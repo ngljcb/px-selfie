@@ -19,30 +19,17 @@
     <nav class="hidden sm:flex ml-auto h-full">
         <span class="text-black font-bold flex items-center justify-center h-24 w-40">USER123</span>
 
-        <a href="#"
-            class="flex items-center justify-center h-24 w-32 text-black no-underline hover:[background-color:#fde289]">
-            Calendar
-        </a>
-        <a href="#"
-            class="flex items-center justify-center h-24 w-32 text-black no-underline hover:[background-color:#fde289]">
-            Notes
-        </a>
-        <a href="#"
+        <a *ngFor="let link of navLinks" [href]="link.href"
             class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:#fde289]">
-            Pomodoro App
+            {{ link.label }}
         </a>
     </nav>
 </header>
 
 <!-- Mobile menu -->
 <div *ngIf="menuOpen" class="sm:hidden flex flex-col bg-[#fde289]">
-    <a href="#" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 rounded">
-        Calendar
-    </a>
-    <a href="#" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 rounded">
-        Notes
-    </a>
-    <a href="#" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 rounded">
-        Pomodoro App
+    <a *ngFor="let link of navLinks" [href]="link.href"
+        class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 rounded">
+        {{ link.label }}
     </a>
 </div>

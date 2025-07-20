@@ -3,12 +3,18 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-header',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.scss'
 })
 export class HeaderComponent {
   menuOpen = false;
+
+  navLinks = [
+    { label: 'Calendar', href: '#' },
+    { label: 'Notes', href: '#' },
+    { label: 'Pomodoro App', href: '#' },
+  ];
 
   toggleMenu(): void {
     this.menuOpen = !this.menuOpen;
