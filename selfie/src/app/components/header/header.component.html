@@ -1,0 +1,48 @@
+<header class="sticky top-0 w-full z-50 flex justify-between items-center bg-[#fbd65a]">
+    <!-- Logo -->
+    <div class="flex items-center px-5 py-3 font-bold text-black">
+        <img src="logo.png" alt="Selfie logo" title="Selfie" class="max-w-[50%] sm:max-w-[20%] h-auto" />
+    </div>
+
+    <!-- User + Hamburger (mobile only) -->
+    <div class="flex items-center gap-3 sm:hidden">
+        <span class="text-black font-bold">USER123</span>
+        <button (click)="toggleMenu()" class="focus:outline-none pr-2">
+            <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Navbar desktop -->
+    <nav class="hidden sm:flex ml-auto h-full">
+        <span class="text-black font-bold flex items-center justify-center h-24 w-40">USER123</span>
+
+        <a href="#"
+            class="flex items-center justify-center h-24 w-32 text-black no-underline hover:[background-color:#fde289]">
+            Calendar
+        </a>
+        <a href="#"
+            class="flex items-center justify-center h-24 w-32 text-black no-underline hover:[background-color:#fde289]">
+            Notes
+        </a>
+        <a href="#"
+            class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:#fde289]">
+            Pomodoro App
+        </a>
+    </nav>
+</header>
+
+<!-- Mobile menu -->
+<div *ngIf="menuOpen" class="sm:hidden flex flex-col bg-[#fde289]">
+    <a href="#" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 rounded">
+        Calendar
+    </a>
+    <a href="#" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 rounded">
+        Notes
+    </a>
+    <a href="#" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 rounded">
+        Pomodoro App
+    </a>
+</div>

@@ -2,12 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
-  selector: 'app-home-header',
+  selector: 'app-header',
   imports: [CommonModule],
-  templateUrl: './home-header.component.html',
-  styleUrl: './home-header.component.scss',
+  templateUrl: './header.component.html',
+  styleUrl: './header.component.scss'
 })
-export class HomeHeaderComponent {
+export class HeaderComponent {
   menuOpen = false;
 
   toggleMenu(): void {
