@@ -1,0 +1,43 @@
+<header class="sticky top-0 w-full z-50 flex justify-between items-center bg-[#fbd65a]">
+    <!-- Logo -->
+    <div class="flex items-center px-5 py-3 font-bold text-black">
+        <img src="logo.png" alt="Selfie logo" title="Selfie" class="w-32 sm:w-60 h-auto" />
+    </div>
+
+    <!-- User + Hamburger (mobile only) -->
+    <div class="flex items-center gap-3 sm:hidden">
+        <span class="text-black font-bold">USER123</span>
+        <button (click)="toggleMenu()" class="focus:outline-none pr-2">
+            <svg *ngIf="!menuOpen" class="w-6 h-6 text-black" fill="none" stroke="currentColor" stroke-width="2"
+                viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+
+            <svg *ngIf="menuOpen" class="w-6 h-6 text-black" fill="none" stroke="currentColor" stroke-width="2"
+                viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <!-- Navbar desktop -->
+    <nav class="hidden sm:flex ml-auto h-full">
+        <a *ngFor="let link of navLinks" [href]="link.href"
+            class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:#fde289]">
+            {{ link.label }}
+        </a>
+        <span class="text-black font-bold flex items-center justify-center h-24 w-40">USER123</span>
+    </nav>
+</header>
+
+<!-- Mobile menu -->
+<div *ngIf="menuOpen" class="fixed w-full sm:hidden flex flex-col bg-[#fde289]">
+    <a *ngFor="let link of navLinks" [href]="link.href"
+        class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 ">
+        {{ link.label }}
+    </a>
+
+    <a href="#" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 ">
+        <strong>Logout</strong>
+    </a>
+</div>
