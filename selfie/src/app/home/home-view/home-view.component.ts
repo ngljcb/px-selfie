@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HeaderComponent } from '../../components/header/header.component';
 import { HomeBoxComponent } from '../home-box/home-box.component';
 
 @Component({
   selector: 'app-home-view',
-  imports: [CommonModule, HeaderComponent, HomeBoxComponent],
+  imports: [CommonModule, HomeBoxComponent],
   templateUrl: './home-view.component.html'
 })
 export class HomeViewComponent {
