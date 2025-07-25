@@ -12,7 +12,7 @@ export class HeaderComponent {
 
   navLinks = [
     { label: 'Calendar', href: '#' },
-    { label: 'Notes', href: '#' },
+    { label: 'Notes', href: '/notes' },
     { label: 'Pomodoro App', href: '#' }
   ];
 

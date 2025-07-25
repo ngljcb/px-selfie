@@ -1,0 +1,194 @@
+<!-- notes/client/components/notes-view/notes-view.component.html -->
+
+<main class="min-h-screen bg-gray-50">
+  <!-- Header Section -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex justify-between items-center">
+        <!-- Titolo sezione -->
+        <div class="flex items-center">
+          <h1 class="text-3xl font-bold text-gray-900">📝 Note</h1>
+          <span class="ml-3 text-sm text-gray-500" *ngIf="totalNotes > 0">
+            {{ totalNotes }} note{{ totalNotes !== 1 ? '' : 'a' }}
+          </span>
+        </div>
+
+        <!-- Azioni principali -->
+        <div class="flex items-center gap-3">
+          <!-- Bottone Crea Gruppo -->
+          <button 
+            (click)="createGroup()"
+            class="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors duration-200">
+            <span class="text-lg">👥</span>
+            <span class="font-medium">Crea Gruppo</span>
+          </button>
+
+          <!-- Bottone Nuova Nota -->
+          <button 
+            (click)="createNewNote()"
+            class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors duration-200 shadow-sm">
+            <span class="text-lg">✏️</span>
+            <span>Crea Nota</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtri Section -->
+  <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        
+        <!-- Barra di ricerca -->
+        <div class="flex-1 max-w-md">
+          <div class="relative">
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (input)="onSearchChange()"
+              placeholder="🔍 Cerca nelle note..."
+              class="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
+            
+            <!-- Clear search button -->
+            <button 
+              *ngIf="searchQuery"
+              (click)="clearSearch()"
+              class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Filtri dropdown -->
+        <div class="flex flex-wrap items-center gap-3">
+          
+          <!-- Filtro Categoria -->
+          <div class="min-w-[160px]">
+            <select 
+              [(ngModel)]="selectedCategory"
+              (change)="onFiltersChange()"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
+              <option value="">📁 Tutte le categorie</option>
+              <option *ngFor="let category of categories" [value]="category.nome">
+                📁 {{ category.nome }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Filtro Tipo -->
+          <div class="min-w-[140px]">
+            <select 
+              [(ngModel)]="selectedType"
+              (change)="onFiltersChange()"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
+              <option value="">🏷️ Tutti i tipi</option>
+              <option *ngFor="let type of noteTypes" [value]="type.value">
+                {{ type.icon }} {{ type.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Ordinamento -->
+          <div class="min-w-[160px]">
+            <select 
+              [(ngModel)]="sortBy"
+              (change)="onFiltersChange()"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
+              <option *ngFor="let option of sortOptions" [value]="option.value">
+                📊 {{ option.label }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Reset filtri -->
+          <button 
+            *ngIf="hasActiveFilters()"
+            (click)="clearAllFilters()"
+            class="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+            🔄 Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenuto principale -->
+  <div class="max-w-7xl mx-auto px-4 pb-8">
+    
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#fbd65a]"></div>
+      <span class="ml-3 text-gray-600">Caricamento note...</span>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <div class="flex items-center">
+        <span class="text-red-500 text-lg mr-2">⚠️</span>
+        <span class="text-red-700">{{ errorMessage }}</span>
+        <button 
+          (click)="retryLoadNotes()"
+          class="ml-auto px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm">
+          Riprova
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State - Nessuna nota -->
+    <div *ngIf="!isLoading && !errorMessage && filteredNotes.length === 0 && totalNotes === 0" 
+         class="text-center py-16">
+      <div class="text-6xl mb-4">📝</div>
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">Nessuna nota presente!</h3>
+    </div>
+
+    <!-- Empty State - Filtri attivi ma nessun risultato -->
+    <div *ngIf="!isLoading && !errorMessage && filteredNotes.length === 0 && totalNotes > 0" 
+         class="text-center py-16">
+      <div class="text-6xl mb-4">🔍</div>
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">Nessuna nota trovata</h3>
+      <p class="text-gray-500 mb-6">Prova a modificare i filtri di ricerca</p>
+      <button 
+        (click)="clearAllFilters()"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+        <span>🔄</span>
+        <span>Rimuovi filtri</span>
+      </button>
+    </div>
+
+    <!-- Griglia delle Note -->
+    <div *ngIf="!isLoading && !errorMessage && filteredNotes.length > 0" 
+         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+
+        <!-- Note Box Components 
+        <app-note-box
+            *ngFor="let note of filteredNotes; trackBy: trackByNoteId"
+            [note]="note"
+            (onEdit)="editNote($event)"
+            (onDuplicate)="duplicateNote($event)"
+            (onCopy)="copyNote($event)"
+            (onDelete)="deleteNote($event)"
+            class="transform transition-transform duration-200 hover:scale-105">
+        </app-note-box>
+        -->
+
+         <div class="home-box-content">
+        <h2 class="home-box-title">"nota1"</h2>
+        <p class="home-box-description">"asjka"</p>
+          </div>
+
+
+
+
+    </div>
+
+    <!-- Risultati e Paginazione -->
+    <div *ngIf="!isLoading && filteredNotes.length > 0" 
+         class="mt-8 flex justify-between items-center text-sm text-gray-600">
+      <span>
+        Visualizzate {{ filteredNotes.length }} di {{ totalNotes }} note
+      </span>
+      
+    </div>
+  </div>
+</main>
