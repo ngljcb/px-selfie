@@ -1,7 +1,9 @@
 <header class="sticky top-0 w-full z-50 flex justify-between items-center bg-[#fbd65a]">
     <!-- Logo -->
     <div class="flex items-center px-5 py-3 font-bold text-black">
+      <a href="/">
         <img src="logo.png" alt="Selfie logo" title="Selfie" class="w-32 sm:w-60 h-auto" />
+      </a>
     </div>
 
     <!-- User + Hamburger (mobile only) -->
@@ -21,13 +23,13 @@
     </div>
 
     <!-- Navbar desktop -->
-    <nav class="hidden sm:flex ml-auto h-full">
+    <nav *ngIf="!isRoot" class="hidden sm:flex ml-auto h-full">
         <a *ngFor="let link of navLinks" [href]="link.href"
             class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:#fde289]">
             {{ link.label }}
         </a>
-        <span class="text-black font-bold flex items-center justify-center h-24 w-40">USER123</span>
     </nav>
+    <span class="hidden sm:flex h-full text-black font-bold flex items-center justify-center h-24 w-40">USER123</span>
 </header>
 
 <!-- Mobile menu -->

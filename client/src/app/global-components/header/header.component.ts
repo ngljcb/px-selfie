@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -13,8 +14,14 @@ export class HeaderComponent {
   navLinks = [
     { label: 'Calendar', href: 'calendar' },
     { label: 'Notes', href: 'notes' },
-    { label: 'Pomodoro App', href: 'pomodoro' }
+    { label: 'Pomodoro App', href: '#' }
   ];
+
+  constructor(private router: Router) {}
+
+  get isRoot(): boolean {
+    return this.router.url === '/';
+  }
 
   toggleMenu(): void {
     this.menuOpen = !this.menuOpen;
