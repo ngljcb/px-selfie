@@ -12,7 +12,7 @@ export class HomeViewComponent {
     {
       title: 'Calendario',
       description: 'Visualizza e gestisci i tuoi eventi, scadenze e appuntamenti.',
-      link: '/'
+      link: 'calendar'
     },
     {
       title: 'Note',

@@ -13,43 +13,34 @@ export const routes: Routes = [
     path: 'notes',
     component: NotesViewComponent
   },
-    // Route per creare una nuova nota
   {
-    path: 'notes/new',
+    path: 'notes/new', // Route per creare una nuova nota
     component: NoteEditorComponent,
     title: 'Nuova Nota - SELFIE',
     data: { mode: 'create' }
   },
-
-  // Route per modificare una nota esistente
   {
-    path: 'notes/:id/edit',
+    path: 'notes/:id/edit', // Route per modificare una nota esistente
     component: NoteEditorComponent,
     title: 'Modifica Nota - SELFIE',
     data: { mode: 'edit' }
   },
-
-  // Route per duplicare una nota esistente
   {
-    path: 'notes/:id/duplicate',
+    path: 'notes/:id/duplicate', // Route per duplicare una nota esistente
     component: NoteEditorComponent,
     title: 'Duplica Nota - SELFIE',
     data: { mode: 'duplicate' }
   },
-
-  // Redirect da /note a /notes per retrocompatibilità
   {
-    path: 'note',
+    path: 'note', // Redirect da /note a /notes per retrocompatibilità
     redirectTo: '/notes',
     pathMatch: 'full'
   },
-  /*
   {
     path: 'calendar',
     component: CalendarComponent
   },
   {
-    path: 'pomodoro',
-    component: PomodoroComponent
-  }*/
+    path: 'pomodoro'
+  }
 ];
