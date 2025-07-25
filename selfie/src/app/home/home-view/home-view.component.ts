@@ -17,7 +17,7 @@ export class HomeViewComponent {
     {
       title: 'Note',
       description: 'Prendi appunti e organizza promemoria importanti.',
-      link: '/'
+      link: '/notes'
     },
     {
       title: 'Pomodoro',
