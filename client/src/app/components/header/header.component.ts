@@ -12,8 +12,8 @@ export class HeaderComponent {
 
   navLinks = [
     { label: 'Calendar', href: 'calendar' },
-    { label: 'Notes', href: '#' },
-    { label: 'Pomodoro App', href: '#' }
+    { label: 'Notes', href: 'notes' },
+    { label: 'Pomodoro App', href: 'pomodoro' }
   ];
 
   toggleMenu(): void {
