@@ -14,11 +14,11 @@ Once the server is running, open your browser and navigate to `http://localhost:
 
 ## Backend
 
-To start a local development server for the frontend, run:
+To start a local development server for the backend, run:
 
 ```bash
 cd server
 npm run dev
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:3000/`. The application will automatically reload whenever you modify any of the source files.
+Once the server is running, it listens to `http://localhost:3000/`. The application will automatically respond whenever a valid request has been made.
