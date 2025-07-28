@@ -29,7 +29,11 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/tailwind.css"],
+            "styles": [
+              "src/tailwind.css",
+              "src/styles.scss",
+              "node_modules/@fortawesome/fontawesome-free/css/all.min.css"
+            ],
             "scripts": []
           },
           "configurations": {
