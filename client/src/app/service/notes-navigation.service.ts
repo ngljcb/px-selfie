@@ -43,6 +43,13 @@ export class NotesNavigationService {
   }
 
   /**
+   * Naviga alla visualizzazione di una nota in sola lettura
+   */
+  goToViewNote(noteId: number): void {
+    this.router.navigate(['/notes', noteId, 'view']);
+  }
+
+  /**
    * Torna alla pagina precedente
    */
   goBack(): void {
@@ -59,7 +66,7 @@ export class NotesNavigationService {
   /**
    * Ottiene la modalità corrente dell'editor basata sulla route
    */
-  getCurrentEditorMode(): 'create' | 'edit' | 'duplicate' | null {
+  getCurrentEditorMode(): 'create' | 'edit' | 'duplicate' | 'view' | null {
     const url = this.router.url;
     
     if (url === '/notes/new') {
@@ -68,6 +75,8 @@ export class NotesNavigationService {
       return 'edit';
     } else if (url.includes('/duplicate')) {
       return 'duplicate';
+    } else if (url.includes('/view')) {
+      return 'view';
     }
     
     return null;
@@ -80,7 +89,7 @@ export class NotesNavigationService {
     const url = this.router.url;
     const segments = url.split('/');
     
-    // Pattern: /notes/:id/edit o /notes/:id/duplicate
+    // Pattern: /notes/:id/edit o /notes/:id/duplicate o /notes/:id/view
     if (segments.length >= 3 && segments[1] === 'notes') {
       const idSegment = segments[2];
       const noteId = parseInt(idSegment, 10);

@@ -33,10 +33,25 @@ export const routes: Routes = [
     data: { mode: 'duplicate' }
   },
   {
+    path: 'notes/:id/view', // Route per visualizzare una nota in sola lettura
+    component: NoteEditorComponent,
+    title: 'Visualizza Nota - SELFIE',
+    data: { mode: 'view' }
+  },
+  {
     path: 'note', // Redirect da /note a /notes per retrocompatibilità
     redirectTo: '/notes',
     pathMatch: 'full'
   },
+
+
+
+
+
+
+
+
+
   {
     path: 'calendar',
     component: CalendarViewComponent

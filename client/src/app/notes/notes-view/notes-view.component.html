@@ -7,7 +7,6 @@
       <div class="flex justify-between items-center">
         <!-- Titolo sezione -->
         <div class="flex items-center">
-          <h1 class="text-3xl font-bold text-gray-900">📝 Note</h1>
           <span class="ml-3 text-sm text-gray-500" *ngIf="totalNotes > 0">
             {{ totalNotes }} note{{ totalNotes !== 1 ? '' : 'a' }}
           </span>
@@ -160,7 +159,6 @@
     <div *ngIf="!isLoading && !errorMessage && filteredNotes.length > 0" 
          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 
-        <!-- Note Box Components 
         <app-note-box
             *ngFor="let note of filteredNotes; trackBy: trackByNoteId"
             [note]="note"
@@ -168,9 +166,9 @@
             (onDuplicate)="duplicateNote($event)"
             (onCopy)="copyNote($event)"
             (onDelete)="deleteNote($event)"
+            
             class="transform transition-transform duration-200 hover:scale-105">
         </app-note-box>
-        -->
 
          <div class="home-box-content">
         <h2 class="home-box-title">"nota1"</h2>
