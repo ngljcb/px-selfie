@@ -33,7 +33,7 @@
 </header>
 
 <!-- Mobile menu -->
-<div *ngIf="menuOpen" class="fixed w-full sm:hidden flex flex-col bg-[#fde289]">
+<div *ngIf="menuOpen" class="w-full sm:hidden flex flex-col bg-[#fde289] shadow-md">
     <a *ngFor="let link of navLinks" [href]="link.href"
         class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 ">
         {{ link.label }}

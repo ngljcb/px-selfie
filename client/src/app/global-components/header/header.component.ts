@@ -14,7 +14,8 @@ export class HeaderComponent {
   navLinks = [
     { label: 'Calendar', href: 'calendar' },
     { label: 'Notes', href: 'notes' },
-    { label: 'Pomodoro App', href: '#' }
+    { label: 'Pomodoro App', href: '#' },
+    { label: 'Grades', href: '#' }
   ];
 
   constructor(private router: Router) {}
