@@ -1,5 +1,15 @@
-const express = require('express')
-const app = express()
-const PORT = 3000
+require('dotenv').config();
 
-app.listen(PORT, () => console.log(`Server has started on: ${PORT}`))
+const express = require('express');
+const cors = require('cors');
+const app = express();
+const routes = require('./router');
+
+app.use(cors());
+app.use(express.json());
+
+app.use('/api', routes);
+
+app.listen(3000, () => {
+  console.log('Server in ascolto su http://localhost:3000');
+});

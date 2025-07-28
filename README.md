@@ -1,4 +1,4 @@
-<a href="#"><img src="./client/public/logo.png"></a>
+<a href="#"><img src="./client/public/banner.png"></a>
 
 
 ## Frontend
