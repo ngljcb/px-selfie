@@ -1,8 +1,10 @@
 // src/app/features/timer/timer-view/timer-view.component.ts
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+import { TimerConfigComponent } from '../timer-config/timer-config.component';
 import { 
   TimerService 
 } from '../../service/timer.service';
@@ -15,6 +17,8 @@ import {
 
 @Component({
   selector: 'app-timer-view',
+  standalone: true,
+  imports: [CommonModule, TimerConfigComponent],
   templateUrl: './timer-view.component.html',
   styleUrls: ['./timer-view.component.scss']
 })
@@ -24,6 +28,9 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   // State
   timerState: TimerState | null = null;
   showConfig = false;
+
+  // Utility per template
+  Math = Math; // Per usare Math.round nel template
 
   // Enums per template
   readonly TimerStatus = TimerStatus;
@@ -166,5 +173,18 @@ export class TimerViewComponent implements OnInit, OnDestroy {
 
   getProgressBarWidth(): string {
     return `${this.getSessionProgress()}%`;
+  }
+
+  // ==================== SAFE GETTERS PER TEMPLATE ====================
+
+  get safeTimerState(): TimerState {
+    return this.timerState || {
+      config: { studyMinutes: 30, breakMinutes: 5, totalCycles: 5 },
+      currentCycle: 1,
+      currentPhase: TimerPhase.STUDY,
+      remainingSeconds: 1800,
+      status: TimerStatus.IDLE,
+      totalElapsedSeconds: 0
+    };
   }
 }

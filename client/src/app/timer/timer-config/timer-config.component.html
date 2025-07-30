@@ -1,0 +1,191 @@
+<!-- src/app/features/timer/components/timer-config/timer-config.component.html -->
+
+<div class="config-container">
+  
+  <!-- HEADER -->
+  <div class="config-header">
+    <h2>Configurazione Timer</h2>
+    <button class="close-btn" (click)="cancel()">
+      <span>✕</span>
+    </button>
+  </div>
+
+  <!-- MODE SWITCH -->
+  <div class="mode-switch">
+    <button 
+      class="mode-btn" 
+      [class.active]="isManualMode"
+      (click)="switchToManual()">
+      <span class="mode-icon">⚙️</span>
+      <span class="mode-text">Configurazione Manuale</span>
+    </button>
+    <button 
+      class="mode-btn" 
+      [class.active]="!isManualMode"
+      (click)="switchToAutomatic()">
+      <span class="mode-icon">🎯</span>
+      <span class="mode-text">Suggerimenti Automatici</span>
+    </button>
+  </div>
+
+  <form [formGroup]="configForm" class="config-form">
+
+    <!-- MODALITÀ MANUALE -->
+    <div class="manual-mode" *ngIf="isManualMode">
+      <div class="form-section">
+        <h3>Imposta i parametri</h3>
+        
+        <div class="form-grid">
+          <!-- Tempo Studio -->
+          <div class="form-group">
+            <label for="studyMinutes">Tempo Studio (minuti)</label>
+            <input 
+              type="number" 
+              id="studyMinutes"
+              formControlName="studyMinutes"
+              min="1" 
+              max="120"
+              class="form-input">
+            <div class="input-error" 
+                 *ngIf="configForm.get('studyMinutes')?.invalid && configForm.get('studyMinutes')?.touched">
+              Inserisci un valore tra 1 e 120 minuti
+            </div>
+          </div>
+
+          <!-- Tempo Pausa -->
+          <div class="form-group">
+            <label for="breakMinutes">Tempo Pausa (minuti)</label>
+            <input 
+              type="number" 
+              id="breakMinutes"
+              formControlName="breakMinutes"
+              min="1" 
+              max="30"
+              class="form-input">
+            <div class="input-error" 
+                 *ngIf="configForm.get('breakMinutes')?.invalid && configForm.get('breakMinutes')?.touched">
+              Inserisci un valore tra 1 e 30 minuti
+            </div>
+          </div>
+
+          <!-- Numero Cicli -->
+          <div class="form-group">
+            <label for="totalCycles">Numero Cicli</label>
+            <input 
+              type="number" 
+              id="totalCycles"
+              formControlName="totalCycles"
+              min="1" 
+              max="20"
+              class="form-input">
+            <div class="input-error" 
+                 *ngIf="configForm.get('totalCycles')?.invalid && configForm.get('totalCycles')?.touched">
+              Inserisci un valore tra 1 e 20 cicli
+            </div>
+          </div>
+        </div>
+
+        <!-- PREVIEW MANUALE -->
+        <div class="config-preview">
+          <div class="preview-title">Anteprima:</div>
+          <div class="preview-text">{{ getPreviewText() }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODALITÀ AUTOMATICA -->
+    <div class="automatic-mode" *ngIf="!isManualMode">
+      <div class="form-section">
+        <h3>Quanto tempo hai a disposizione?</h3>
+        
+        <div class="time-input-group">
+          <label for="totalTime">Tempo totale disponibile (minuti)</label>
+          <input 
+            type="number" 
+            id="totalTime"
+            formControlName="totalTime"
+            min="10" 
+            max="480"
+            (input)="onTotalTimeChange()"
+            class="form-input time-input">
+          <div class="time-helper">
+            <span class="time-format">{{ formatTime(configForm.get('totalTime')?.value || 0) }}</span>
+          </div>
+          <div class="input-error" 
+               *ngIf="configForm.get('totalTime')?.invalid && configForm.get('totalTime')?.touched">
+            Inserisci un valore tra 10 minuti e 8 ore
+          </div>
+        </div>
+
+        <!-- PROPOSTE -->
+        <div class="proposals-section" *ngIf="proposals.length > 0">
+          <h4>Proposte consigliate:</h4>
+          
+          <div class="proposals-grid">
+            <div 
+              class="proposal-card" 
+              *ngFor="let proposal of proposals"
+              [class.selected]="selectedProposal?.id === proposal.id"
+              (click)="selectProposal(proposal)">
+              
+              <div class="proposal-header">
+                <div class="proposal-name">{{ proposal.name }}</div>
+                <div class="proposal-check" *ngIf="selectedProposal?.id === proposal.id">✓</div>
+              </div>
+              
+              <div class="proposal-description">{{ proposal.description }}</div>
+              
+              <div class="proposal-details">
+                <div class="proposal-stats">
+                  <div class="stat">
+                    <span class="stat-label">Studio:</span>
+                    <span class="stat-value">{{ formatTime(proposal.studyTime) }}</span>
+                  </div>
+                  <div class="stat" *ngIf="proposal.breakTime > 0">
+                    <span class="stat-label">Pausa:</span>
+                    <span class="stat-value">{{ formatTime(proposal.breakTime) }}</span>
+                  </div>
+                  <div class="stat">
+                    <span class="stat-label">Cicli:</span>
+                    <span class="stat-value">{{ proposal.totalCycles }}</span>
+                  </div>
+                </div>
+                <div class="proposal-breakdown">{{ proposal.details }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NESSUNA PROPOSTA -->
+        <div class="no-proposals" *ngIf="proposals.length === 0 && configForm.get('totalTime')?.value">
+          <p>Inserisci un tempo valido per vedere le proposte</p>
+        </div>
+
+        <!-- PREVIEW AUTOMATICA -->
+        <div class="config-preview" *ngIf="selectedProposal">
+          <div class="preview-title">Configurazione selezionata:</div>
+          <div class="preview-text">{{ getPreviewText() }}</div>
+        </div>
+      </div>
+    </div>
+
+  </form>
+
+  <!-- AZIONI -->
+  <div class="config-actions">
+    <button 
+      type="button" 
+      class="action-btn cancel-btn" 
+      (click)="cancel()">
+      Annulla
+    </button>
+    <button 
+      type="button" 
+      class="action-btn save-btn" 
+      [disabled]="!isFormValid()"
+      (click)="saveConfig()">
+      {{ isManualMode ? 'Salva Configurazione' : 'Usa Proposta Selezionata' }}
+    </button>
+  </div>
+
+</div>
