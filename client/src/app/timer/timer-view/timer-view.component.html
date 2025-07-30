@@ -1,0 +1,140 @@
+<!-- src/app/features/timer/timer-view/timer-view.component.html -->
+
+<div class="timer-view" *ngIf="timerState">
+  
+  <!-- HEADER CON STATUS -->
+  <div class="timer-header">
+    <h1>Timer Pomodoro</h1>
+    <p class="status-text">{{ getStatusText() }}</p>
+  </div>
+
+  <!-- MAIN TIMER DISPLAY -->
+  <div [class]="getTimerDisplayClass()">
+    
+    <!-- Countdown principale -->
+    <div class="time-display">
+      <span class="time-number">{{ formatTime(timerState.remainingSeconds) }}</span>
+    </div>
+
+    <!-- Info fase corrente -->
+    <div class="phase-info">
+      <div class="current-phase">
+        <span class="phase-icon">{{ isStudyPhase() ? '📚' : '☕' }}</span>
+        <span class="phase-text">{{ getCurrentPhaseText() }}</span>
+      </div>
+      <div class="cycle-info">{{ getCycleText() }}</div>
+    </div>
+
+    <!-- Progress bar sessione -->
+    <div class="progress-container">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width]="getProgressBarWidth()"></div>
+      </div>
+      <span class="progress-text">{{ getSessionProgress() | number:'1.0-0' }}% completato</span>
+    </div>
+
+    <!-- Animazione pulsante (solo quando attivo) -->
+    <div class="pulse-animation" 
+         [class.active]="isRunning()" 
+         [class.study-pulse]="isStudyPhase()" 
+         [class.break-pulse]="isBreakPhase()">
+    </div>
+  </div>
+
+  <!-- CONTROLLI -->
+  <div class="timer-controls">
+    
+    <!-- Controlli principali -->
+    <div class="main-controls">
+      <button 
+        class="control-btn start-btn" 
+        (click)="startTimer()" 
+        [disabled]="isRunning()"
+        [class.primary]="isIdle() || isPaused()">
+        <span class="btn-icon">▶️</span>
+        <span class="btn-text">{{ isPaused() ? 'Riprendi' : 'Inizia' }}</span>
+      </button>
+
+      <button 
+        class="control-btn pause-btn" 
+        (click)="pauseTimer()" 
+        [disabled]="!isRunning()">
+        <span class="btn-icon">⏸️</span>
+        <span class="btn-text">Pausa</span>
+      </button>
+
+      <button 
+        class="control-btn reset-btn" 
+        (click)="resetTimer()"
+        [disabled]="isIdle()">
+        <span class="btn-icon">🔄</span>
+        <span class="btn-text">Ricomincia</span>
+      </button>
+
+      <button 
+        class="control-btn stop-btn" 
+        (click)="stopTimer()"
+        [disabled]="isIdle()">
+        <span class="btn-icon">⏹️</span>
+        <span class="btn-text">Fine</span>
+      </button>
+    </div>
+
+    <!-- Controllo configurazione -->
+    <div class="config-controls">
+      <button 
+        class="control-btn config-btn" 
+        (click)="openConfig()"
+        [disabled]="isRunning()">
+        <span class="btn-icon">⚙️</span>
+        <span class="btn-text">Configura</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- INFO CONFIGURAZIONE CORRENTE -->
+  <div class="config-summary">
+    <div class="config-item">
+      <span class="config-label">Studio:</span>
+      <span class="config-value">{{ timerState.config.studyMinutes }} min</span>
+    </div>
+    <div class="config-item">
+      <span class="config-label">Pausa:</span>
+      <span class="config-value">{{ timerState.config.breakMinutes }} min</span>
+    </div>
+    <div class="config-item">
+      <span class="config-label">Cicli:</span>
+      <span class="config-value">{{ timerState.config.totalCycles }}</span>
+    </div>
+  </div>
+
+  <!-- MESSAGGIO COMPLETAMENTO -->
+  <div class="completion-message" *ngIf="isCompleted()">
+    <div class="completion-content">
+      <div class="completion-icon">🎉</div>
+      <h2>Sessione Completata!</h2>
+      <p>Hai completato tutti i {{ timerState.config.totalCycles }} cicli.</p>
+      <p class="study-time">Tempo totale di studio: {{ formatTime(timerState.totalElapsedSeconds) }}</p>
+      <button class="control-btn primary" (click)="resetTimer()">
+        Nuova Sessione
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL CONFIGURAZIONE -->
+<div class="config-modal-overlay" *ngIf="showConfig" (click)="closeConfig()">
+  <div class="config-modal" (click)="$event.stopPropagation()">
+    <app-timer-config
+      [currentConfig]="timerState.config"
+      (onConfigSave)="onConfigSave($event)"
+      (onClose)="closeConfig()">
+    </app-timer-config>
+  </div>
+</div>
+
+<!-- LOADING STATE -->
+<div class="loading" *ngIf="!timerState">
+  <p>Caricamento timer...</p>
+</div>

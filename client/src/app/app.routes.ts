@@ -4,6 +4,7 @@ import { HomeViewComponent } from './home/home-view/home-view.component';
 import { NotesViewComponent } from './notes/notes-view/notes-view.component';
 import { NoteEditorComponent } from './notes/note-editor/note-editor.component';
 import { NotesNavigationService } from './service/notes-navigation.service';
+import { TimerViewComponent } from './timer/timer-view/timer-view.component';
 
 export const routes: Routes = [
   {
@@ -42,6 +43,10 @@ export const routes: Routes = [
     path: 'note', // Redirect da /note a /notes per retrocompatibilità
     redirectTo: '/notes',
     pathMatch: 'full'
+  },
+  {
+    path: 'timer',
+    component: TimerViewComponent
   },
 
 
