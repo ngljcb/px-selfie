@@ -49,7 +49,8 @@ export class TimerConfigComponent implements OnInit {
         studyMinutes: this.currentConfig.studyMinutes,
         breakMinutes: this.currentConfig.breakMinutes,
         totalCycles: this.currentConfig.totalCycles,
-        totalTime: this.calculateTotalTime(this.currentConfig)
+        totalTimeHours: Math.floor(this.calculateTotalTime(this.currentConfig) / 60),
+        totalTimeMinutes: this.calculateTotalTime(this.currentConfig) % 60
       });
     }
   }
@@ -61,8 +62,9 @@ export class TimerConfigComponent implements OnInit {
       breakMinutes: [5, [Validators.required, Validators.min(1), Validators.max(30)]],
       totalCycles: [5, [Validators.required, Validators.min(1), Validators.max(20)]],
       
-      // Modalità automatica
-      totalTime: [150, [Validators.required, Validators.min(10), Validators.max(480)]] // 8 ore max
+      // Modalità automatica - separati in ore e minuti
+      totalTimeHours: [2, [Validators.required, Validators.min(0), Validators.max(8)]],
+      totalTimeMinutes: [30, [Validators.required, Validators.min(0), Validators.max(59)]]
     });
   }
 
@@ -79,162 +81,169 @@ export class TimerConfigComponent implements OnInit {
     this.generateProposals();
   }
 
-  // ==================== GENERAZIONE PROPOSTE ====================
+  // ==================== UTILITY PER TEMPO ====================
+
+  getTotalTimeInMinutes(): number {
+    const hours = this.configForm.get('totalTimeHours')?.value || 0;
+    const minutes = this.configForm.get('totalTimeMinutes')?.value || 0;
+    return hours * 60 + minutes;
+  }
+
+  setTotalTimeFromMinutes(totalMinutes: number): void {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    this.configForm.patchValue({
+      totalTimeHours: hours,
+      totalTimeMinutes: minutes
+    });
+  }
+
+  formatTimeDisplay(): string {
+    const hours = this.configForm.get('totalTimeHours')?.value || 0;
+    const minutes = this.configForm.get('totalTimeMinutes')?.value || 0;
+    const totalMinutes = this.getTotalTimeInMinutes();
+    
+    if (hours === 0 && minutes === 0) {
+      return 'Inserisci tempo valido';
+    }
+    
+    let display = '';
+    if (hours > 0) {
+      display += `${hours}h`;
+    }
+    if (minutes > 0) {
+      if (display) display += ' ';
+      display += `${minutes}min`;
+    }
+    
+    return `${totalMinutes} minuti`;
+  }
+
+  // ==================== NUOVA LOGICA GENERAZIONE PROPOSTE ====================
 
   generateProposals(): void {
-    const totalTime = this.configForm.get('totalTime')?.value || 150;
+    const TT = this.getTotalTimeInMinutes(); // Tempo Totale
     this.proposals = [];
 
-    // Se tempo < 25 minuti: solo studio continuo
-    if (totalTime < 25) {
+    // Validazione minima
+    if (TT < 10) {
+      return;
+    }
+
+    // Caso 1: TT < 25 minuti -> Solo studio continuo
+    if (TT < 25) {
       this.proposals.push({
         id: 1,
         name: 'Studio Continuo',
         description: 'Tempo insufficiente per pause, studio continuo',
-        studyMinutes: totalTime,
+        studyMinutes: TT,
         breakMinutes: 0,
         totalCycles: 1,
-        totalTime: totalTime,
-        studyTime: totalTime,
+        totalTime: TT,
+        studyTime: TT,
         breakTime: 0,
-        details: `${totalTime} minuti di studio continuo`
+        details: `${TT} minuti di studio continuo`
       });
       return;
     }
 
-    // Proposta 1: Pomodoro classico (25+5)
-    this.generatePomodoroProposal(totalTime);
-
-    // Proposta 2: Sessioni lunghe (50+10) - solo se >= 60 minuti
-    if (totalTime >= 60) {
-      this.generateLongSessionProposal(totalTime);
-    }
+    // Caso 2: TT >= 25 minuti -> Genera proposte con cicli
+    this.generateCycleProposals(TT);
   }
 
-  private generatePomodoroProposal(totalTime: number): void {
-    const studyBase = 25;
-    const breakBase = 5;
-    const cycleLength = studyBase + breakBase; // 30 minuti
-    
-    let cycles = Math.floor(totalTime / cycleLength);
-    let remainingTime = totalTime % cycleLength;
-    
-    // Se rimane tempo, aggiungiamo studio extra nell'ultimo ciclo
-    let finalStudyTime = studyBase;
-    let finalBreakTime = breakBase;
-    
-    if (remainingTime > 0 && cycles > 0) {
-      finalStudyTime = studyBase + remainingTime;
-    } else if (cycles === 0) {
-      // Caso edge: meno di 30 minuti totali
-      cycles = 1;
-      finalStudyTime = totalTime - breakBase;
-      if (finalStudyTime < 1) {
-        finalStudyTime = totalTime;
-        finalBreakTime = 0;
+  private generateCycleProposals(TT: number): void {
+    // Configurazioni base da testare: [studio, pausa]
+    const baseConfigs = [
+      { study: 25, break: 5, name: 'Pomodoro Classico', desc: 'Cicli da 25 min studio + 5 min pausa' },
+      { study: 30, break: 5, name: 'Pomodoro Esteso', desc: 'Cicli da 30 min studio + 5 min pausa' },
+      { study: 50, break: 10, name: 'Sessioni Lunghe', desc: 'Cicli da 50 min studio + 10 min pausa' }
+    ];
+
+    let proposalId = 1;
+
+    baseConfigs.forEach(config => {
+      const proposal = this.calculateOptimalCycles(TT, config.study, config.break, proposalId, config.name, config.desc);
+      if (proposal) {
+        this.proposals.push(proposal);
+        proposalId++;
       }
-    }
-
-    const totalStudyTime = (cycles - 1) * studyBase + finalStudyTime;
-    const totalBreakTime = (cycles - 1) * breakBase + finalBreakTime;
-
-    this.proposals.push({
-      id: 1,
-      name: 'Pomodoro Classico',
-      description: 'Cicli da 25 min studio + 5 min pausa',
-      studyMinutes: studyBase,
-      breakMinutes: breakBase,
-      totalCycles: cycles,
-      totalTime: totalTime,
-      studyTime: totalStudyTime,
-      breakTime: totalBreakTime,
-      details: this.buildPomodoroDetails(cycles, studyBase, breakBase, finalStudyTime, finalBreakTime)
     });
   }
 
-  private generateLongSessionProposal(totalTime: number): void {
-    const studyBase = 50;
-    const breakBase = 10;
-    const cycleLength = studyBase + breakBase; // 60 minuti
+  private calculateOptimalCycles(TT: number, TS: number, TP: number, id: number, name: string, description: string): ConfigProposal | null {
+    const CC = TS + TP; // Ciclo Completo
     
-    let cycles = Math.floor(totalTime / cycleLength);
-    let remainingTime = totalTime % cycleLength;
-    
-    // Se rimane tempo, aggiungiamo studio extra nell'ultimo ciclo
-    let finalStudyTime = studyBase;
-    let finalBreakTime = breakBase;
-    
-    if (remainingTime > 0 && cycles > 0) {
-      finalStudyTime = studyBase + remainingTime;
-    } else if (cycles === 0) {
-      // Caso edge: meno di 60 minuti ma >= 60 (giusto al limite)
-      cycles = 1;
-      finalStudyTime = totalTime - breakBase;
-      if (finalStudyTime < 1) {
-        finalStudyTime = totalTime;
+    // Se non possiamo fare nemmeno un periodo di studio, non possiamo fare questa configurazione
+    if (TS > TT) {
+      return null;
+    }
+
+    // Calcola quanti cicli completi possiamo fare
+    const completeCycles = Math.floor(TT / CC);
+    const TR = TT - (completeCycles * CC); // Tempo Rimanente
+
+    let finalStudyTime = TS;
+    let finalBreakTime = TP;
+    let totalCycles = completeCycles;
+    let actualTotalStudyTime = completeCycles * TS;
+    let actualTotalBreakTime = completeCycles * TP;
+
+    // Gestione del tempo rimanente
+    if (TR > 0) {
+      totalCycles++; // Aggiungiamo un ciclo finale
+
+      if (TS < TR && TR < CC) {
+        // Caso: TS < TR < CC
+        // Facciamo studio completo + pausa ridotta
+        finalStudyTime = TS;
+        finalBreakTime = TR - TS;
+        actualTotalStudyTime += TS;
+        actualTotalBreakTime += (TR - TS);
+      } else if (TR === TS) {
+        // Caso: TR = TS
+        // Solo studio, nessuna pausa
+        finalStudyTime = TS;
         finalBreakTime = 0;
+        actualTotalStudyTime += TS;
+      } else if (TR < TS) {
+        // Caso: TR < TS
+        // Studio ridotto
+        finalStudyTime = TR;
+        finalBreakTime = 0;
+        actualTotalStudyTime += TR;
       }
     }
 
-    const totalStudyTime = (cycles - 1) * studyBase + finalStudyTime;
-    const totalBreakTime = (cycles - 1) * breakBase + finalBreakTime;
-
-    this.proposals.push({
-      id: 2,
-      name: 'Sessioni Lunghe',
-      description: 'Cicli da 50 min studio + 10 min pausa',
-      studyMinutes: studyBase,
-      breakMinutes: breakBase,
-      totalCycles: cycles,
-      totalTime: totalTime,
-      studyTime: totalStudyTime,
-      breakTime: totalBreakTime,
-      details: this.buildLongSessionDetails(cycles, studyBase, breakBase, finalStudyTime, finalBreakTime)
-    });
+    return {
+      id: id,
+      name: name,
+      description: description,
+      studyMinutes: TS, // Tempo studio base per i cicli normali
+      breakMinutes: TP, // Tempo pausa base per i cicli normali
+      totalCycles: totalCycles,
+      totalTime: TT,
+      studyTime: actualTotalStudyTime,
+      breakTime: actualTotalBreakTime,
+      details: this.buildCycleDetails(completeCycles, TS, TP, finalStudyTime, finalBreakTime, TR > 0)
+    };
   }
 
-  private buildPomodoroDetails(cycles: number, studyBase: number, breakBase: number, finalStudyTime: number, finalBreakTime: number): string {
-    if (cycles === 1) {
-      return `${finalStudyTime} min studio${finalBreakTime > 0 ? ` + ${finalBreakTime} min pausa` : ''}`;
-    }
-    
+  private buildCycleDetails(completeCycles: number, baseStudy: number, baseBreak: number, finalStudy: number, finalBreak: number, hasRemainder: boolean): string {
     const details = [];
     
-    // Cicli standard
-    if (cycles > 1) {
-      details.push(`${cycles - 1} cicli da ${studyBase}+${breakBase} min`);
+    if (completeCycles > 0) {
+      details.push(`${completeCycles} cicli da ${baseStudy}+${baseBreak} min`);
     }
     
-    // Ultimo ciclo (potrebbe essere diverso)
-    if (finalStudyTime !== studyBase || finalBreakTime !== breakBase) {
-      details.push(`ultimo ciclo: ${finalStudyTime}+${finalBreakTime} min`);
-    } else {
-      details.push(`ultimo ciclo: ${studyBase}+${breakBase} min`);
+    if (hasRemainder) {
+      if (finalBreak > 0) {
+        details.push(`ultimo: ${finalStudy}+${finalBreak} min`);
+      } else {
+        details.push(`ultimo: ${finalStudy} min studio`);
+      }
     }
     
-    return details.join(', ');
-  }
-
-  private buildLongSessionDetails(cycles: number, studyBase: number, breakBase: number, finalStudyTime: number, finalBreakTime: number): string {
-    if (cycles === 1) {
-      return `${finalStudyTime} min studio${finalBreakTime > 0 ? ` + ${finalBreakTime} min pausa` : ''}`;
-    }
-    
-    const details = [];
-    
-    // Cicli standard
-    if (cycles > 1) {
-      details.push(`${cycles - 1} cicli da ${studyBase}+${breakBase} min`);
-    }
-    
-    // Ultimo ciclo (potrebbe essere diverso)
-    if (finalStudyTime !== studyBase || finalBreakTime !== breakBase) {
-      details.push(`ultimo ciclo: ${finalStudyTime}+${finalBreakTime} min`);
-    } else {
-      details.push(`ultimo ciclo: ${studyBase}+${breakBase} min`);
-    }
-    
-    return details.join(', ');
+    return details.length > 0 ? details.join(', ') : `${finalStudy} min studio`;
   }
 
   // ==================== SELEZIONE PROPOSTA ====================
@@ -242,7 +251,7 @@ export class TimerConfigComponent implements OnInit {
   selectProposal(proposal: ConfigProposal): void {
     this.selectedProposal = proposal;
     
-    // Aggiorna i valori del form per preview
+    // Per la preview, usiamo i valori base del ciclo
     this.configForm.patchValue({
       studyMinutes: proposal.studyMinutes,
       breakMinutes: proposal.breakMinutes,
@@ -259,15 +268,15 @@ export class TimerConfigComponent implements OnInit {
     }
   }
 
- isFormValid(): boolean {
-  if (this.isManualMode) {
-    return !!(this.configForm.get('studyMinutes')?.valid && 
-             this.configForm.get('breakMinutes')?.valid && 
-             this.configForm.get('totalCycles')?.valid);
-  } else {
-    return this.selectedProposal !== null;
+  isFormValid(): boolean {
+    if (this.isManualMode) {
+      return !!(this.configForm.get('studyMinutes')?.valid && 
+               this.configForm.get('breakMinutes')?.valid && 
+               this.configForm.get('totalCycles')?.valid);
+    } else {
+      return this.selectedProposal !== null && this.getTotalTimeInMinutes() >= 10;
+    }
   }
-}
 
   saveConfig(): void {
     if (!this.isFormValid()) return;
@@ -281,6 +290,8 @@ export class TimerConfigComponent implements OnInit {
         totalCycles: this.configForm.get('totalCycles')?.value
       };
     } else {
+      // Per la modalità automatica, usiamo la configurazione della proposta selezionata
+      // Ma dobbiamo gestire i cicli variabili, quindi usiamo i valori base
       config = {
         studyMinutes: this.selectedProposal!.studyMinutes,
         breakMinutes: this.selectedProposal!.breakMinutes,

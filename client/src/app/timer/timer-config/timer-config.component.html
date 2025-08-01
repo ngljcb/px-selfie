@@ -4,7 +4,7 @@
   
   <!-- HEADER -->
   <div class="config-header">
-    <h2>Configurazione Timer</h2>
+    <h2>Configurazione</h2>
     <button class="close-btn" (click)="cancel()">
       <span>✕</span>
     </button>
@@ -38,7 +38,7 @@
         <div class="form-grid">
           <!-- Tempo Studio -->
           <div class="form-group">
-            <label for="studyMinutes">Tempo Studio (minuti)</label>
+            <label for="studyMinutes">Studio (minuti)</label>
             <input 
               type="number" 
               id="studyMinutes"
@@ -54,7 +54,7 @@
 
           <!-- Tempo Pausa -->
           <div class="form-group">
-            <label for="breakMinutes">Tempo Pausa (minuti)</label>
+            <label for="breakMinutes">Pausa (minuti)</label>
             <input 
               type="number" 
               id="breakMinutes"
@@ -70,7 +70,7 @@
 
           <!-- Numero Cicli -->
           <div class="form-group">
-            <label for="totalCycles">Numero Cicli</label>
+            <label for="totalCycles">Cicli</label>
             <input 
               type="number" 
               id="totalCycles"
@@ -99,21 +99,51 @@
         <h3>Quanto tempo hai a disposizione?</h3>
         
         <div class="time-input-group">
-          <label for="totalTime">Tempo totale disponibile (minuti)</label>
-          <input 
-            type="number" 
-            id="totalTime"
-            formControlName="totalTime"
-            min="10" 
-            max="480"
-            (input)="onTotalTimeChange()"
-            class="form-input time-input">
-          <div class="time-helper">
-            <span class="time-format">{{ formatTime(configForm.get('totalTime')?.value || 0) }}</span>
+          
+          <!-- Input separati per ore e minuti -->
+          <div class="time-inputs-container">
+            <div class="time-input-wrapper">
+              <input 
+                type="number" 
+                id="totalTimeHours"
+                formControlName="totalTimeHours"
+                min="0" 
+                max="8"
+                (input)="onTotalTimeChange()"
+                class="form-input time-input"
+                placeholder="0">
+              <label for="totalTimeHours" class="time-label">ore</label>
+            </div>
+            
+            <div class="time-separator"></div>
+            
+            <div class="time-input-wrapper">
+              <input 
+                type="number" 
+                id="totalTimeMinutes"
+                formControlName="totalTimeMinutes"
+                min="0" 
+                max="59"
+                (input)="onTotalTimeChange()"
+                class="form-input time-input"
+                placeholder="0">
+              <label for="totalTimeMinutes" class="time-label">minuti</label>
+            </div>
           </div>
+          
+          <div class="time-helper">
+            <span class="time-format">{{ formatTimeDisplay() }}</span>
+          </div>
+          
           <div class="input-error" 
-               *ngIf="configForm.get('totalTime')?.invalid && configForm.get('totalTime')?.touched">
-            Inserisci un valore tra 10 minuti e 8 ore
+               *ngIf="(configForm.get('totalTimeHours')?.invalid && configForm.get('totalTimeHours')?.touched) || 
+                      (configForm.get('totalTimeMinutes')?.invalid && configForm.get('totalTimeMinutes')?.touched)">
+            Inserisci un tempo valido (massimo 8 ore)
+          </div>
+          
+          <div class="input-error" 
+               *ngIf="getTotalTimeInMinutes() < 10 && getTotalTimeInMinutes() > 0">
+            Tempo minimo: 10 minuti
           </div>
         </div>
 
@@ -157,18 +187,15 @@
         </div>
 
         <!-- NESSUNA PROPOSTA -->
-        <div class="no-proposals" *ngIf="proposals.length === 0 && configForm.get('totalTime')?.value">
-          <p>Inserisci un tempo valido per vedere le proposte</p>
+        <div class="no-proposals" *ngIf="proposals.length === 0 && getTotalTimeInMinutes() >= 10">
+          <p>Nessuna proposta disponibile per questo tempo</p>
         </div>
-
-        <!-- PREVIEW AUTOMATICA -->
-        <div class="config-preview" *ngIf="selectedProposal">
-          <div class="preview-title">Configurazione selezionata:</div>
-          <div class="preview-text">{{ getPreviewText() }}</div>
+        
+        <div class="no-proposals" *ngIf="getTotalTimeInMinutes() < 10 && getTotalTimeInMinutes() > 0">
+          <p>Inserisci almeno 10 minuti per vedere le proposte</p>
         </div>
       </div>
     </div>
-
   </form>
 
   <!-- AZIONI -->
@@ -184,7 +211,7 @@
       class="action-btn save-btn" 
       [disabled]="!isFormValid()"
       (click)="saveConfig()">
-      {{ isManualMode ? 'Salva Configurazione' : 'Usa Proposta Selezionata' }}
+      {{ isManualMode ? 'Salva' : 'Conferma' }}
     </button>
   </div>
 
