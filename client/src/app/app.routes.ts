@@ -3,12 +3,16 @@ import { CalendarViewComponent } from './calendar/calendar-view/calendar-view.co
 import { HomeViewComponent } from './home/home-view/home-view.component';
 import { NotesViewComponent } from './notes/notes-view/notes-view.component';
 import { NoteEditorComponent } from './notes/note-editor/note-editor.component';
-import { NotesNavigationService } from './service/notes-navigation.service';
+import { RegisterComponent } from './auth/register/register.component';
 
 export const routes: Routes = [
   {
     path: '',
     component: HomeViewComponent
+  },
+  {
+    path: 'register',
+    component: RegisterComponent
   },
   {
     path: 'notes',
