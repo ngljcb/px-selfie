@@ -1,5 +1,3 @@
-/* src/app/features/timer/timer-view/timer-view.component.scss */
-
 /* ==================== MOBILE FIRST BASE STYLES ==================== */
 
 .timer-view {
@@ -39,7 +37,7 @@
   position: relative;
   background-color: #fbd65a;
   border-radius: 1rem;
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 1.5rem 1rem;
   margin-bottom: 1.5rem;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   text-align: center;
@@ -54,7 +52,6 @@
       background-color: #fcf3b5;
       animation: studyPulse 2s ease-in-out infinite;
     }
-
   }
 
   /* Modalità Pausa */
@@ -65,19 +62,57 @@
       background-color: #c8f7e0;
       animation: breakPulse 2s ease-in-out infinite;
     }
-
   }
 
   /* Completamento */
   &.completed {
     background-color: #ffd93d;
     animation: completedGlow 1.5s ease-in-out infinite alternate;
-
-
   }
 
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+/* ==================== ICONA CONFIGURAZIONE ==================== */
+
+.config-icon-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 30px;
+  height: 30px;
+  border: none;
+  color: #000;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  width: 10px;
+
+  .config-icon {
+    font-size: 0.9rem;
+    img {
+        width: 30px;       
+        height: 30px;   
+    }
+  }
+
+  &:hover:not(:disabled) {
+    transform: scale(1.05);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 }
 
@@ -129,7 +164,7 @@
 /* ==================== PROGRESS BAR ==================== */
 
 .progress-container {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 
   .progress-bar {
     width: 100%;
@@ -151,6 +186,106 @@
     font-size: 0.8rem;
     color: #666;
     font-weight: 400;
+  }
+}
+
+/* ==================== CONTROLLI INTEGRATI ==================== */
+
+.integrated-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+
+  .secondary-controls {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeInUp 0.3s ease;
+  }
+}
+
+.control-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.8rem 1rem;
+  border: none;
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #000;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  min-height: 60px;
+  min-width: 70px;
+
+  .btn-icon {
+    font-size: 1.1rem;
+  }
+
+  .btn-text {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  &:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Stili specifici per bottoni */
+  &.primary {
+    background-color: rgba(255, 255, 255, 0.4);
+    color: #000;
+    font-size: 1rem;
+    padding: 1rem 2rem;
+    min-height: 70px;
+    min-width: 120px;
+
+    .btn-text {
+      font-size: 0.9rem;
+    }
+  }
+
+  &.start-btn.primary {
+    background-color: rgba(168, 230, 207, 0.8);
+    color: #000;
+  }
+
+  &.stop-btn:not(:disabled) {
+    background-color: rgba(255, 179, 179, 0.8);
+    color: #000;
+  }
+
+  &.reset-btn:not(:disabled) {
+    background-color: rgba(255, 217, 61, 0.8);
+    color: #000;
+  }
+
+  &.pause-btn:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.3);
+    color: #000;
   }
 }
 
@@ -179,98 +314,6 @@
 
   &.break-pulse {
     background-color: #27ae60;
-  }
-}
-
-/* ==================== CONTROLLI (MOBILE GRID) ==================== */
-
-.timer-controls {
-  margin-bottom: 1.5rem;
-
-  .main-controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-  }
-
-  .config-controls {
-    display: flex;
-    justify-content: center;
-  }
-}
-
-.control-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.8rem 0.5rem;
-  border: none;
-  border-radius: 0.75rem;
-  background-color: #fbd65a;
-  color: #000;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  min-height: 70px;
-
-  .btn-icon {
-    font-size: 1.1rem;
-  }
-
-  .btn-text {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-align: center;
-    line-height: 1.2;
-  }
-
-  &:hover:not(:disabled) {
-    background-color: #fcf3b5;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  &:active:not(:disabled) {
-    transform: scale(0.98);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-
-  /* Stili specifici per bottoni */
-  &.primary {
-    background-color: #fbd65a;
-    color: #000;
-  }
-
-  &.start-btn.primary {
-    background-color: #a8e6cf;
-    color: #000;
-  }
-
-  &.stop-btn:not(:disabled) {
-    background-color: #ffb3b3;
-    color: #000;
-  }
-
-  &.reset-btn:not(:disabled) {
-    background-color: #ffd93d;
-    color: #000;
-  }
-
-  &.config-btn {
-    background-color: #d4a4eb;
-    color: #000;
-    grid-column: 1 / -1;
-    max-width: 200px;
-    margin: 0 auto;
   }
 }
 
@@ -324,13 +367,13 @@
   padding: 1rem;
 
   .completion-content {
-    background-color: #fbd65a;
     padding: 2rem 1rem;
     border-radius: 1rem;
     text-align: center;
     width: 100%;
     max-width: 350px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background-color: #fbd65a;
 
     .completion-icon {
       font-size: 3rem;
@@ -357,9 +400,15 @@
       font-size: 1rem;
     }
 
-    button {
-      margin-top: 1rem;
-      width: 100%;
+    .completion-button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+
+    .centered-btn {
+      width: auto;
+      min-width: 200px;
     }
   }
 }
@@ -451,6 +500,17 @@
   }
 }
 
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ==================== DESKTOP STYLES (min-width: 641px) ==================== */
 
 @media (min-width: 641px) {
@@ -460,12 +520,20 @@
     padding: 2rem;
   }
 
-
   .timer-display {
-    padding: 3rem 2rem;
+    padding: 3rem 2rem 2rem 2rem;
     margin-bottom: 2rem;
+  }
 
+  .config-icon-btn {
+    width: 50px;
+    height: 50px;
+    top: 1.5rem;
+    right: 1.5rem;
 
+    .config-icon {
+      font-size: 1.4rem;
+    }
   }
 
   .time-display .time-number {
@@ -491,6 +559,8 @@
   }
 
   .progress-container {
+    margin-bottom: 2rem;
+
     .progress-bar {
       height: 8px;
       border-radius: 4px;
@@ -510,20 +580,11 @@
     height: 200px;
   }
 
-  .timer-controls {
-    margin-bottom: 2rem;
+  .integrated-controls {
+    gap: 1.5rem;
 
-    .main-controls {
-      display: flex;
+    .secondary-controls {
       gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
-    }
-
-    .config-controls {
-      display: flex;
-      justify-content: center;
     }
   }
 
@@ -532,7 +593,7 @@
     border-radius: 1rem;
     font-size: 0.9rem;
     min-width: 100px;
-    min-height: auto;
+    min-height: 70px;
 
     .btn-icon {
       font-size: 1.2rem;
@@ -542,11 +603,15 @@
       font-size: 0.8rem;
     }
 
-    &.config-btn {
-      grid-column: unset;
-      max-width: none;
-      margin: 0;
-      width: auto;
+    &.primary {
+      font-size: 1.1rem;
+      padding: 1.2rem 2.5rem;
+      min-height: 80px;
+      min-width: 140px;
+
+      .btn-text {
+        font-size: 1rem;
+      }
     }
   }
 
@@ -585,9 +650,12 @@
         font-size: 1.1rem;
       }
 
-      button {
-        width: auto;
-        min-width: 150px;
+      .completion-button-container {
+        margin-top: 1.5rem;
+      }
+
+      .centered-btn {
+        min-width: 250px;
       }
     }
   }
@@ -613,9 +681,18 @@
   }
 
   .timer-display {
-    padding: 4rem 3rem;
+    padding: 4rem 3rem 3rem 3rem;
+  }
 
+  .config-icon-btn {
+    width: 60px;
+    height: 60px;
+    top: 2rem;
+    right: 2rem;
 
+    .config-icon {
+      font-size: 1.6rem;
+    }
   }
 
   .time-display .time-number {
@@ -625,10 +702,21 @@
   .control-btn {
     padding: 1.2rem 2rem;
     min-width: 120px;
+    min-height: 80px;
+
+    &.primary {
+      padding: 1.5rem 3rem;
+      min-width: 160px;
+      min-height: 90px;
+    }
   }
 
   .pulse-animation {
     width: 250px;
     height: 250px;
+  }
+
+  .completion-message .completion-content .centered-btn {
+    min-width: 300px;
   }
 }

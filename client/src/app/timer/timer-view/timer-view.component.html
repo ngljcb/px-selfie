@@ -1,126 +1,124 @@
-<!-- src/app/features/timer/timer-view/timer-view.component.html -->
-
 @if (timerState) {
-  <div class="timer-view">
-    
-    <!-- MAIN TIMER DISPLAY -->
-    <div [class]="getTimerDisplayClass()">
+
+    <div class="timer-view">
       
-      <!-- Countdown principale -->
-      <div class="time-display">
-        <span class="time-number">{{ formatTime(safeTimerState.remainingSeconds) }}</span>
-      </div>
-
-      <!-- Info fase corrente -->
-      <div class="phase-info">
-        <div class="current-phase">
-          <span class="phase-icon">{{ isStudyPhase() ? '📚' : '☕' }}</span>
-          <span class="phase-text">{{ getCurrentPhaseText() }}</span>
-        </div>
-        <div class="cycle-info">{{ getCycleText() }}</div>
-      </div>
-
-      <!-- Progress bar sessione -->
-      <div class="progress-container">
-        <div class="progress-bar">
-          <div class="progress-fill" [style.width]="getProgressBarWidth()"></div>
-        </div>
-        <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completato</span>
-      </div>
-
-      <!-- Animazione pulsante (solo quando attivo) -->
-      <div class="pulse-animation" 
-           [class.active]="isRunning()" 
-           [class.study-pulse]="isStudyPhase()" 
-           [class.break-pulse]="isBreakPhase()">
-      </div>
-    </div>
-
-    <!-- CONTROLLI -->
-    <div class="timer-controls">
-      
-      <!-- Controlli principali -->
-      <div class="main-controls">
+      <!-- MAIN TIMER DISPLAY -->
+      <div [class]="getTimerDisplayClass()">
+        
+        <!-- Icona configurazione (sempre visibile in alto a destra) -->
         <button 
-          class="control-btn start-btn" 
-          (click)="startTimer()" 
-          [disabled]="isRunning()"
-          [class.primary]="isIdle() || isPaused()">
-          <span class="btn-icon">▶️</span>
-          <span class="btn-text">{{ isPaused() ? 'Riprendi' : 'Inizia' }}</span>
-        </button>
-
-        <button 
-          class="control-btn pause-btn" 
-          (click)="pauseTimer()" 
-          [disabled]="!isRunning()">
-          <span class="btn-icon">⏸️</span>
-          <span class="btn-text">Pausa</span>
-        </button>
-
-        <button 
-          class="control-btn reset-btn" 
-          (click)="resetTimer()"
-          [disabled]="isIdle()">
-          <span class="btn-icon">🔄</span>
-          <span class="btn-text">Ricomincia</span>
-        </button>
-
-        <button 
-          class="control-btn stop-btn" 
-          (click)="stopTimer()"
-          [disabled]="isIdle()">
-          <span class="btn-icon">⏹️</span>
-          <span class="btn-text">Fine</span>
-        </button>
-      </div>
-
-      <!-- Controllo configurazione -->
-      <div class="config-controls">
-        <button 
-          class="control-btn config-btn" 
+          class="config-icon-btn" 
           (click)="openConfig()"
           [disabled]="isRunning()">
-          <span class="btn-icon">⚙️</span>
-          <span class="btn-text">Configura</span>
+          <span class="config-icon"><img src="https://pomofocus.io/icons/config-white.png"></span>
         </button>
-      </div>
-    </div>
 
-    <!-- MESSAGGIO COMPLETAMENTO -->
-    @if (isCompleted()) {
-      <div class="completion-message">
-        <div class="completion-content">
-          <div class="completion-icon">🎉</div>
-          <h2>Sessione Completata!</h2>
-          <p>Hai completato tutti i {{ safeTimerState.config.totalCycles }} cicli.</p>
-          <p class="study-time">Tempo totale di studio: {{ formatTime(safeTimerState.totalElapsedSeconds) }}</p>
-          <button class="control-btn primary" (click)="resetTimer()">
-            Nuova Sessione
-          </button>
+        <!-- Countdown principale -->
+        <div class="time-display">
+          <span class="time-number">{{ formatTime(safeTimerState.remainingSeconds) }}</span>
+        </div>
+
+        <!-- Info fase corrente -->
+        <div class="phase-info">
+          <div class="cycle-info">{{ getCycleText() }}</div>
+        </div>
+
+        <!-- Progress bar sessione -->
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width]="getProgressBarWidth()"></div>
+          </div>
+          <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completato</span>
+        </div>
+
+        <!-- CONTROLLI INTEGRATI -->
+        <div class="integrated-controls">
+          
+          <!-- Bottone Start/Resume (sempre visibile quando non è running) -->
+          @if (!isRunning()) {
+            <button 
+              class="control-btn start-btn primary" 
+              (click)="startTimer()">
+              <span class="btn-text">{{ isPaused() ? 'Riprendi' : 'Inizia' }}</span>
+            </button>
+          }
+
+          <!-- Controlli secondari (visibili solo quando il timer è attivo o in pausa) -->
+          @if (!isIdle()) {
+            <div class="secondary-controls">
+              <button 
+                class="control-btn pause-btn" 
+                (click)="pauseTimer()" 
+                [disabled]="!isRunning()">
+                <span class="btn-text">Pausa</span>
+              </button>
+
+              <!-- Bottone Skip (visibile solo quando il timer è in esecuzione) -->
+              @if (isRunning()) {
+                <button 
+                  class="control-btn skip-btn" 
+                  (click)="skipCurrentPhase()">
+                  <span class="btn-text">Salta</span>
+                </button>
+              }
+
+              <button 
+                class="control-btn reset-btn" 
+                (click)="resetTimer()">
+                <span class="btn-text">Ricomincia</span>
+              </button>
+
+              <button 
+                class="control-btn stop-btn" 
+                (click)="stopTimer()">
+                <span class="btn-text">Fine</span>
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Animazione pulsante (solo quando attivo) -->
+        <div class="pulse-animation" 
+            [class.active]="isRunning()" 
+            [class.study-pulse]="isStudyPhase()" 
+            [class.break-pulse]="isBreakPhase()">
         </div>
       </div>
-    }
 
+      <!-- MESSAGGIO COMPLETAMENTO -->
+      @if (isCompleted()) {
+        <div class="completion-message">
+          <div class="completion-content">
+            <div class="completion-icon">🎉</div>
+            <h2>Sessione Completata!</h2>
+            <p class="study-time">Tempo totale: {{ formatTime(getTotalEffectiveTime()) }}</p>
+            <div class="completion-button-container">
+              <button class="control-btn primary centered-btn" (click)="stopTimer()">
+                Nuova Sessione
+              </button>
+            </div>
+          </div>
+        </div>
+      }
   </div>
 }
 
-<!-- MODAL CONFIGURAZIONE -->
-@if (showConfig) {
-  <div class="config-modal-overlay" (click)="closeConfig()">
-    <div class="config-modal" (click)="$event.stopPropagation()">
-      <app-timer-config
-        [currentConfig]="safeTimerState.config"
-        (onConfigSave)="onConfigSave($event)"
-        (onClose)="closeConfig()">
-      </app-timer-config>
+  <!-- MODAL CONFIGURAZIONE -->
+  @if (showConfig) {
+    <div class="config-modal-overlay" (click)="closeConfig()">
+      <div class="config-modal" (click)="$event.stopPropagation()">
+        <app-timer-config
+          [currentConfig]="safeTimerState.config"
+          (onConfigSave)="onConfigSave($event)"
+          (onClose)="closeConfig()">
+        </app-timer-config>
+      </div>
     </div>
-  </div>
-}
+  }
 
 <!-- LOADING STATE -->
 @if (!timerState) {
   <div class="loading">
-    <p>Caricamento timer...</p>
+    <p>Caricamento in corso...</p>
   </div>
 }

@@ -8,7 +8,6 @@ import { TimerConfig } from '../../model/timer.interface';
 interface ConfigProposal {
   id: number;
   name: string;
-  description: string;
   studyMinutes: number;
   breakMinutes: number;
   totalCycles: number;
@@ -135,7 +134,6 @@ export class TimerConfigComponent implements OnInit {
       this.proposals.push({
         id: 1,
         name: 'Studio Continuo',
-        description: 'Tempo insufficiente per pause, studio continuo',
         studyMinutes: TT,
         breakMinutes: 0,
         totalCycles: 1,
@@ -154,15 +152,15 @@ export class TimerConfigComponent implements OnInit {
   private generateCycleProposals(TT: number): void {
     // Configurazioni base da testare: [studio, pausa]
     const baseConfigs = [
-      { study: 25, break: 5, name: 'Pomodoro Classico', desc: 'Cicli da 25 min studio + 5 min pausa' },
-      { study: 30, break: 5, name: 'Pomodoro Esteso', desc: 'Cicli da 30 min studio + 5 min pausa' },
-      { study: 50, break: 10, name: 'Sessioni Lunghe', desc: 'Cicli da 50 min studio + 10 min pausa' }
+      { study: 25, break: 5, name: 'Pomodoro Classico(25+5)'},
+      { study: 30, break: 5, name: 'Pomodoro Medio(30+5)'},
+      { study: 50, break: 10, name: 'Pomodoro Grande(50+10)'}
     ];
 
     let proposalId = 1;
 
     baseConfigs.forEach(config => {
-      const proposal = this.calculateOptimalCycles(TT, config.study, config.break, proposalId, config.name, config.desc);
+      const proposal = this.calculateOptimalCycles(TT, config.study, config.break, proposalId, config.name);
       if (proposal) {
         this.proposals.push(proposal);
         proposalId++;
@@ -170,7 +168,7 @@ export class TimerConfigComponent implements OnInit {
     });
   }
 
-  private calculateOptimalCycles(TT: number, TS: number, TP: number, id: number, name: string, description: string): ConfigProposal | null {
+  private calculateOptimalCycles(TT: number, TS: number, TP: number, id: number, name: string): ConfigProposal | null {
     const CC = TS + TP; // Ciclo Completo
     
     // Se non possiamo fare nemmeno un periodo di studio, non possiamo fare questa configurazione
@@ -217,7 +215,6 @@ export class TimerConfigComponent implements OnInit {
     return {
       id: id,
       name: name,
-      description: description,
       studyMinutes: TS, // Tempo studio base per i cicli normali
       breakMinutes: TP, // Tempo pausa base per i cicli normali
       totalCycles: totalCycles,

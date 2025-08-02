@@ -48,11 +48,30 @@ export class TimerViewComponent implements OnInit, OnDestroy {
 
     // Richiedi permessi notifiche all'avvio
     this.timerService.requestNotificationPermission();
+    
+    // Inizializza AudioContext con la prima interazione utente
+    this.initializeAudioOnFirstInteraction();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ==================== INIZIALIZZAZIONE AUDIO ====================
+
+  private initializeAudioOnFirstInteraction(): void {
+    // AudioContext richiede interazione utente per essere attivato
+    const enableAudio = () => {
+      // Riprova ad attivare l'audio context con la prima interazione
+      if (this.timerService.isAudioEnabled()) {
+        document.removeEventListener('click', enableAudio);
+        document.removeEventListener('keydown', enableAudio);
+      }
+    };
+
+    document.addEventListener('click', enableAudio, { once: true });
+    document.addEventListener('keydown', enableAudio, { once: true });
   }
 
   // ==================== CONTROLLI TIMER ====================
@@ -73,12 +92,32 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     this.timerService.stopTimer();
   }
 
+  skipCurrentPhase(): void {
+    this.timerService.skipCurrentPhase();
+  }
+
   openConfig(): void {
     this.showConfig = true;
   }
 
   closeConfig(): void {
     this.showConfig = false;
+  }
+
+  // ==================== CONTROLLO SPECIFICO PER NUOVA SESSIONE ====================
+
+  startNewSession(): void {
+    // Forza il reset completo del timer allo stato iniziale
+    this.timerService.resetTimer();
+    // Assicurati che il timer torni allo stato IDLE con fase STUDY
+    setTimeout(() => {
+      // Se necessario, fai un secondo reset per assicurarti che tutto torni allo stato iniziale
+      if (this.timerState?.status !== TimerStatus.IDLE || 
+          this.timerState?.currentPhase !== TimerPhase.STUDY ||
+          this.timerState?.currentCycle !== 1) {
+        this.timerService.resetTimer();
+      }
+    }, 100);
   }
 
   // ==================== CONFIGURAZIONE ====================
@@ -175,6 +214,30 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     return `${this.getSessionProgress()}%`;
   }
 
+  // ==================== METODO PER CALCOLARE IL TEMPO TOTALE EFFETTIVO ====================
+
+  getTotalEffectiveTime(): number {
+    if (!this.timerState) return 0;
+    
+    // Se la sessione è completata, mostra solo il tempo effettivamente trascorso
+    if (this.timerState.status === TimerStatus.COMPLETED) {
+      // Calcola il tempo totale basandosi sui cicli completati
+      const completedCycles = this.timerState.config.totalCycles;
+      const studyTimePerCycle = this.timerState.config.studyMinutes * 60;
+      const breakTimePerCycle = this.timerState.config.breakMinutes * 60;
+      
+      // Tempo totale = (cicli completati * tempo studio) + ((cicli completati - 1) * tempo pausa)
+      // L'ultimo ciclo non ha pausa
+      const totalStudyTime = completedCycles * studyTimePerCycle;
+      const totalBreakTime = Math.max(0, completedCycles) * breakTimePerCycle;
+      
+      return totalStudyTime + totalBreakTime;
+    }
+    
+    // Se non è completata, usa il tempo elapsed normale
+    return this.timerState.totalElapsedSeconds;
+  }
+
   // ==================== SAFE GETTERS PER TEMPLATE ====================
 
   get safeTimerState(): TimerState {
@@ -186,5 +249,11 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       status: TimerStatus.IDLE,
       totalElapsedSeconds: 0
     };
+  }
+
+  // ==================== INFO AUDIO STATUS ====================
+
+  isAudioEnabled(): boolean {
+    return this.timerService.isAudioEnabled();
   }
 }
