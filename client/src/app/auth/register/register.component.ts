@@ -16,6 +16,7 @@ export class RegisterComponent {
   username = '';
   email = '';
   password = '';
+  registerError: string | null = null;
 
   constructor(
     private authService: AuthService,
@@ -23,18 +24,23 @@ export class RegisterComponent {
   ) {}
 
   onSubmit(): void {
-    console.log('Dati registrazione:', {
-      username: this.username,
-      email: this.email,
-      password: this.password
-    });
+    this.registerError = null;
+
+    if (!this.username || !this.email || !this.password) {
+      this.registerError = 'Tutti i campi sono obbligatori.';
+      return;
+    }
 
     this.authService.register(this.email, this.username, this.password).subscribe({
       next: (res: RegisterResponse) => {
         console.log('Registrazione completata:', res);
         this.router.navigate(['/']);
       },
-      error: (err: any) => console.error('Errore registrazione:', err)
+      error: (err: any) => {
+        console.error('Errore registrazione:', err);
+        this.registerError =
+          err?.error?.error || 'Errore imprevisto durante la registrazione.';
+      }
     });
   }
 }
