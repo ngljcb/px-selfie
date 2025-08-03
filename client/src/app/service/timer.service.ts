@@ -27,7 +27,8 @@ export class TimerService {
     currentPhase: 'study',
     remainingSeconds: DEFAULT_TIMER_CONFIG.studyMinutes * 60,
     status: 'idle',
-    totalElapsedSeconds: 0
+    totalElapsedSeconds: 0,
+    canRestart: true // Nuovo campo per gestire la disponibilità del bottone ricomincia
   });
 
   // Observable pubblico per i componenti
@@ -51,7 +52,10 @@ export class TimerService {
     // Resume AudioContext se necessario (per policy browser)
     this.audioService.resumeAudioContext();
 
-    this.updateTimerState({ status: 'running' });
+    this.updateTimerState({ 
+      status: 'running',
+      canRestart: true // Quando il timer inizia, il bottone ricomincia torna disponibile
+    });
     this.startCountdown();
   }
 
@@ -63,13 +67,28 @@ export class TimerService {
   resetTimer(): void {
     this.stopCountdown();
     const currentState = this.timerStateSubject.value;
-    const phaseSeconds = currentState.currentPhase === 'study' 
-      ? currentState.config.studyMinutes * 60
-      : currentState.config.breakMinutes * 60;
+    
+    // Ricomincia il ciclo corrente = torna all'inizio dello studio del ciclo corrente
+    const studySeconds = currentState.config.studyMinutes * 60;
+    
+    // Calcola il tempo totale che dovrebbe essere già trascorso fino all'inizio di questo ciclo
+    const completedCycles = currentState.currentCycle - 1;
+    const studySecondsPerCycle = currentState.config.studyMinutes * 60;
+    const breakSecondsPerCycle = currentState.config.breakMinutes * 60;
+    const secondsPerCompleteCycle = studySecondsPerCycle + breakSecondsPerCycle;
+    
+    // Tempo trascorso fino all'inizio del ciclo corrente
+    const elapsedUntilCurrentCycle = completedCycles * secondsPerCompleteCycle;
+
+    // Determina lo stato: se era idle mantieni idle, altrimenti metti paused
+    const newStatus = currentState.status === 'idle' ? 'idle' : 'paused';
 
     this.updateTimerState({
-      remainingSeconds: phaseSeconds,
-      status: 'idle'
+      currentPhase: 'study', // Torna sempre allo studio
+      remainingSeconds: studySeconds,
+      status: newStatus, // Mantieni la logica di stato
+      totalElapsedSeconds: elapsedUntilCurrentCycle, // Mantieni il tempo dei cicli precedenti
+      canRestart: false // Dopo aver premuto ricomincia, diventa non disponibile
     });
   }
 
@@ -268,7 +287,8 @@ export class TimerService {
       currentPhase: 'study',
       remainingSeconds: newConfig.studyMinutes * 60,
       status: 'idle',
-      totalElapsedSeconds: 0
+      totalElapsedSeconds: 0,
+      canRestart: true // Reset allo stato iniziale con bottone disponibile
     });
   }
 
@@ -440,13 +460,41 @@ export class TimerService {
 
   getSessionProgress(): number {
     const currentState = this.timerStateSubject.value;
-    const totalCycles = currentState.config.totalCycles;
-    const currentCycle = currentState.currentCycle;
-    const phaseProgress = currentState.currentPhase === 'study' 
-      ? this.getPhaseProgress()
-      : 1; // Pausa considerata completata per il calcolo
+    const config = currentState.config;
     
-    return ((currentCycle - 1) + phaseProgress) / totalCycles * 100;
+    // Calcola il tempo totale della sessione (studio + pause)
+    const studySecondsPerCycle = config.studyMinutes * 60;
+    const breakSecondsPerCycle = config.breakMinutes * 60;
+    const secondsPerCompleteCycle = studySecondsPerCycle + breakSecondsPerCycle;
+    
+    // Tempo totale previsto per tutta la sessione
+    // Nota: l'ultimo ciclo non ha pausa, quindi sottraiamo una pausa
+    const totalSessionSeconds = config.totalCycles * secondsPerCompleteCycle;
+    
+    // Calcola il tempo già trascorso
+    let elapsedSeconds = 0;
+    
+    // Tempo dei cicli completati (cicli completi = studio + pausa)
+    const completedCycles = currentState.currentCycle - 1;
+    elapsedSeconds += completedCycles * secondsPerCompleteCycle;
+    
+    // Tempo della fase corrente
+    if (currentState.currentPhase === 'study') {
+      // Studio in corso: aggiungi il tempo già trascorso in questo studio
+      const currentStudyElapsed = studySecondsPerCycle - currentState.remainingSeconds;
+      elapsedSeconds += currentStudyElapsed;
+    } else {
+      // Pausa in corso: aggiungi tutto il tempo dello studio corrente + tempo pausa trascorso
+      elapsedSeconds += studySecondsPerCycle;
+      const currentBreakElapsed = breakSecondsPerCycle - currentState.remainingSeconds;
+      elapsedSeconds += currentBreakElapsed;
+    }
+    
+    // Calcola la percentuale
+    const progress = (elapsedSeconds / totalSessionSeconds) * 100;
+    
+    // Assicurati che sia tra 0 e 100
+    return Math.min(100, Math.max(0, progress));
   }
 
   private getPhaseProgress(): number {

@@ -1,16 +1,28 @@
-@if (timerState) {
-
+<body>
+  @if (timerState) {
     <div class="timer-view">
+      
+      <!-- NOTIFICHE -->
+      @if (notifications.length > 0) {
+        <div class="notifications-container">
+          @for (notification of notifications; track notification.id) {
+            <div class="notification" [class]="'notification-' + notification.type">
+              <span class="notification-message">{{ notification.message }}</span>
+              <button class="notification-close" (click)="dismissNotification(notification.id)">×</button>
+            </div>
+          }
+        </div>
+      }
       
       <!-- MAIN TIMER DISPLAY -->
       <div [class]="getTimerDisplayClass()">
         
-        <!-- Icona configurazione (sempre visibile in alto a destra) -->
+        <!-- Icona configurazione -->
         <button 
-          class="config-icon-btn" 
+          class="config-btn" 
           (click)="openConfig()"
           [disabled]="isRunning()">
-          <span class="config-icon"><img src="https://pomofocus.io/icons/config-white.png"></span>
+          <img src="https://pomofocus.io/icons/config-white.png" alt="Config">
         </button>
 
         <!-- Countdown principale -->
@@ -31,53 +43,41 @@
           <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completato</span>
         </div>
 
-        <!-- CONTROLLI INTEGRATI -->
-        <div class="integrated-controls">
+        <!-- CONTROLLI -->
+        <div class="controls">
           
-          <!-- Bottone Start/Resume (sempre visibile quando non è running) -->
+          <!-- Bottone Start/Resume -->
           @if (!isRunning()) {
-            <button 
-              class="control-btn start-btn primary" 
-              (click)="startTimer()">
-              <span class="btn-text">{{ isPaused() ? 'Riprendi' : 'Inizia' }}</span>
+            <button class="btn btn-primary" (click)="startTimer()">
+              {{ isPaused() ? 'Riprendi' : 'Inizia' }}
             </button>
           }
 
-          <!-- Controlli secondari (visibili solo quando il timer è attivo o in pausa) -->
+          <!-- Controlli secondari -->
           @if (!isIdle()) {
             <div class="secondary-controls">
-              <button 
-                class="control-btn pause-btn" 
-                (click)="pauseTimer()" 
-                [disabled]="!isRunning()">
-                <span class="btn-text">Pausa</span>
+              <button class="btn btn-pause" (click)="pauseTimer()" [disabled]="!isRunning()">
+                Pausa
               </button>
 
-              <!-- Bottone Skip (visibile solo quando il timer è in esecuzione) -->
               @if (isRunning()) {
-                <button 
-                  class="control-btn skip-btn" 
-                  (click)="skipCurrentPhase()">
-                  <span class="btn-text">Salta</span>
+                <button class="btn btn-skip" (click)="skipCurrentPhase()">
+                  Salta
                 </button>
               }
 
-              <button 
-                class="control-btn reset-btn" 
-                (click)="resetTimer()">
-                <span class="btn-text">Ricomincia</span>
+              <button class="btn btn-reset" (click)="resetTimer()" [disabled]="!canRestart()">
+                Ricomincia
               </button>
 
-              <button 
-                class="control-btn stop-btn" 
-                (click)="stopTimer()">
-                <span class="btn-text">Fine</span>
+              <button class="btn btn-stop" (click)="stopTimer()">
+                Fine
               </button>
             </div>
           }
         </div>
 
-        <!-- Animazione pulsante (solo quando attivo) -->
+        <!-- Animazione pulsante -->
         <div class="pulse-animation" 
             [class.active]="isRunning()" 
             [class.study-pulse]="isStudyPhase()" 
@@ -87,26 +87,24 @@
 
       <!-- MESSAGGIO COMPLETAMENTO -->
       @if (isCompleted()) {
-        <div class="completion-message">
+        <div class="completion-overlay">
           <div class="completion-content">
             <div class="completion-icon">🎉</div>
             <h2>Sessione Completata!</h2>
             <p class="study-time">Tempo totale: {{ formatTime(getTotalEffectiveTime()) }}</p>
-            <div class="completion-button-container">
-              <button class="control-btn primary centered-btn" (click)="stopTimer()">
-                Nuova Sessione
-              </button>
-            </div>
+            <button class="btn btn-primary" (click)="stopTimer()">
+              Nuova Sessione
+            </button>
           </div>
         </div>
       }
-  </div>
-}
+    </div>
+  }
 
   <!-- MODAL CONFIGURAZIONE -->
   @if (showConfig) {
-    <div class="config-modal-overlay" (click)="closeConfig()">
-      <div class="config-modal" (click)="$event.stopPropagation()">
+    <div class="modal-overlay" (click)="closeConfig()">
+      <div class="modal-content" (click)="$event.stopPropagation()">
         <app-timer-config
           [currentConfig]="safeTimerState.config"
           (onConfigSave)="onConfigSave($event)"
@@ -116,9 +114,10 @@
     </div>
   }
 
-<!-- LOADING STATE -->
-@if (!timerState) {
-  <div class="loading">
-    <p>Caricamento in corso...</p>
-  </div>
-}
+  <!-- LOADING STATE -->
+  @if (!timerState) {
+    <div class="loading">
+      <p>Caricamento in corso...</p>
+    </div>
+  }
+</body>

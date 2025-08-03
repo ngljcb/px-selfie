@@ -15,6 +15,14 @@ import {
   TimerPhase 
 } from '../../model/timer.interface';
 
+// Interfaccia per le notifiche
+interface TimerNotification {
+  id: string;
+  message: string;
+  type: 'study-complete' | 'break-complete' | 'session-complete' | 'phase-skipped';
+  timestamp: Date;
+}
+
 @Component({
   selector: 'app-timer-view',
   standalone: true,
@@ -28,7 +36,10 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   // State
   timerState: TimerState | null = null;
   showConfig = false;
-
+  
+  // Notifiche
+  notifications: TimerNotification[] = [];
+  
   // Utility per template
   Math = Math; // Per usare Math.round nel template
 
@@ -43,7 +54,11 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     this.timerService.timerState$
       .pipe(takeUntil(this.destroy$))
       .subscribe(state => {
+        const previousState = this.timerState;
         this.timerState = state;
+        
+        // Controlla se c'è stata una transizione di fase o fine timer
+        this.checkForPhaseTransition(previousState, state);
       });
 
     // Richiedi permessi notifiche all'avvio
@@ -56,6 +71,67 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // ==================== GESTIONE NOTIFICHE ====================
+
+  private checkForPhaseTransition(previousState: TimerState | null, currentState: TimerState): void {
+    if (!previousState) return;
+
+    // Controlla se la sessione è stata completata PRIMA di tutto
+    if (previousState.status !== TimerStatus.COMPLETED && 
+        currentState.status === TimerStatus.COMPLETED) {
+      this.showNotification('🎊 Sessione completata! Ottimo lavoro!', 'session-complete');
+      return; // Esci subito, non fare altre operazioni
+    }
+
+    // Controlla se una fase è appena terminata (timer arriva a 0 mentre era in running)
+    if (previousState.status === TimerStatus.RUNNING && 
+        previousState.remainingSeconds > 0 &&
+        currentState.remainingSeconds === 0 &&
+        currentState.status === TimerStatus.RUNNING) {
+      
+      // Verifica se siamo nell'ultima pausa dell'ultimo ciclo
+      if (currentState.currentPhase === TimerPhase.BREAK && 
+          currentState.currentCycle >= currentState.config.totalCycles) {
+        // Sessione completata - non pausare, lascia che vada a COMPLETED
+        return; // Non fare nulla, lascia che il timer completi naturalmente
+      }
+      
+      // Pausa immediatamente il timer per tutte le altre fasi
+      this.timerService.pauseTimer();
+      
+      // Mostra notifica appropriata
+      if (currentState.currentPhase === TimerPhase.STUDY) {
+        this.showNotification('🎉 Tempo di pausa! Premi "Riprendi" quando sei pronto.', 'study-complete');
+      } else {
+        this.showNotification('📚 Torniamo a studiare! Premi "Riprendi" quando sei pronto.', 'break-complete');
+      }
+    }
+  }
+
+  private showNotification(message: string, type: TimerNotification['type']): void {
+    const notification: TimerNotification = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+      message,
+      type,
+      timestamp: new Date()
+    };
+
+    this.notifications.unshift(notification);
+
+    // Rimuovi automaticamente la notifica dopo 4 secondi
+    setTimeout(() => {
+      this.dismissNotification(notification.id);
+    }, 4000);
+  }
+
+  dismissNotification(notificationId: string): void {
+    this.notifications = this.notifications.filter(n => n.id !== notificationId);
+  }
+
+  dismissAllNotifications(): void {
+    this.notifications = [];
   }
 
   // ==================== INIZIALIZZAZIONE AUDIO ====================
@@ -93,7 +169,31 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   }
 
   skipCurrentPhase(): void {
-    this.timerService.skipCurrentPhase();
+    const currentState = this.timerState;
+    
+    // Mostra notifica per il salto
+    if (currentState && currentState.status === TimerStatus.RUNNING) {
+      const skippedPhase = currentState.currentPhase === TimerPhase.STUDY ? 'studio' : 'pausa';
+      
+      // Verifica se siamo nell'ultima pausa dell'ultimo ciclo
+      if (currentState.currentPhase === TimerPhase.BREAK && 
+          currentState.currentCycle >= currentState.config.totalCycles) {
+        // Ultima pausa saltata = sessione completata
+        this.showNotification('🎊 Sessione completata! Ottimo lavoro!', 'session-complete');
+        this.timerService.skipCurrentPhase(); // Questo dovrebbe portare a COMPLETED
+        return;
+      }
+      
+      this.showNotification(`⏭️ Fase di ${skippedPhase} saltata!`, 'phase-skipped');
+      
+      // Prima salta la fase, poi pausa
+      this.timerService.skipCurrentPhase();
+      
+      // Pausa il timer dopo lo skip (solo se non è l'ultima pausa)
+      setTimeout(() => {
+        this.timerService.pauseTimer();
+      }, 100);
+    }
   }
 
   openConfig(): void {
@@ -190,6 +290,12 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     return this.timerState?.currentPhase === TimerPhase.BREAK;
   }
 
+  // ==================== NUOVO METODO PER GESTIRE LA DISPONIBILITÀ DEL BOTTONE RICOMINCIA ====================
+
+  canRestart(): boolean {
+    return this.timerState?.canRestart ?? true;
+  }
+
   // ==================== ANIMAZIONI E STYLING ====================
 
   getTimerDisplayClass(): string {
@@ -247,7 +353,8 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       currentPhase: TimerPhase.STUDY,
       remainingSeconds: 1800,
       status: TimerStatus.IDLE,
-      totalElapsedSeconds: 0
+      totalElapsedSeconds: 0,
+      canRestart: true
     };
   }
 

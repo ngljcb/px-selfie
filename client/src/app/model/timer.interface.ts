@@ -13,6 +13,7 @@ export interface TimerState {
   remainingSeconds: number;
   status: 'idle' | 'running' | 'paused' | 'completed';
   totalElapsedSeconds: number;
+  canRestart?: boolean; 
 }
 
 export interface TimeProposal {

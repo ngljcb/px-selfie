@@ -369,13 +369,8 @@
     font-size: 1rem;
 
     &.cancel-btn {
-      background-color: #f5f5f5;
-      color: #666;
-
-      &:hover {
-        background-color: #e0e0e0;
-        color: #000;
-      }
+      background-color: #e0e0e0;
+      color: #000;
     }
 
     &.save-btn {

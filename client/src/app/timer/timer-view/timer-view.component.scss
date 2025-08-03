@@ -1,38 +1,100 @@
-/* ==================== MOBILE FIRST BASE STYLES ==================== */
+// ==================== BASE STYLES ==================== 
+body {
+   background-color: #f6ecc8; 
+}
 
 .timer-view {
   padding: 1rem;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #000;
-  background-color: #fff;
   min-height: 100vh;
   box-sizing: border-box;
+  position: relative;
 }
 
-/* ==================== HEADER ==================== */
-
-.timer-header {
-  text-align: center;
-  margin-bottom: 2rem;
-
-  h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem 0;
-    color: #000;
-    line-height: 1.2;
-  }
-
-  .status-text {
-    font-size: 1rem;
-    color: #666;
-    margin: 0;
-    font-weight: 400;
+// ==================== NOTIFICHE ==================== 
+.notifications-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 320px;
+  width: 100%;
+  
+  @media (max-width: 640px) {
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
   }
 }
 
-/* ==================== TIMER DISPLAY ==================== */
+.notification {
+  background: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-left: 4px solid #fbd65a;
+  padding: 1rem;
+  animation: slideInRight 0.3s ease-out;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  
+  &.notification-study-complete {
+    border-left-color: #a8e6cf;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  }
+  
+  &.notification-break-complete {
+    border-left-color: #fbd65a;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  }
+  
+  &.notification-session-complete {
+    border-left-color: #ffd93d;
+    background: linear-gradient(135deg, #fefce8 0%, #fef08a 100%);
+  }
+  
+  &.notification-phase-skipped {
+    border-left-color: #17a2b8;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  }
+}
 
+.notification-message {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  flex: 1;
+  line-height: 1.4;
+}
+
+.notification-close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #374151;
+  }
+}
+
+// ==================== TIMER DISPLAY ==================== 
 .timer-display {
   position: relative;
   background-color: #fbd65a;
@@ -44,7 +106,6 @@
   transition: all 0.2s ease;
   overflow: hidden;
 
-  /* Modalità Studio */
   &.study-mode {
     background-color: #fbd65a;
     
@@ -54,7 +115,6 @@
     }
   }
 
-  /* Modalità Pausa */
   &.break-mode {
     background-color: #a8e6cf;
     
@@ -64,7 +124,6 @@
     }
   }
 
-  /* Completamento */
   &.completed {
     background-color: #ffd93d;
     animation: completedGlow 1.5s ease-in-out infinite alternate;
@@ -75,34 +134,31 @@
   }
 }
 
-/* ==================== ICONA CONFIGURAZIONE ==================== */
-
-.config-icon-btn {
+// ==================== CONFIG BUTTON ==================== 
+.config-btn {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border: none;
-  color: #000;
+  background: none;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  width: 10px;
+  border-radius: 50%;
 
-  .config-icon {
-    font-size: 0.9rem;
-    img {
-        width: 30px;       
-        height: 30px;   
-    }
+  img {
+    width: 24px;       
+    height: 24px;   
   }
 
   &:hover:not(:disabled) {
     transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.3);
   }
 
   &:active:not(:disabled) {
@@ -116,53 +172,40 @@
   }
 }
 
-/* ==================== COUNTDOWN DISPLAY ==================== */
-
+// ==================== TIME DISPLAY ==================== 
 .time-display {
   margin-bottom: 1.5rem;
-
+  
   .time-number {
-    font-size: 2.5rem;
-    font-weight: 900;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #000;
-    letter-spacing: 0.1em;
-    line-height: 1;
+    font-size: 3rem;
+    font-weight: bold;
+    
+    @media (min-width: 641px) {
+      font-size: 4rem;
+    }
+    
+    @media (min-width: 1024px) {
+      font-size: 5rem;
+    }
   }
 }
 
-/* ==================== PHASE INFO ==================== */
-
+// ==================== PHASE INFO ==================== 
 .phase-info {
   margin-bottom: 1.5rem;
-
-  .current-phase {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 0.5rem;
-
-    .phase-icon {
-      font-size: 1.3rem;
-      margin-right: 0.5rem;
-    }
-
-    .phase-text {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #000;
-    }
-  }
 
   .cycle-info {
     font-size: 0.9rem;
     color: #666;
     font-weight: 400;
+    
+    @media (min-width: 641px) {
+      font-size: 1rem;
+    }
   }
 }
 
-/* ==================== PROGRESS BAR ==================== */
-
+// ==================== PROGRESS BAR ==================== 
 .progress-container {
   margin-bottom: 1.5rem;
 
@@ -180,18 +223,30 @@
       transition: width 0.3s ease;
       border-radius: 3px;
     }
+    
+    @media (min-width: 641px) {
+      height: 8px;
+      border-radius: 4px;
+
+      .progress-fill {
+        border-radius: 4px;
+      }
+    }
   }
 
   .progress-text {
     font-size: 0.8rem;
     color: #666;
     font-weight: 400;
+    
+    @media (min-width: 641px) {
+      font-size: 0.9rem;
+    }
   }
 }
 
-/* ==================== CONTROLLI INTEGRATI ==================== */
-
-.integrated-controls {
+// ==================== CONTROLS ==================== 
+.controls {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -204,20 +259,22 @@
     flex-wrap: wrap;
     justify-content: center;
     animation: fadeInUp 0.3s ease;
+    
+    @media (min-width: 641px) {
+      gap: 1rem;
+    }
+  }
+  
+  @media (min-width: 641px) {
+    gap: 1.5rem;
   }
 }
 
-.control-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
+// ==================== BUTTONS ==================== 
+.btn {
   padding: 0.8rem 1rem;
   border: none;
   border-radius: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #000;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
@@ -226,20 +283,7 @@
   min-height: 60px;
   min-width: 70px;
 
-  .btn-icon {
-    font-size: 1.1rem;
-  }
-
-  .btn-text {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    text-align: center;
-    line-height: 1.2;
-  }
-
   &:hover:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
   }
@@ -254,43 +298,64 @@
     transform: none;
   }
 
-  /* Stili specifici per bottoni */
-  &.primary {
-    background-color: rgba(255, 255, 255, 0.4);
+  &.btn-primary {
+    background-color: rgba(255, 255, 255, 0.9);
     color: #000;
     font-size: 1rem;
     padding: 1rem 2rem;
     min-height: 70px;
     min-width: 120px;
+  }
 
-    .btn-text {
-      font-size: 0.9rem;
+  &.btn-pause {
+    background-color: rgba(108, 117, 125, 0.9);
+    color: #fff;
+  }
+
+  &.btn-skip {
+    background-color: rgba(23, 162, 184, 0.9);
+    color: #fff;
+  }
+
+  &.btn-reset {
+    background-color: rgba(255, 193, 7, 0.9);
+    color: #000;
+  }
+
+  &.btn-stop {
+    background-color: rgba(220, 53, 69, 0.9);
+    color: #fff;
+  }
+  
+  @media (min-width: 641px) {
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    font-size: 0.9rem;
+    min-width: 100px;
+    min-height: 70px;
+
+    &.btn-primary {
+      font-size: 1.1rem;
+      padding: 1.2rem 2.5rem;
+      min-height: 80px;
+      min-width: 140px;
     }
   }
+  
+  @media (min-width: 1024px) {
+    padding: 1.2rem 2rem;
+    min-width: 120px;
+    min-height: 80px;
 
-  &.start-btn.primary {
-    background-color: rgba(168, 230, 207, 0.8);
-    color: #000;
-  }
-
-  &.stop-btn:not(:disabled) {
-    background-color: rgba(255, 179, 179, 0.8);
-    color: #000;
-  }
-
-  &.reset-btn:not(:disabled) {
-    background-color: rgba(255, 217, 61, 0.8);
-    color: #000;
-  }
-
-  &.pause-btn:not(:disabled) {
-    background-color: rgba(255, 255, 255, 0.3);
-    color: #000;
+    &.btn-primary {
+      padding: 1.5rem 3rem;
+      min-width: 160px;
+      min-height: 90px;
+    }
   }
 }
 
-/* ==================== ANIMAZIONI PULSANTI ==================== */
-
+// ==================== PULSE ANIMATION ==================== 
 .pulse-animation {
   position: absolute;
   top: 50%;
@@ -315,44 +380,20 @@
   &.break-pulse {
     background-color: #27ae60;
   }
-}
-
-/* ==================== CONFIG SUMMARY ==================== */
-
-.config-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1rem;
-  background-color: #fbd65a;
-  border-radius: 1rem;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 1.5rem;
-
-  .config-item {
-    text-align: center;
-
-    .config-label {
-      display: block;
-      font-size: 0.8rem;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      margin-bottom: 0.25rem;
-    }
-
-    .config-value {
-      display: block;
-      font-size: 1rem;
-      font-weight: 700;
-      color: #000;
-    }
+  
+  @media (min-width: 641px) {
+    width: 200px;
+    height: 200px;
+  }
+  
+  @media (min-width: 1024px) {
+    width: 250px;
+    height: 250px;
   }
 }
 
-/* ==================== COMPLETION MESSAGE ==================== */
-
-.completion-message {
+// ==================== COMPLETION OVERLAY ==================== 
+.completion-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -399,23 +440,32 @@
       color: #000;
       font-size: 1rem;
     }
+    
+    @media (min-width: 641px) {
+      padding: 3rem 2rem;
+      max-width: 400px;
 
-    .completion-button-container {
-      display: flex;
-      justify-content: center;
-      margin-top: 1.5rem;
-    }
+      .completion-icon {
+        font-size: 4rem;
+      }
 
-    .centered-btn {
-      width: auto;
-      min-width: 200px;
+      h2 {
+        font-size: 1.8rem;
+      }
+
+      p {
+        font-size: 1rem;
+      }
+
+      .study-time {
+        font-size: 1.1rem;
+      }
     }
   }
 }
 
-/* ==================== CONFIG MODAL ==================== */
-
-.config-modal-overlay {
+// ==================== MODAL ==================== 
+.modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -429,7 +479,7 @@
   animation: fadeIn 0.3s ease;
   padding: 1rem;
 
-  .config-modal {
+  .modal-content {
     background-color: #fff;
     border-radius: 1rem;
     width: 100%;
@@ -438,11 +488,14 @@
     overflow-y: auto;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     animation: slideUp 0.3s ease;
+    
+    @media (min-width: 641px) {
+      max-width: 600px;
+    }
   }
 }
 
-/* ==================== LOADING ==================== */
-
+// ==================== LOADING ==================== 
 .loading {
   display: flex;
   align-items: center;
@@ -452,8 +505,7 @@
   font-size: 1rem;
 }
 
-/* ==================== KEYFRAME ANIMATIONS ==================== */
-
+// ==================== ANIMATIONS ==================== 
 @keyframes studyPulse {
   0%, 100% { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
   50% { box-shadow: 0 4px 12px rgba(251, 214, 90, 0.4); }
@@ -511,8 +563,18 @@
   }
 }
 
-/* ==================== DESKTOP STYLES (min-width: 641px) ==================== */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
 
+// ==================== RESPONSIVE LAYOUT ==================== 
 @media (min-width: 641px) {
   .timer-view {
     max-width: 800px;
@@ -525,198 +587,45 @@
     margin-bottom: 2rem;
   }
 
-  .config-icon-btn {
+  .config-btn {
     width: 50px;
     height: 50px;
     top: 1.5rem;
     right: 1.5rem;
 
-    .config-icon {
-      font-size: 1.4rem;
+    img {
+      width: 28px;
+      height: 28px;
     }
-  }
-
-  .time-display .time-number {
-    font-size: 4rem;
   }
 
   .phase-info {
     margin-bottom: 2rem;
-
-    .current-phase {
-      .phase-icon {
-        font-size: 1.5rem;
-      }
-
-      .phase-text {
-        font-size: 2rem;
-      }
-    }
-
-    .cycle-info {
-      font-size: 1rem;
-    }
   }
 
   .progress-container {
     margin-bottom: 2rem;
-
-    .progress-bar {
-      height: 8px;
-      border-radius: 4px;
-
-      .progress-fill {
-        border-radius: 4px;
-      }
-    }
-
-    .progress-text {
-      font-size: 0.9rem;
-    }
-  }
-
-  .pulse-animation {
-    width: 200px;
-    height: 200px;
-  }
-
-  .integrated-controls {
-    gap: 1.5rem;
-
-    .secondary-controls {
-      gap: 1rem;
-    }
-  }
-
-  .control-btn {
-    padding: 1rem 1.5rem;
-    border-radius: 1rem;
-    font-size: 0.9rem;
-    min-width: 100px;
-    min-height: 70px;
-
-    .btn-icon {
-      font-size: 1.2rem;
-    }
-
-    .btn-text {
-      font-size: 0.8rem;
-    }
-
-    &.primary {
-      font-size: 1.1rem;
-      padding: 1.2rem 2.5rem;
-      min-height: 80px;
-      min-width: 140px;
-
-      .btn-text {
-        font-size: 1rem;
-      }
-    }
-  }
-
-  .config-summary {
-    flex-direction: row;
-    justify-content: center;
-    gap: 2rem;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-
-    .config-item .config-value {
-      font-size: 1.1rem;
-    }
-  }
-
-  .completion-message {
-    padding: 0;
-
-    .completion-content {
-      padding: 3rem 2rem;
-      max-width: 400px;
-
-      .completion-icon {
-        font-size: 4rem;
-      }
-
-      h2 {
-        font-size: 1.8rem;
-      }
-
-      p {
-        font-size: 1rem;
-      }
-
-      .study-time {
-        font-size: 1.1rem;
-      }
-
-      .completion-button-container {
-        margin-top: 1.5rem;
-      }
-
-      .centered-btn {
-        min-width: 250px;
-      }
-    }
-  }
-
-  .config-modal-overlay {
-    padding: 0;
-
-    .config-modal {
-      max-width: 600px;
-    }
   }
 }
-
-/* ==================== LARGE DESKTOP (min-width: 1024px) ==================== */
 
 @media (min-width: 1024px) {
   .timer-view {
     padding: 3rem;
   }
 
-  .timer-header h1 {
-    font-size: 3.5rem;
-  }
-
   .timer-display {
     padding: 4rem 3rem 3rem 3rem;
   }
 
-  .config-icon-btn {
+  .config-btn {
     width: 60px;
     height: 60px;
     top: 2rem;
     right: 2rem;
 
-    .config-icon {
-      font-size: 1.6rem;
+    img {
+      width: 32px;
+      height: 32px;
     }
-  }
-
-  .time-display .time-number {
-    font-size: 5rem;
-  }
-
-  .control-btn {
-    padding: 1.2rem 2rem;
-    min-width: 120px;
-    min-height: 80px;
-
-    &.primary {
-      padding: 1.5rem 3rem;
-      min-width: 160px;
-      min-height: 90px;
-    }
-  }
-
-  .pulse-animation {
-    width: 250px;
-    height: 250px;
-  }
-
-  .completion-message .completion-content .centered-btn {
-    min-width: 300px;
   }
 }
