@@ -51,4 +51,14 @@ async function login(email, password) {
   };
 }
 
-module.exports = { register, login };
+async function logout(access_token) {
+  const { error } = await supabase.auth.signOut({
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+    }
+  });
+
+  if (error) throw error;
+}
+
+module.exports = { register, login, logout };
