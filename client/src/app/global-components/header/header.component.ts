@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { AuthService } from '../../service/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -18,7 +19,10 @@ export class HeaderComponent {
     { label: 'Grades', href: '#' }
   ];
 
-  constructor(private router: Router) {}
+   constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   get isRoot(): boolean {
     return this.router.url === '/';
@@ -26,5 +30,15 @@ export class HeaderComponent {
 
   toggleMenu(): void {
     this.menuOpen = !this.menuOpen;
+  }
+
+  onLogout(): void {
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: err => {
+        console.error('Errore logout:', err);
+        this.router.navigate(['/login']);
+      }
+    });
   }
 }

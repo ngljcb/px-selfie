@@ -63,4 +63,30 @@ async function me(req, res) {
   });
 }
 
-module.exports = { register, login, me };
+async function logout(req, res) {
+  const cookies = cookie.parse(req.headers.cookie || '');
+  const access_token = cookies.access_token;
+
+  if (!access_token) {
+    return res.status(400).json({ error: 'Token non presente nel cookie' });
+  }
+
+  try {
+    await authService.logout(access_token);
+
+    // Cancella il cookie
+    res.setHeader('Set-Cookie', cookie.serialize('access_token', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Strict',
+      expires: new Date(0),
+      path: '/',
+    }));
+
+    res.status(200).json({ message: 'Logout effettuato con successo' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
+module.exports = { register, login, logout, me };
