@@ -4,45 +4,57 @@ import { HomeViewComponent } from './home/home-view/home-view.component';
 import { NotesViewComponent } from './notes/notes-view/notes-view.component';
 import { NoteEditorComponent } from './notes/note-editor/note-editor.component';
 import { RegisterComponent } from './auth/register/register.component';
+import { LoginComponent } from './auth/login/login.component';
+import { AuthGuard } from './auth/guard/auth.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    component: HomeViewComponent
+    component: HomeViewComponent,
+    canActivate: [AuthGuard]
   },
   {
     path: 'register',
     component: RegisterComponent
   },
   {
-    path: 'notes',
-    component: NotesViewComponent
+    path: 'login',
+    component: LoginComponent
   },
   {
-    path: 'notes/new', // Route per creare una nuova nota
+    path: 'notes',
+    component: NotesViewComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'notes/new',
     component: NoteEditorComponent,
+    canActivate: [AuthGuard],
     title: 'Nuova Nota - SELFIE',
     data: { mode: 'create' }
   },
   {
-    path: 'notes/:id/edit', // Route per modificare una nota esistente
+    path: 'notes/:id/edit',
     component: NoteEditorComponent,
+    canActivate: [AuthGuard],
     title: 'Modifica Nota - SELFIE',
     data: { mode: 'edit' }
   },
   {
-    path: 'notes/:id/duplicate', // Route per duplicare una nota esistente
+    path: 'notes/:id/duplicate',
     component: NoteEditorComponent,
+    canActivate: [AuthGuard],
     title: 'Duplica Nota - SELFIE',
     data: { mode: 'duplicate' }
   },
   {
-    path: 'note', // Redirect da /note a /notes per retrocompatibilità
+    path: 'note',
     redirectTo: '/notes',
     pathMatch: 'full'
   },
   {
     path: 'calendar',
-    component: CalendarViewComponent
+    component: CalendarViewComponent,
+    canActivate: [AuthGuard]
   }
 ];

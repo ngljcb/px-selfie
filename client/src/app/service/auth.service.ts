@@ -14,4 +14,17 @@ export class AuthService {
       password
     }, { withCredentials: true });
   }
+
+  login(email: string, password: string): Observable<any> {
+    return this.http.post(`${environment.API_BASE_URL}/api/auth/login`, {
+      email,
+      password
+    }, { withCredentials: true });
+  }
+
+  me(): Observable<any> {
+    return this.http.get(`${environment.API_BASE_URL}/api/auth/me`, {
+      withCredentials: true
+    });
+  }
 }

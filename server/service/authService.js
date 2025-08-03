@@ -8,25 +8,15 @@ async function register(email, password, username) {
       data: { username },
     }
   });
-
   if (error) throw error;
 
   const session = data.session;
   if (!session) throw new Error('No session returned from Supabase');
 
   const updateRes = await supabase.auth.updateUser(
-    {
-      data: {
-        full_name: username, // questo popola la colonna "Display name"
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-      },
-    }
+    { data: { full_name: username } },
+    { headers: { Authorization: `Bearer ${session.access_token}` } }
   );
-
   if (updateRes.error) throw updateRes.error;
 
   return {
@@ -39,4 +29,26 @@ async function register(email, password, username) {
   };
 }
 
-module.exports = { register };
+async function login(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) throw error;
+
+  const session = data.session;
+  if (!session) throw new Error('No session returned from Supabase');
+
+  const user = data.user;
+
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.user_metadata?.username || user.user_metadata?.full_name || null,
+    },
+    access_token: session.access_token,
+  };
+}
+
+module.exports = { register, login };
