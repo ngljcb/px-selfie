@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Feature {
   title: string;
@@ -13,11 +14,12 @@ export interface Feature {
   providedIn: 'root'
 })
 export class FeatureService {
-  private apiUrl = 'http://localhost:3000/api/features';
 
   constructor(private http: HttpClient) {}
 
   getFeatures(): Observable<Feature[]> {
-    return this.http.get<Feature[]>(this.apiUrl);
+    return this.http.get<Feature[]>(`${environment.API_BASE_URL}/api/features`, {
+      withCredentials: true
+    });
   }
 }

@@ -1,4 +1,4 @@
 export const environment = {
-  SUPABASE_URL: 'https://jiyzzybmqeftoraztajh.supabase.co',
-  SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImppeXp6eWJtcWVmdG9yYXp0YWpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3MjYyMjcsImV4cCI6MjA2OTMwMjIyN30.Yqz9uTOcGS4tlHDmZqoVFi0wlibdXx5Br54QgxEP1Qk'
+  production: false,
+  API_BASE_URL: 'http://localhost:3000'
 };

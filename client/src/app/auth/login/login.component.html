@@ -1,0 +1,23 @@
+<div class="login-container">
+  <img src="logo.png" alt="Logo" class="logo" />
+
+  <form #loginForm="ngForm" (ngSubmit)="onSubmit()" class="login-form">
+    <h2 class="title">Login</h2>
+
+    <div *ngIf="loginError" class="error-message">
+      {{ loginError }}
+    </div>
+
+    <input type="email" placeholder="email" [(ngModel)]="email" name="email" required #emailInput="ngModel" />
+    <input type="password" placeholder="password" [(ngModel)]="password" name="password" required #passwordInput="ngModel" />
+
+    <button type="submit" [disabled]="!loginForm.valid">
+      Login
+    </button>
+
+    <p class="login-redirect">
+      Not registered yet?
+      <a routerLink="/register">Sign up here</a>
+    </p>
+  </form>
+</div>

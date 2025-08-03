@@ -5,7 +5,11 @@ const cors = require('cors');
 const app = express();
 const routes = require('./router');
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:4200', // client Angular
+  credentials: true
+}));
+
 app.use(express.json());
 
 app.use('/api', routes);
