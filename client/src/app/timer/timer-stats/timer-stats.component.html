@@ -1,0 +1,195 @@
+<!-- src/app/features/timer/timer-stats/timer-stats.component.html -->
+
+<div class="timer-stats">
+  
+  <!-- LOADING STATE -->
+  @if (isLoading) {
+    <div class="stats-loading">
+      <div class="loading-spinner"></div>
+      <span>Caricamento statistiche...</span>
+    </div>
+  }
+
+  <!-- ERROR STATE -->
+  @if (error && !isLoading) {
+    <div class="stats-error">
+      <span class="error-icon">⚠️</span>
+      <span class="error-message">{{ error }}</span>
+      <button class="btn-retry" (click)="refreshStats()">Riprova</button>
+    </div>
+  }
+
+  <!-- STATISTICHE PRINCIPALI -->
+  @if (statistics && !isLoading && !error) {
+    <div class="stats-container">
+      
+      <!-- HEADER CON TOGGLE -->
+      <div class="stats-header" (click)="toggleExpanded()">
+        <h3 class="stats-title">
+          📊 Le tue statistiche
+          <span class="toggle-icon" [class.expanded]="isExpanded">▼</span>
+        </h3>
+      </div>
+
+      <!-- STATS COMPATTE (SEMPRE VISIBILI) -->
+      <div class="stats-compact">
+        
+        <!-- STREAK -->
+        <div class="stat-item streak-item" [class]="getStreakColorClass()">
+          <div class="stat-icon">{{ getStreakIcon() }}</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ consecutiveDays }}</div>
+            <div class="stat-label">giorni consecutivi</div>
+            <div class="stat-message">{{ getStreakMessage() }}</div>
+          </div>
+        </div>
+
+        <!-- SESSIONI COMPLETATE -->
+        <div class="stat-item">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ totalSessions }}</div>
+            <div class="stat-label">sessioni completate</div>
+          </div>
+        </div>
+
+        <!-- TEMPO TOTALE -->
+        <div class="stat-item">
+          <div class="stat-icon">⏱️</div>
+          <div class="stat-content">
+            <div class="stat-value">{{ totalStudyTime }}</div>
+            <div class="stat-label">tempo totale di studio</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PROGRESS BAR MILESTONE -->
+      @if (consecutiveDays > 0) {
+        <div class="milestone-progress">
+          <div class="progress-info">
+            <span class="progress-text">
+              Verso {{ getNextMilestoneProgress().next }} giorni
+            </span>
+            <span class="progress-percentage">
+              {{ getNextMilestoneProgress().percentage }}%
+            </span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" 
+                 [style.width]="getNextMilestoneProgress().percentage + '%'">
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- STATS DETTAGLIATE (ESPANDIBILI) -->
+      @if (isExpanded) {
+        <div class="stats-expanded" [@expandCollapse]>
+          
+          <!-- MEDIE E PERFORMANCE -->
+          <div class="stats-section">
+            <h4 class="section-title">📈 Performance</h4>
+            
+            <div class="stats-grid">
+              
+              <!-- MEDIA SESSIONI/GIORNO -->
+              @if (consecutiveDays > 0) {
+                <div class="stat-detail">
+                  <span class="detail-label">Media sessioni/giorno</span>
+                  <span class="detail-value">{{ getAverageSessionsPerDay() }}</span>
+                </div>
+              }
+
+              <!-- MEDIA MINUTI/GIORNO -->
+              @if (consecutiveDays > 0) {
+                <div class="stat-detail">
+                  <span class="detail-label">Media minuti/giorno</span>
+                  <span class="detail-value">{{ formatMinutes(getAverageMinutesPerDay()) }}</span>
+                </div>
+              }
+
+              <!-- MEDIA MINUTI/SESSIONE -->
+              @if (totalSessions > 0) {
+                <div class="stat-detail">
+                  <span class="detail-label">Media per sessione</span>
+                  <span class="detail-value">{{ formatMinutes(getAverageMinutesPerSession()) }}</span>
+                </div>
+              }
+
+            </div>
+          </div>
+
+          <!-- TRAGUARDI -->
+          <div class="stats-section">
+            <h4 class="section-title">🏆 Traguardi</h4>
+            
+            <div class="achievements">
+              
+              <!-- PRIMI TRAGUARDI -->
+              <div class="achievement" [class.achieved]="totalSessions >= 1">
+                <span class="achievement-icon">🎯</span>
+                <span class="achievement-text">Prima sessione completata</span>
+                @if (totalSessions >= 1) {
+                  <span class="achievement-check">✅</span>
+                }
+              </div>
+
+              <div class="achievement" [class.achieved]="consecutiveDays >= 3">
+                <span class="achievement-icon">🌱</span>
+                <span class="achievement-text">3 giorni consecutivi</span>
+                @if (consecutiveDays >= 3) {
+                  <span class="achievement-check">✅</span>
+                }
+              </div>
+
+              <div class="achievement" [class.achieved]="consecutiveDays >= 7">
+                <span class="achievement-icon">🔥</span>
+                <span class="achievement-text">Una settimana di studio</span>
+                @if (consecutiveDays >= 7) {
+                  <span class="achievement-check">✅</span>
+                }
+              </div>
+
+              <div class="achievement" [class.achieved]="totalStudyMinutes >= 600">
+                <span class="achievement-icon">⏰</span>
+                <span class="achievement-text">10 ore di studio totali</span>
+                @if (totalStudyMinutes >= 600) {
+                  <span class="achievement-check">✅</span>
+                }
+              </div>
+
+              <div class="achievement" [class.achieved]="consecutiveDays >= 30">
+                <span class="achievement-icon">👑</span>
+                <span class="achievement-text">Un mese consecutivo</span>
+                @if (consecutiveDays >= 30) {
+                  <span class="achievement-check">✅</span>
+                }
+              </div>
+
+            </div>
+          </div>
+
+          <!-- AZIONI -->
+          <div class="stats-actions">
+            <button class="btn-refresh" (click)="refreshStats()">
+              🔄 Aggiorna
+            </button>
+          </div>
+
+        </div>
+      }
+
+    </div>
+  }
+
+  <!-- EMPTY STATE -->
+  @if (!statistics && !isLoading && !error) {
+    <div class="stats-empty">
+      <div class="empty-icon">📊</div>
+      <h3>Inizia a studiare!</h3>
+      <p>Completa la tua prima sessione per vedere le statistiche.</p>
+    </div>
+  }
+
+</div>

@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TimerConfigComponent } from '../timer-config/timer-config.component';
+import { TimerStatsComponent } from '../timer-stats/timer-stats.component';
 import { 
   TimerService 
 } from '../../service/timer.service';
@@ -26,7 +27,7 @@ interface TimerNotification {
 @Component({
   selector: 'app-timer-view',
   standalone: true,
-  imports: [CommonModule, TimerConfigComponent],
+  imports: [CommonModule, TimerConfigComponent, TimerStatsComponent],
   templateUrl: './timer-view.component.html',
   styleUrls: ['./timer-view.component.scss']
 })
