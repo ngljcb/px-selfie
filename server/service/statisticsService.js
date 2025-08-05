@@ -1,25 +1,5 @@
 const supabase = require('../persistence/supabase');
 
-// Helper function per ottenere la data locale in formato YYYY-MM-DD
-function getTodayDateString() {
-  const today = new Date();
-  // Usa il timezone locale del server invece di UTC
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-// Helper function per calcolare differenza in giorni tra due date (solo parte data)
-function calculateDaysDifference(dateString1, dateString2) {
-  // Crea date objects solo con la parte data (ore = 00:00:00)
-  const date1 = new Date(dateString1 + 'T00:00:00');
-  const date2 = new Date(dateString2 + 'T00:00:00');
-  
-  const diffTime = date2.getTime() - date1.getTime();
-  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
-}
-
 async function getUserStatistics(userId) {
   // Recupera o crea le statistiche dell'utente
   let { data: stats, error } = await supabase
@@ -80,9 +60,10 @@ async function checkLoginStreak(userId) {
     throw error;
   }
 
-  // Data di oggi (timezone locale del server)
-  const todayDateString = getTodayDateString();
-  
+  // Data di oggi
+  const today = new Date();
+  const todayDateString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
   const logDay = stats.log_day; // Può essere null o una data
   let newConsecutiveDays = stats.consecutive_study_days;
   let canIncrementStreak = true;
@@ -93,7 +74,10 @@ async function checkLoginStreak(userId) {
     canIncrementStreak = true;
   } else {
     // Calcola differenza in giorni tra oggi e ultimo login
-    const diffDays = calculateDaysDifference(logDay, todayDateString);
+    const logDate = new Date(logDay);
+    const todayDate = new Date(todayDateString);
+    const diffTime = todayDate.getTime() - logDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
       // Stesso giorno - mantieni il flag attuale
@@ -106,9 +90,8 @@ async function checkLoginStreak(userId) {
       newConsecutiveDays = 0;
       canIncrementStreak = true;
       streakWasReset = true;
-    } else if (diffDays < 0) {
-      // Caso anomalo: logDay è nel futuro - reset per sicurezza
-      console.warn(`Anomalia: logDay (${logDay}) è nel futuro rispetto a oggi (${todayDateString})`);
+    } else {
+      // Caso anomalo (diffDays < 0) - reset per sicurezza
       newConsecutiveDays = 0;
       canIncrementStreak = true;
       streakWasReset = true;
@@ -138,47 +121,72 @@ async function checkLoginStreak(userId) {
 }
 
 async function updateSessionCompleted(userId, studyTimeMinutes) {
-  // Recupera lo stato attuale per controllare il flag
-  const { data: currentStats, error: fetchError } = await supabase
-    .from('user_statistics')
-    .select('can_increment_streak, consecutive_study_days')
-    .eq('user_id', userId)
-    .single();
+  try {
+    console.log('Inizio updateSessionCompleted per userId:', userId, 'studyTimeMinutes:', studyTimeMinutes);
 
-  if (fetchError) throw fetchError;
+    // Recupera lo stato attuale per controllare il flag
+    const { data: currentStats, error: fetchError } = await supabase
+      .from('user_statistics')
+      .select('can_increment_streak, consecutive_study_days, total_completed_sessions, total_study_time_minutes')
+      .eq('user_id', userId)
+      .single();
 
-  const shouldIncrementStreak = currentStats.can_increment_streak;
-  
-  // Prepara l'aggiornamento
-  const updateData = {
-    user_id: userId,
-    total_completed_sessions: supabase.raw('COALESCE(total_completed_sessions, 0) + 1'),
-    total_study_time_minutes: supabase.raw(`COALESCE(total_study_time_minutes, 0) + ${studyTimeMinutes}`)
-  };
+    if (fetchError) {
+      console.error('Errore nel recupero statistiche attuali:', fetchError);
+      throw fetchError;
+    }
 
-  // Se può incrementare lo streak, lo incrementa e disabilita il flag
-  if (shouldIncrementStreak) {
-    updateData.consecutive_study_days = supabase.raw('COALESCE(consecutive_study_days, 0) + 1');
-    updateData.can_increment_streak = false;
+    console.log('Statistiche attuali:', currentStats);
+
+    const shouldIncrementStreak = currentStats.can_increment_streak;
+    
+    // Calcola i nuovi valori
+    const newTotalSessions = (currentStats.total_completed_sessions || 0) + 1;
+    const newTotalMinutes = (currentStats.total_study_time_minutes || 0) + studyTimeMinutes;
+    const newConsecutiveDays = shouldIncrementStreak 
+      ? (currentStats.consecutive_study_days || 0) + 1 
+      : currentStats.consecutive_study_days;
+
+    // Prepara l'oggetto di aggiornamento
+    const updateData = {
+      total_completed_sessions: newTotalSessions,
+      total_study_time_minutes: newTotalMinutes
+    };
+
+    // Se può incrementare lo streak, lo incrementa e disabilita il flag
+    if (shouldIncrementStreak) {
+      updateData.consecutive_study_days = newConsecutiveDays;
+      updateData.can_increment_streak = false;
+    }
+
+    console.log('Dati da aggiornare:', updateData);
+
+    // Aggiorna le statistiche
+    const { data, error } = await supabase
+      .from('user_statistics')
+      .update(updateData)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Errore nell\'aggiornamento:', error);
+      throw error;
+    }
+
+    console.log('Statistiche aggiornate con successo:', data);
+
+    return {
+      totalCompletedSessions: data.total_completed_sessions,
+      totalStudyTimeMinutes: data.total_study_time_minutes,
+      totalStudyTimeFormatted: formatStudyTime(data.total_study_time_minutes),
+      consecutiveStudyDays: data.consecutive_study_days
+    };
+
+  } catch (error) {
+    console.error('Errore completo in updateSessionCompleted:', error);
+    throw error;
   }
-
-  // Aggiorna le statistiche
-  const { data, error } = await supabase
-    .from('user_statistics')
-    .upsert(updateData, {
-      onConflict: 'user_id'
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  return {
-    totalCompletedSessions: data.total_completed_sessions,
-    totalStudyTimeMinutes: data.total_study_time_minutes,
-    totalStudyTimeFormatted: formatStudyTime(data.total_study_time_minutes),
-    consecutiveStudyDays: data.consecutive_study_days
-  };
 }
 
 // ==================== FUNZIONI HELPER ====================
