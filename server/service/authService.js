@@ -19,6 +19,27 @@ async function register(email, password, username) {
   );
   if (updateRes.error) throw updateRes.error;
 
+  // NUOVO: Crea la riga iniziale per le statistiche dell'utente
+  try {
+    const { error: statsError } = await supabase
+      .from('user_statistics')
+      .insert([{ 
+        user_id: data.user.id,
+        total_completed_sessions: 0,
+        total_study_time_minutes: 0,
+        consecutive_study_days: 0,
+        can_increment_streak: true,
+        log_day: null
+      }]);
+
+    if (statsError) {
+      console.error('Errore nella creazione delle statistiche iniziali:', statsError);
+      // Non blocchiamo la registrazione per questo errore
+    }
+  } catch (statsError) {
+    console.error('Errore nella creazione delle statistiche iniziali:', statsError);
+  }
+
   return {
     user: {
       id: data.user.id,

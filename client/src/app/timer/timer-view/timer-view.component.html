@@ -99,10 +99,12 @@
         </div>
       }
     </div>
-
-    <!-- TIMER STATISTICS -->
-    <app-timer-stats></app-timer-stats>
   }
+
+  <!-- TIMER STATISTICS - SPOSTATO FUORI dal controllo timerState -->
+  <div class="timer-stats-container">
+    <app-timer-stats></app-timer-stats>
+  </div>
 
   <!-- MODAL CONFIGURAZIONE -->
   @if (showConfig) {

@@ -1,5 +1,25 @@
 const supabase = require('../persistence/supabase');
 
+// Helper function per ottenere la data locale in formato YYYY-MM-DD
+function getTodayDateString() {
+  const today = new Date();
+  // Usa il timezone locale del server invece di UTC
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// Helper function per calcolare differenza in giorni tra due date (solo parte data)
+function calculateDaysDifference(dateString1, dateString2) {
+  // Crea date objects solo con la parte data (ore = 00:00:00)
+  const date1 = new Date(dateString1 + 'T00:00:00');
+  const date2 = new Date(dateString2 + 'T00:00:00');
+  
+  const diffTime = date2.getTime() - date1.getTime();
+  return Math.floor(diffTime / (1000 * 60 * 60 * 24));
+}
+
 async function getUserStatistics(userId) {
   // Recupera o crea le statistiche dell'utente
   let { data: stats, error } = await supabase
@@ -60,10 +80,9 @@ async function checkLoginStreak(userId) {
     throw error;
   }
 
-  // Data di oggi
-  const today = new Date();
-  const todayDateString = today.toISOString().split('T')[0]; // YYYY-MM-DD
-
+  // Data di oggi (timezone locale del server)
+  const todayDateString = getTodayDateString();
+  
   const logDay = stats.log_day; // Può essere null o una data
   let newConsecutiveDays = stats.consecutive_study_days;
   let canIncrementStreak = true;
@@ -74,10 +93,7 @@ async function checkLoginStreak(userId) {
     canIncrementStreak = true;
   } else {
     // Calcola differenza in giorni tra oggi e ultimo login
-    const logDate = new Date(logDay);
-    const todayDate = new Date(todayDateString);
-    const diffTime = todayDate.getTime() - logDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffDays = calculateDaysDifference(logDay, todayDateString);
 
     if (diffDays === 0) {
       // Stesso giorno - mantieni il flag attuale
@@ -90,8 +106,9 @@ async function checkLoginStreak(userId) {
       newConsecutiveDays = 0;
       canIncrementStreak = true;
       streakWasReset = true;
-    } else {
-      // Caso anomalo (diffDays < 0) - reset per sicurezza
+    } else if (diffDays < 0) {
+      // Caso anomalo: logDay è nel futuro - reset per sicurezza
+      console.warn(`Anomalia: logDay (${logDay}) è nel futuro rispetto a oggi (${todayDateString})`);
       newConsecutiveDays = 0;
       canIncrementStreak = true;
       streakWasReset = true;

@@ -4,6 +4,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
+import { environment } from '../..//environments/environment'; // AGGIUNTO
 import { 
   UserStatistics, 
   UpdateSessionStatsDTO, 
@@ -15,7 +16,7 @@ import {
   providedIn: 'root'
 })
 export class StatisticsService {
-  private readonly apiUrl = 'http://localhost:3000/api'; // Adjust base URL as needed
+  private readonly apiUrl = `${environment.API_BASE_URL}/api`; // CORRETTO
   
   // Subject per mantenere le statistiche in cache
   private statisticsSubject = new BehaviorSubject<StatisticsResponse | null>(null);
@@ -29,7 +30,9 @@ export class StatisticsService {
    * Recupera le statistiche dell'utente corrente
    */
   getUserStatistics(): Observable<StatisticsResponse> {
-    return this.http.get<StatisticsResponse>(`${this.apiUrl}/statistics`)
+    return this.http.get<StatisticsResponse>(`${this.apiUrl}/statistics`, {
+      withCredentials: true // AGGIUNTO per coerenza con auth.service
+    })
       .pipe(
         tap(stats => {
           // Aggiorna il subject per condividere i dati
@@ -48,12 +51,14 @@ export class StatisticsService {
    * Aggiorna le statistiche quando una sessione viene completata
    * @param studyTimeMinutes Tempo di studio in minuti della sessione completata
    */
-  updateSessionCompleted(studyTimeMinutes: number): Observable<StatisticsResponse> {
+  updateSessionStats(studyTimeMinutes: number): Observable<StatisticsResponse> {
     const payload: UpdateSessionStatsDTO = {
       study_time_minutes: studyTimeMinutes
     };
 
-    return this.http.post<StatisticsResponse>(`${this.apiUrl}/statistics/session-completed`, payload)
+    return this.http.post<StatisticsResponse>(`${this.apiUrl}/statistics/session-completed`, payload, {
+      withCredentials: true // AGGIUNTO
+    })
       .pipe(
         tap(updatedStats => {
           // Aggiorna il subject con i nuovi dati
@@ -72,7 +77,9 @@ export class StatisticsService {
    * Controlla e aggiorna lo streak consecutivo al login dell'utente
    */
   checkLoginStreak(): Observable<LoginStreakCheckDTO> {
-    return this.http.post<LoginStreakCheckDTO>(`${this.apiUrl}/statistics/login-check`, {})
+    return this.http.post<LoginStreakCheckDTO>(`${this.apiUrl}/statistics/login-check`, {}, {
+      withCredentials: true // AGGIUNTO
+    })
       .pipe(
         tap(streakInfo => {
           console.log('Streak info:', streakInfo);

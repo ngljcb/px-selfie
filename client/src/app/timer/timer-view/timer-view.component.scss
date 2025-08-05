@@ -12,6 +12,26 @@ body {
   position: relative;
 }
 
+// ==================== TIMER STATS CONTAINER (MOBILE-FIRST) ====================
+.timer-stats-container {
+  // Mobile: padding ridotto e margine compatto
+  padding: 0 1rem 1rem 1rem;
+  margin-top: 1rem;
+  
+  @media (min-width: 641px) {
+    // Tablet: container centrato
+    max-width: 800px;
+    margin: 1.5rem auto 0 auto;
+    padding: 0 2rem 2rem 2rem;
+  }
+  
+  @media (min-width: 1024px) {
+    // Desktop: container più ampio
+    margin-top: 2rem;
+    padding: 0 3rem 3rem 3rem;
+  }
+}
+
 // ==================== NOTIFICHE ==================== 
 .notifications-container {
   position: fixed;
@@ -628,16 +648,4 @@ body {
       height: 32px;
     }
   }
-  app-timer-stats {
-  display: block;
-  margin-top: 1.5rem;
-  
-  @media (min-width: 641px) {
-    margin-top: 2rem;
-  }
-  
-  @media (min-width: 1024px) {
-    margin-top: 2.5rem;
-  }
-}
 }

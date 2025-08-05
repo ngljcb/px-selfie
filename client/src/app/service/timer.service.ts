@@ -318,7 +318,7 @@ export class TimerService {
     const studyTimeMinutes = Math.floor(this.currentSession.totalStudyTime / 60);
     
     if (studyTimeMinutes > 0) {
-      this.statisticsService.updateSessionCompleted(studyTimeMinutes)
+      this.statisticsService.updateSessionStats(studyTimeMinutes) // CORRETTO
         .subscribe({
           next: (updatedStats) => {
             console.log('Statistiche aggiornate:', updatedStats);
@@ -330,7 +330,6 @@ export class TimerService {
         });
     }
   }
-
   /**
    * Metodo pubblico per controllare lo streak al login
    * Da chiamare dal componente di autenticazione

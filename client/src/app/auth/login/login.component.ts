@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../service/auth.service';
+import { StatisticsService } from '../../service/statistics.service';
 
 @Component({
   selector: 'app-login',
@@ -17,7 +18,8 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private statisticsService: StatisticsService
   ) {}
   
   onSubmit(): void {
@@ -30,7 +32,18 @@ export class LoginComponent {
 
     this.authService.login(this.email, this.password).subscribe({
       next: () => {
-        this.router.navigate(['/']);
+        // Login riuscito, ora controlla lo streak
+        this.statisticsService.checkLoginStreak().subscribe({
+          next: (streakInfo) => {
+            console.log('Controllo streak completato:', streakInfo);
+            this.router.navigate(['/']);
+          },
+          error: (streakError) => {
+            console.error('Errore nel controllo dello streak (non bloccante):', streakError);
+            // Non bloccare il login per questo errore
+            this.router.navigate(['/']);
+          }
+        });
       },
       error: (err: any) => {
         console.error('Errore login:', err);
