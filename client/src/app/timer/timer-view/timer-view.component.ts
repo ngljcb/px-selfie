@@ -90,12 +90,12 @@ export class TimerViewComponent implements OnInit, OnDestroy {
           console.log('Login streak checked:', streakInfo);
           if (streakInfo.streakWasReset) {
             this.showNotification(
-              `📅 Nuovo giorno di studio! Il tuo streak è stato resettato.`, 
+              `Il tuo streak è stato resettato.`, 
               'phase-skipped'
             );
           } else if (streakInfo.canIncrementStreak) {
             this.showNotification(
-              `🔥 Nuovo giorno! Completa una sessione per continuare il tuo streak.`, 
+              `Completa una sessione per continuare il tuo streak.`, 
               'phase-skipped'
             );
           }
@@ -118,7 +118,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       // NUOVO: Aggiorna le statistiche quando la sessione è completata
       this.updateSessionStatistics(currentState);
       
-      this.showNotification('🎊 Sessione completata! Ottimo lavoro!', 'session-complete');
+      this.showNotification('Sessione completata! Ottimo lavoro!', 'session-complete');
       return; // Esci subito, non fare altre operazioni
     }
 
@@ -140,9 +140,9 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       
       // Mostra notifica appropriata
       if (currentState.currentPhase === TimerPhase.STUDY) {
-        this.showNotification('🎉 Tempo di pausa! Premi "Riprendi" quando sei pronto.', 'study-complete');
+        this.showNotification('Tempo di pausa!', 'study-complete');
       } else {
-        this.showNotification('📚 Torniamo a studiare! Premi "Riprendi" quando sei pronto.', 'break-complete');
+        this.showNotification('Torniamo a studiare!', 'break-complete');
       }
     }
   }
@@ -160,7 +160,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
         next: (updatedStats) => {
           console.log('Statistiche aggiornate:', updatedStats);
           this.showNotification(
-            `📊 Statistiche aggiornate! Sessioni: ${updatedStats.totalCompletedSessions}, Tempo totale: ${updatedStats.totalStudyTimeFormatted}`, 
+            `Statistiche aggiornate! Sessioni: ${updatedStats.totalCompletedSessions}, Tempo totale: ${updatedStats.totalStudyTimeFormatted}`, 
             'session-complete'
           );
         },
@@ -239,12 +239,11 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       if (currentState.currentPhase === TimerPhase.BREAK && 
           currentState.currentCycle >= currentState.config.totalCycles) {
         // Ultima pausa saltata = sessione completata
-        this.showNotification('🎊 Sessione completata! Ottimo lavoro!', 'session-complete');
         this.timerService.skipCurrentPhase(); // Questo dovrebbe portare a COMPLETED
         return;
       }
       
-      this.showNotification(`⏭️ Fase di ${skippedPhase} saltata!`, 'phase-skipped');
+      this.showNotification(`Fase di ${skippedPhase} saltata!`, 'phase-skipped');
       
       // Prima salta la fase, poi pausa
       this.timerService.skipCurrentPhase();

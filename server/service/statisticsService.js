@@ -14,8 +14,6 @@ async function getUserStatistics(userId) {
       .from('user_statistics')
       .insert([{ 
         user_id: userId,
-        log_day: null,
-        can_increment_streak: true
       }])
       .select()
       .single();
@@ -47,9 +45,7 @@ async function checkLoginStreak(userId) {
     const { data: newStats, error: insertError } = await supabase
       .from('user_statistics')
       .insert([{ 
-        user_id: userId,
-        log_day: null,
-        can_increment_streak: true
+        user_id: userId
       }])
       .select('log_day, consecutive_study_days, can_increment_streak')
       .single();

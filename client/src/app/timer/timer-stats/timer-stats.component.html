@@ -10,22 +10,13 @@
     </div>
   }
 
-  <!-- ERROR STATE -->
-  @if (error && !isLoading) {
-    <div class="stats-error">
-      <span class="error-icon">⚠️</span>
-      <span class="error-message">{{ error }}</span>
-      <button class="btn-retry" (click)="refreshStats()">Riprova</button>
-    </div>
-  }
-
   <!-- STATISTICHE PRINCIPALI -->
   @if (statistics && !isLoading && !error) {
     <div class="stats-container">
       
       <!-- HEADER -->
       <div class="stats-header">
-        <h3 class="stats-title">📊 Le tue statistiche</h3>
+        <h3 class="stats-title">Le tue statistiche</h3>
       </div>
 
       <!-- STATS COMPATTE -->
@@ -33,7 +24,7 @@
         
         <!-- SESSIONI COMPLETATE -->
         <div class="stat-item">
-          <div class="stat-icon">🎯</div>
+          <div class="stat-icon">✅</div>
           <div class="stat-content">
             <div class="stat-value">{{ totalSessions }}</div>
             <div class="stat-label">sessioni completate</div>

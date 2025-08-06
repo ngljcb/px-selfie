@@ -62,12 +62,6 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ==================== CONTROLLI UI ====================
-
-  refreshStats(): void {
-    this.loadStatistics();
-  }
-
   // ==================== GETTERS PER TEMPLATE ====================
 
   get totalSessions(): number {
