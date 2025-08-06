@@ -11,7 +11,7 @@ import { AuthService } from '../../service/auth.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  email = '';
+  username = '';
   password = '';
   loginError: string | null = null;
 
@@ -23,13 +23,16 @@ export class LoginComponent {
   onSubmit(): void {
     this.loginError = null;
 
-    if (!this.email || !this.password) {
+    if (!this.username || !this.password) {
       this.loginError = 'Tutti i campi sono obbligatori.';
       return;
     }
 
-    this.authService.login(this.email, this.password).subscribe({
-      next: () => {
+    this.authService.login(this.username, this.password).subscribe({
+      next: (res) => {
+        if (res?.user?.username) {
+          sessionStorage.setItem('username', res.user.username);
+        }
         this.router.navigate(['/']);
       },
       error: (err: any) => {

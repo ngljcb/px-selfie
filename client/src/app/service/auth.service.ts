@@ -7,17 +7,25 @@ import { environment } from '../../environments/environment';
 export class AuthService {
   constructor(private http: HttpClient) {}
 
-  register(email: string, username: string, password: string): Observable<any> {
+  register(
+    email: string,
+    username: string,
+    password: string,
+    name: string,
+    birthday: string
+  ): Observable<any> {
     return this.http.post(`${environment.API_BASE_URL}/api/auth/register`, {
       email,
-      username,
-      password
+      password,
+      username,      
+      name,
+      birthday
     }, { withCredentials: true });
   }
 
-  login(email: string, password: string): Observable<any> {
+  login(username: string, password: string): Observable<any> {
     return this.http.post(`${environment.API_BASE_URL}/api/auth/login`, {
-      email,
+      username,
       password
     }, { withCredentials: true });
   }
