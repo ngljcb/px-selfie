@@ -3,10 +3,14 @@ const supabase = require('../persistence/supabase');
 const cookie = require('cookie');
 
 async function register(req, res) {
-  const { email, password, username } = req.body;
+  const { email, password, username, name, birthday } = req.body;
+
+  if (!email || !password || !username || !name || !birthday) {
+    return res.status(400).json({ error: 'All fields are required: email, password, username, name, birthday' });
+  }
 
   try {
-    const { user, access_token } = await authService.register(email, password, username);
+    const { user, access_token } = await authService.register(email, password, username, name, birthday);
 
     res.setHeader('Set-Cookie', cookie.serialize('access_token', access_token, {
       httpOnly: true,
@@ -23,10 +27,10 @@ async function register(req, res) {
 }
 
 async function login(req, res) {
-  const { email, password } = req.body;
+  const { username, password } = req.body;
 
   try {
-    const { user, access_token } = await authService.login(email, password);
+    const { user, access_token } = await authService.login(username, password);
 
     res.setHeader('Set-Cookie', cookie.serialize('access_token', access_token, {
       httpOnly: true,
