@@ -57,9 +57,9 @@
     }
 
     &:disabled {
-      background: #ccc;
+      background: linear-gradient(to bottom, #ffd4aa, #ffb366);
       cursor: not-allowed;
-      color: #666;
+      color: #fcf0b6;
       box-shadow: none;
     }
   }

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { CalendarViewComponent } from './calendar/calendar-view/calendar-view.component';
+import { CalendarCreateComponent } from './calendar/calendar-create/calendar-create.component';
 import { HomeViewComponent } from './home/home-view/home-view.component';
 import { NotesViewComponent } from './notes/notes-view/notes-view.component';
 import { NoteEditorComponent } from './notes/note-editor/note-editor.component';
@@ -62,5 +63,5 @@ export const routes: Routes = [
     path: 'timer',
     component: TimerViewComponent,
     canActivate: [AuthGuard]
-  },
+  }
 ];

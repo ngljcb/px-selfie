@@ -1,18 +1,22 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarOptions } from '@fullcalendar/core';
+import { CalendarCreateComponent } from '../calendar-create/calendar-create.component';
 
 @Component({
   selector: 'app-calendar-view',
   standalone: true,
-  imports: [FullCalendarModule],
+  imports: [FullCalendarModule, CommonModule, CalendarCreateComponent],
   templateUrl: './calendar-view.component.html',
   styleUrl: './calendar-view.component.scss'
 })
 export class CalendarViewComponent {
+  showCreate = false;
+  selectedDate: string = '';
 
   calendarOptions: CalendarOptions = {
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -32,6 +36,17 @@ export class CalendarViewComponent {
     ],
     editable: true,
     selectable: true,
-    height: 'full'
+    height: 'full',
+    dateClick: this.handleDateClick.bind(this)
   };
+
+  handleDateClick(arg: any): void {
+    this.selectedDate = arg.dateStr; // formato YYYY-MM-DD
+    this.showCreate = true;
+  }
+
+  closeCreate(): void {
+    this.showCreate = false;
+    this.selectedDate = '';
+  }
 }

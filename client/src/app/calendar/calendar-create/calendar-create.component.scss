@@ -1,0 +1,185 @@
+.calendar-create-wrapper {
+  display: flex;
+  margin-top: 1rem;
+  padding: 1rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  form {
+    width: 700px;              // ✅ Aumentata larghezza
+    min-height: 500px;         // ✅ Aumentata altezza minima
+    max-height: 90vh;          // ✅ Altezza responsiva
+    overflow-y: auto;          // ✅ Scroll se contenuto lungo
+    background-color: #fcf0b6;
+    max-width: 1000px;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.1rem;
+    text-align: center;
+    color: #5c3b00;
+  }
+
+  .form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #444;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  input,
+  select {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    background-color: white;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus,
+  select:focus {
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
+    outline: none;
+  }
+
+  .row-group {
+    display: flex;
+    gap: 1rem;
+
+    div {
+      flex: 1;
+    }
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #444;
+    justify-content: flex-start;
+    margin-top: 0.5rem;
+  }
+
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+
+  .checkbox-row label {
+    flex: 1; /* ✅ Così non forza larghezze strane */
+  }
+
+  .button-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+
+    button {
+      padding: 0.6rem 2rem;
+      border-radius: 0.5rem;
+      font-weight: bold;
+      font-size: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      transition: background 0.3s, transform 0.1s;
+      border: none;
+      min-width: 120px;
+    }
+
+    button[type='submit'] {
+      background: linear-gradient(to bottom, #ffa94d, #e65c00);
+      color: white;
+    }
+
+    button[type='submit']:hover {
+      background: linear-gradient(to bottom, #ffb366, #ff6f1a);
+    }
+
+    button[type='button'] {
+      background: linear-gradient(to bottom, #ffd0a2, #f79a64);
+      color: #5c3b00;
+    }
+
+    button[type='button']:hover {
+      background: linear-gradient(to bottom, #ffc386, #ff9b37);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .calendar-create-wrapper {
+    form {
+      width: 90vw;        // Aumenta larghezza (più spazio sullo schermo)
+      min-height: 85vh;   // Aumenta altezza (più spazio per scroll)
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    h2 {
+      font-size: 1.3rem;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: #444;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .row-group {
+      flex-direction: column;
+    }
+
+    .button-row {
+      flex-direction: column;
+      align-items: stretch;
+
+      button {
+        width: 100%;
+      }
+    }
+
+    .checkbox-row {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-row input {
+      width: auto;
+      margin-right: 0.5rem;
+    }
+
+    .checkbox-row label {
+      flex: unset;
+      width: auto;
+    }
+
+    select {
+      max-width: 100%;
+    }
+  }
+}

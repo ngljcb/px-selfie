@@ -2,4 +2,12 @@
   <div class="h-full w-full justify-center flex-1 overflow-hidden px-10 py-10 sm:py-5 sm:px-5">
     <full-calendar [options]="calendarOptions"></full-calendar>
   </div>
+
+  <!-- Overlay calendar-create -->
+  <div class="calendar-overlay" *ngIf="showCreate">
+    <div class="calendar-create-wrapper">
+      <button class="close-button" (click)="closeCreate()">×</button>
+      <app-calendar-create [selectedDate]="selectedDate" (chiudi)="closeCreate()"></app-calendar-create>
+    </div>
+  </div>
 </main>
