@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../service/auth.service';
-import { StatisticsService } from '../../service/statistics.service';
 
 @Component({
   selector: 'app-login',
@@ -18,10 +17,9 @@ export class LoginComponent {
 
   constructor(
     private authService: AuthService,
-    private router: Router,
-    private statisticsService: StatisticsService
+    private router: Router
   ) {}
-  
+
   onSubmit(): void {
     this.loginError = null;
 
@@ -32,15 +30,10 @@ export class LoginComponent {
 
     this.authService.login(this.username, this.password).subscribe({
       next: (res) => {
-        this.statisticsService.checkLoginStreak().subscribe({
-          next: (streakInfo) => {
-            if (res?.user?.username) {
-              sessionStorage.setItem('username', res.user.username);
-            }
-            console.log('Controllo streak completato:', streakInfo);
-            this.router.navigate(['/']);
-          }
-        });
+        if (res?.user?.username) {
+          sessionStorage.setItem('username', res.user.username);
+        }
+        this.router.navigate(['/']);
       },
       error: (err: any) => {
         console.error('Errore login:', err);
