@@ -2,47 +2,40 @@
   <div class="modal-container">
     <div class="calendar-create-wrapper">
       <form (ngSubmit)="onSubmit()">
-        <h2>Nuovo {{ type }}</h2>
+        <h2>Creazione {{ type }}</h2>
 
         <div class="form-grid">
           <div>
-            <label>Tipo:</label>
+            <label>Tipo *</label>
             <select [(ngModel)]="type" name="type">
+              <option disabled selected value=""> -- Seleziona un tipo -- </option>
               <option value="evento">Evento</option>
-              <option value="attività">Attività</option>
+              <option value="attivita">Attività</option>
             </select>
           </div>
 
           <div>
-            <label>Titolo:</label>
+            <label>Titolo *</label>
             <input [(ngModel)]="title" name="title" required />
           </div>
 
           <div>
-            <label>Luogo:</label>
+            <label>Luogo</label>
             <input [(ngModel)]="location" name="location" />
           </div>
 
           <div class="row-group">
             <div>
-              <label>Data:</label>
-              <input type="date" [(ngModel)]="dataInizio" name="dataInizio" required />
+              <label>Data e Ora inizio *</label>
+              <input type="datetime-local" [(ngModel)]="dataOraInizio" name="dataOraInizio" required />
             </div>
             <div>
-              <label>Data fine (opzionale):</label>
-              <input type="date" [(ngModel)]="dataFine" name="dataFine" />
+              <label>Data e Ora fine</label>
+              <input type="datetime-local" [(ngModel)]="dataOraFine" name="dataOraFine" />
             </div>
           </div>
-
-          <div class="row-group">
-            <div>
-              <label>Orario:</label>
-              <input type="time" [(ngModel)]="time" name="time" />
-            </div>
-            <div>
-              <label>Durata (ore):</label>
-              <input type="number" min="1" [(ngModel)]="duration" name="duration" />
-            </div>
+          <div *ngIf="erroreData" class="error-msg">
+            La data di inizio deve essere precedente a quella di fine.
           </div>
 
           <div class="checkbox-row">
@@ -50,30 +43,40 @@
             <label for="isRecurring">Evento ricorrente</label>
           </div>
 
-          <div *ngIf="isRecurring" class="row-group">
-            <div>
-              <label>Frequenza:</label>
-              <select [(ngModel)]="frequenza" name="frequenza">
-                <option value="">Seleziona</option>
-                <option value="giornaliera">Giornaliera</option>
-                <option value="settimanale">Settimanale</option>
-                <option value="mensile">Mensile</option>
-              </select>
-            </div>
-            <div>
-              <label>Numero ripetizioni:</label>
-              <input type="number" min="1" [(ngModel)]="ripetizioni" name="ripetizioni" />
+          <div *ngIf="isRecurring" class="giorni-frequenza">
+            <label>Giorni della settimana:</label>
+            <div class="checkbox-giorni">
+              <label *ngFor="let giorno of giorniSettimana">
+                <input type="checkbox" [(ngModel)]="giorniSelezionati[giorno]" name="{{giorno}}" />
+                {{ giorno }}
+              </label>
             </div>
           </div>
 
-          <div *ngIf="isRecurring">
-            <label>Oppure fino al:</label>
-            <input type="date" [(ngModel)]="fineRicorrenza" name="fineRicorrenza" />
+          <div *ngIf="isRecurring" class="row-group">
+            <div>
+              <label>Tipo di ripetizione *</label>
+              <select [(ngModel)]="tipoRipetizione" name="tipoRipetizione">
+                <option value="nulla"> Non ripetibile </option>
+                <option value="numeroFisso">Numero fisso</option>
+                <option value="scadenza">Data Scadenza</option>
+              </select>
+            </div>
+            <div *ngIf="tipoRipetizione == 'numeroFisso'">
+              <label>Numero ripetizioni</label>
+              <input type="number" min="1" [(ngModel)]="ripetizioni" name="ripetizioni" />
+            </div>
+            <div *ngIf="tipoRipetizione == 'scadenza'">
+              <label>Data scadenza</label>
+              <input type="date" [(ngModel)]="fineRicorrenza" name="fineRicorrenza" />
+            </div>
+
           </div>
+
         </div>
 
         <div class="button-row">
-          <button type="submit">Salva</button>
+          <button type="submit"><i class="far fa-save"></i> Salva</button>
         </div>
       </form>
     </div>

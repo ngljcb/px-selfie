@@ -1,3 +1,4 @@
+// calendar-create.component.scss
 .calendar-create-wrapper {
   display: flex;
   margin-top: 1rem;
@@ -7,10 +8,10 @@
   justify-content: center;
 
   form {
-    width: 700px;              // ✅ Aumentata larghezza
-    min-height: 500px;         // ✅ Aumentata altezza minima
-    max-height: 90vh;          // ✅ Altezza responsiva
-    overflow-y: auto;          // ✅ Scroll se contenuto lungo
+    width: 700px;
+    min-height: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
     background-color: #fcf0b6;
     max-width: 1000px;
     padding: 2rem;
@@ -88,7 +89,7 @@
   }
 
   .checkbox-row label {
-    flex: 1; /* ✅ Così non forza larghezze strane */
+    flex: 1;
   }
 
   .button-row {
@@ -127,13 +128,51 @@
       background: linear-gradient(to bottom, #ffc386, #ff9b37);
     }
   }
+
+  .giorni-frequenza {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #444;
+      margin-bottom: 0.3rem;
+    }
+
+    .checkbox-giorni {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      input[type='checkbox'] {
+        margin: 0;
+        width: auto;
+      }
+    }
+  }
+}
+
+.error-msg {
+  color: #e53935;
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
   .calendar-create-wrapper {
     form {
-      width: 90vw;        // Aumenta larghezza (più spazio sullo schermo)
-      min-height: 85vh;   // Aumenta altezza (più spazio per scroll)
+      width: 90vw;
+      min-height: 65vh;
       max-height: 90vh;
       overflow-y: auto;
     }
@@ -180,6 +219,11 @@
 
     select {
       max-width: 100%;
+    }
+
+    .giorni-frequenza .checkbox-giorni {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 }
