@@ -12,7 +12,7 @@ import { StatisticsService } from '../../service/statistics.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  email = '';
+  username = '';
   password = '';
   loginError: string | null = null;
 
@@ -25,22 +25,19 @@ export class LoginComponent {
   onSubmit(): void {
     this.loginError = null;
 
-    if (!this.email || !this.password) {
+    if (!this.username || !this.password) {
       this.loginError = 'Tutti i campi sono obbligatori.';
       return;
     }
 
-    this.authService.login(this.email, this.password).subscribe({
-      next: () => {
-        // Login riuscito, ora controlla lo streak
+    this.authService.login(this.username, this.password).subscribe({
+      next: (res) => {
         this.statisticsService.checkLoginStreak().subscribe({
           next: (streakInfo) => {
+            if (res?.user?.username) {
+              sessionStorage.setItem('username', res.user.username);
+            }
             console.log('Controllo streak completato:', streakInfo);
-            this.router.navigate(['/']);
-          },
-          error: (streakError) => {
-            console.error('Errore nel controllo dello streak (non bloccante):', streakError);
-            // Non bloccare il login per questo errore
             this.router.navigate(['/']);
           }
         });

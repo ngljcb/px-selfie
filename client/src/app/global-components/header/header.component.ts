@@ -11,6 +11,7 @@ import { AuthService } from '../../service/auth.service';
 })
 export class HeaderComponent {
   menuOpen = false;
+  username = sessionStorage.getItem('username')?.toUpperCase();
 
   navLinks = [
     { label: 'Calendar', href: 'calendar' },
@@ -34,9 +35,12 @@ export class HeaderComponent {
 
   onLogout(): void {
     this.authService.logout().subscribe({
-      next: () => this.router.navigate(['/login']),
-      error: err => {
-        console.error('Errore logout:', err);
+      next: () => {
+        sessionStorage.clear();
+        this.router.navigate(['/login']);
+      },
+      error: (err) => {
+        console.error('Errore durante il logout:', err);
         this.router.navigate(['/login']);
       }
     });
