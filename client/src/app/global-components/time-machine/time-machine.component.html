@@ -1,0 +1,11 @@
+<div class="time-machine-floating">
+  <div class="form-container" *ngIf="showForm">
+    <input type="datetime-local" [(ngModel)]="selectedDateTime" />
+    <button class="btn-set" (click)="setDate()">Set</button>
+    <button class="btn-reset" (click)="resetDate()">Reset</button>
+  </div>
+
+  <button class="icon-button" (click)="toggleForm()">
+    <img src="assets/hourglass.svg" alt="Time Machine" />
+  </button>
+</div>
