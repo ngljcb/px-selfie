@@ -12,9 +12,9 @@ import { CommonModule } from '@angular/common';
 
 import { 
   NotePreview, 
-  NoteType, 
   NOTE_TYPES, 
-  NOTES_CONFIG 
+  NOTES_CONFIG, 
+  AccessibilityType
 } from '../../model/note.interface';
 
 @Component({
@@ -27,12 +27,12 @@ export class NoteBoxComponent {
   
   @Input() note!: NotePreview;
   
-  // Eventi per le azioni
-  @Output() onEdit = new EventEmitter<number>();
-  @Output() onDuplicate = new EventEmitter<number>();
-  @Output() onCopy = new EventEmitter<number>();
-  @Output() onDelete = new EventEmitter<number>();
-  @Output() onView = new EventEmitter<number>(); // Per apertura in sola lettura
+  // Eventi per le azioni - aggiornati per usare string invece di number
+  @Output() onEdit = new EventEmitter<string>();
+  @Output() onDuplicate = new EventEmitter<string>();
+  @Output() onCopy = new EventEmitter<string>();
+  @Output() onDelete = new EventEmitter<string>();
+  @Output() onView = new EventEmitter<string>();
 
   // Stati componente
   showMenu = false;
@@ -69,7 +69,14 @@ export class NoteBoxComponent {
   /**
    * Gestisce il click sulla card per aprire la nota
    */
-  onCardClick(): void {
+  onCardClick(event?: Event): void {
+    if (event) {
+      // Previeni il click se si sta cliccando su un bottone
+      const target = event.target as HTMLElement;
+      if (target.closest('button') || target.closest('.menu-container')) {
+        return;
+      }
+    }
     this.onView.emit(this.note.id);
   }
 
@@ -131,7 +138,7 @@ export class NoteBoxComponent {
       return;
     }
 
-    const confirmMessage = `Sei sicuro di voler eliminare la nota "${this.note.titolo}"?\n\nQuesta azione non può essere annullata.`;
+    const confirmMessage = `Sei sicuro di voler eliminare la nota "${this.note.title}"?\n\nQuesta azione non può essere annullata.`;
     
     if (confirm(confirmMessage)) {
       this.onDelete.emit(this.note.id);
@@ -169,13 +176,13 @@ export class NoteBoxComponent {
     this.showMenu = false;
     
     try {
-      const content = `# ${this.note.titolo}\n\n${this.note.preview}\n\n---\nCategoria: ${this.note.categoria}\nData: ${this.formatDate(this.note.data_ultima_modifica)}`;
+      const content = `# ${this.note.title}\n\n${this.note.preview}\n\n---\nCategoria: ${this.note.category}\nCreata: ${this.formatDate(this.note.created_at)}\nUltima modifica: ${this.formatDate(this.note.last_modify)}`;
       const blob = new Blob([content], { type: 'text/markdown' });
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${this.note.titolo.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
+      link.download = `${this.note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
       link.click();
       
       URL.revokeObjectURL(url);
@@ -203,17 +210,17 @@ export class NoteBoxComponent {
   /**
    * Ottiene la classe CSS per il badge del tipo
    */
-  getTypeBadgeClass(tipo: NoteType): string {
-    const baseClasses = 'border';
+  getTypeBadgeClass(tipo: AccessibilityType): string {
+    const baseClasses = 'border transition-colors';
     
     switch (tipo) {
-      case 'privato':
+      case 'private':
         return `${baseClasses} bg-gray-100 text-gray-700 border-gray-300`;
-      case 'pubblico':
+      case 'public':
         return `${baseClasses} bg-blue-100 text-blue-700 border-blue-300`;
-      case 'condiviso':
+      case 'authorized':
         return `${baseClasses} bg-green-100 text-green-700 border-green-300`;
-      case 'di_gruppo':
+      case 'group':
         return `${baseClasses} bg-purple-100 text-purple-700 border-purple-300`;
       default:
         return `${baseClasses} bg-gray-100 text-gray-700 border-gray-300`;
@@ -221,17 +228,9 @@ export class NoteBoxComponent {
   }
 
   /**
-   * Ottiene l'icona per il tipo di nota
-   */
-  getTypeIcon(tipo: NoteType): string {
-    const noteType = NOTE_TYPES.find(t => t.value === tipo);
-    return noteType?.icon || '📝';
-  }
-
-  /**
    * Ottiene l'etichetta per il tipo di nota
    */
-  getTypeLabel(tipo: NoteType): string {
+  getTypeLabel(tipo: AccessibilityType): string {
     const noteType = NOTE_TYPES.find(t => t.value === tipo);
     return noteType?.label || 'Sconosciuto';
   }
@@ -280,6 +279,28 @@ export class NoteBoxComponent {
   }
 
   /**
+   * Calcola il tempo di lettura stimato
+   */
+  getReadingTime(): number {
+    const wordsPerMinute = 200;
+    const words = this.note.contentLength / 5; // Stima approssimativa: 5 caratteri per parola
+    return Math.max(1, Math.ceil(words / wordsPerMinute));
+  }
+
+  /**
+   * Ottiene la priorità visiva della nota basata su tipo e data
+   */
+  getNotePriority(): 'high' | 'medium' | 'low' {
+    if (this.isRecentlyModified(this.note.last_modify)) {
+      return 'high';
+    }
+    if (this.note.accessibility === 'authorized' || this.note.accessibility === 'group') {
+      return 'medium';
+    }
+    return 'low';
+  }
+
+  /**
    * Mostra messaggio di feedback temporaneo
    */
   private showFeedback(message: string, type: 'success' | 'error'): void {
@@ -300,14 +321,38 @@ export class NoteBoxComponent {
     textArea.value = text;
     textArea.style.position = 'absolute';
     textArea.style.left = '-999999px';
+    textArea.style.opacity = '0';
     
     document.body.appendChild(textArea);
     textArea.select();
+    textArea.setSelectionRange(0, 99999); // Per dispositivi mobile
     
     try {
       document.execCommand('copy');
     } finally {
       document.body.removeChild(textArea);
+    }
+  }
+
+  /**
+   * Condivide la nota usando l'API Web Share (se disponibile)
+   */
+  async shareNoteNative(): Promise<void> {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: this.note.title,
+          text: this.note.preview,
+          url: window.location.href // TODO: URL specifica della nota
+        });
+        this.showFeedback('Nota condivisa!', 'success');
+      } catch (error) {
+        console.error('Errore nella condivisione nativa:', error);
+        this.showFeedback('Errore nella condivisione', 'error');
+      }
+    } else {
+      // Fallback alla condivisione personalizzata
+      this.shareNote(new Event('click'));
     }
   }
 }

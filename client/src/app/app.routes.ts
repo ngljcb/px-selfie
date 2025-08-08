@@ -25,27 +25,29 @@ export const routes: Routes = [
   {
     path: 'notes',
     component: NotesViewComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
   },
   {
     path: 'notes/new',
     component: NoteEditorComponent,
     canActivate: [AuthGuard],
-    title: 'Nuova Nota - SELFIE',
-    data: { mode: 'create' }
+  },
+  {
+    path: 'notes/:id',
+    component: NoteEditorComponent,
+    canActivate: [AuthGuard],
+    data: { mode: 'view' }
   },
   {
     path: 'notes/:id/edit',
     component: NoteEditorComponent,
     canActivate: [AuthGuard],
-    title: 'Modifica Nota - SELFIE',
     data: { mode: 'edit' }
   },
   {
     path: 'notes/:id/duplicate',
     component: NoteEditorComponent,
     canActivate: [AuthGuard],
-    title: 'Duplica Nota - SELFIE',
     data: { mode: 'duplicate' }
   },
   {
@@ -56,11 +58,11 @@ export const routes: Routes = [
   {
     path: 'calendar',
     component: CalendarViewComponent,
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard],
   },
   {
     path: 'timer',
     component: TimerViewComponent,
-    canActivate: [AuthGuard]
-  },
+    canActivate: [AuthGuard],
+  }
 ];

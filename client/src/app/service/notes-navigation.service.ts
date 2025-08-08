@@ -1,4 +1,4 @@
-// notes/client/services/notes-navigation.service.ts
+// notes/client/service/notes-navigation.service.ts
 
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
@@ -13,6 +13,8 @@ export class NotesNavigationService {
     private router: Router,
     private location: Location
   ) {}
+
+  // ========== NAVIGAZIONE NOTE ==========
 
   /**
    * Naviga alla vista principale delle note
@@ -29,24 +31,25 @@ export class NotesNavigationService {
   }
 
   /**
-   * Naviga alla modifica di una nota esistente
+   * Naviga alla visualizzazione di una nota specifica
    */
-  goToEditNote(noteId: number): void {
+  goToViewNote(noteId: string): void {
+    // Per ora reindirizza alla modifica, ma potremmo aggiungere una route view specifica
     this.router.navigate(['/notes', noteId, 'edit']);
   }
 
   /**
-   * Naviga alla duplicazione di una nota esistente
+   * Naviga alla modifica di una nota
    */
-  goToDuplicateNote(noteId: number): void {
-    this.router.navigate(['/notes', noteId, 'duplicate']);
+  goToEditNote(noteId: string): void {
+    this.router.navigate(['/notes', noteId, 'edit']);
   }
 
   /**
-   * Naviga alla visualizzazione di una nota in sola lettura
+   * Naviga alla duplicazione di una nota
    */
-  goToViewNote(noteId: number): void {
-    this.router.navigate(['/notes', noteId, 'view']);
+  goToDuplicateNote(noteId: string): void {
+    this.router.navigate(['/notes', noteId, 'duplicate']);
   }
 
   /**
@@ -57,46 +60,32 @@ export class NotesNavigationService {
   }
 
   /**
-   * Controlla se siamo nella sezione notes
+   * Naviga alla home
    */
-  isInNotesSection(): boolean {
+  goToHome(): void {
+    this.router.navigate(['/']);
+  }
+
+  // ========== UTILITY METHODS ==========
+
+  /**
+   * Verifica se siamo attualmente nella vista note
+   */
+  isOnNotesView(): boolean {
     return this.router.url.startsWith('/notes');
   }
 
   /**
-   * Ottiene la modalità corrente dell'editor basata sulla route
+   * Ottiene l'URL corrente
    */
-  getCurrentEditorMode(): 'create' | 'edit' | 'duplicate' | 'view' | null {
-    const url = this.router.url;
-    
-    if (url === '/notes/new') {
-      return 'create';
-    } else if (url.includes('/edit')) {
-      return 'edit';
-    } else if (url.includes('/duplicate')) {
-      return 'duplicate';
-    } else if (url.includes('/view')) {
-      return 'view';
-    }
-    
-    return null;
+  getCurrentUrl(): string {
+    return this.router.url;
   }
 
   /**
-   * Estrae l'ID della nota dalla route corrente
+   * Naviga con parametri di query
    */
-  getCurrentNoteId(): number | null {
-    const url = this.router.url;
-    const segments = url.split('/');
-    
-    // Pattern: /notes/:id/edit o /notes/:id/duplicate o /notes/:id/view
-    if (segments.length >= 3 && segments[1] === 'notes') {
-      const idSegment = segments[2];
-      const noteId = parseInt(idSegment, 10);
-      
-      return !isNaN(noteId) ? noteId : null;
-    }
-    
-    return null;
+  navigateWithQuery(route: string[], queryParams: any): void {
+    this.router.navigate(route, { queryParams });
   }
 }

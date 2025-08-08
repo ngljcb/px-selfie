@@ -3,22 +3,23 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
 
 // Import del componente NoteBoxComponent
-import { NoteBoxComponent } from '../note-box/note-box.component'; // Aggiungi questa riga
+import { NoteBoxComponent } from '../note-box/note-box.component';
 
 // Import modelli e servizi
 import { 
   NotePreview, 
   Category, 
   NotesFilter, 
-  NOTE_TYPES, 
   SORT_OPTIONS, 
-  NoteType 
+  AccessibilityType,
+  NOTE_TYPES,
+  SortType
 } from '../../model/note.interface';
 import { NotesNavigationService } from '../../service/notes-navigation.service';
-// import { NotesClientService } from '../../services/notes-client.service'; // Da implementare
+import { NotesService } from '../../service/notes.service';
 
 @Component({
   selector: 'app-notes-view',
@@ -26,7 +27,7 @@ import { NotesNavigationService } from '../../service/notes-navigation.service';
   imports: [
     CommonModule, 
     FormsModule,
-    NoteBoxComponent // Aggiungi NoteBoxComponent qui
+    NoteBoxComponent
   ],
   templateUrl: './notes-view.component.html'
 })
@@ -41,12 +42,13 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   // Stati dell'interfaccia
   isLoading = false;
   errorMessage = '';
+  showSuccessMessage = '';
 
   // Filtri
   searchQuery = '';
   selectedCategory = '';
-  selectedType: NoteType | '' = '';
-  sortBy: 'alfabetico' | 'data' | 'lunghezza' = 'data';
+  selectedType: AccessibilityType | '' = '';
+  selectedSortOption = 'data-desc'; // Formato: 'sortBy-sortOrder'
 
   // Costanti per il template
   noteTypes = NOTE_TYPES;
@@ -57,16 +59,16 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   private searchSubject = new Subject<string>();
 
   constructor(
-    private navigationService: NotesNavigationService
-    // private notesService: NotesClientService // Da implementare
+    private navigationService: NotesNavigationService,
+    private notesService: NotesService,
   ) {
     // Setup search debouncing
     this.searchSubject.pipe(
-      debounceTime(300), // Aspetta 300ms dopo l'ultimo input
-      distinctUntilChanged(), // Solo se il valore è cambiato
+      debounceTime(300),
+      distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(searchTerm => {
-      this.performSearch(searchTerm);
+      this.applyFilters();
     });
   }
 
@@ -79,6 +81,8 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // ========== CARICAMENTO DATI ==========
+
   /**
    * Carica i dati iniziali (note e categorie)
    */
@@ -86,57 +90,43 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // TODO: Implementare chiamate al service
-    // this.notesService.getAllNotes().subscribe({
-    //   next: (notes) => {
-    //     this.allNotes = notes;
-    //     this.totalNotes = notes.length;
-    //     this.applyFilters();
-    //     this.isLoading = false;
-    //   },
-    //   error: (error) => {
-    //     this.errorMessage = 'Errore nel caricamento delle note';
-    //     this.isLoading = false;
-    //     console.error('Error loading notes:', error);
-    //   }
-    // });
+    // Carica sia note che categorie in parallelo
+    combineLatest([
+      this.notesService.getNotes(this.buildCurrentFilter()),
+    ]).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: ([notesResponse]) => {
+        if (notesResponse) {
+          this.allNotes = notesResponse.notes;
+          this.totalNotes = notesResponse.total;
+          this.applyFilters();
+        }
 
-    // this.loadCategories();
-
-    // Per ora simula il caricamento
-    setTimeout(() => {
-      this.isLoading = false;
-      this.applyFilters();
-    }, 1000);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Errore nel caricamento dei dati:', error);
+        this.errorMessage = 'Errore nel caricamento delle note';
+        this.isLoading = false;
+      }
+    });
   }
 
   /**
-   * Carica le categorie disponibili
+   * Riprova il caricamento in caso di errore
    */
-  private loadCategories(): void {
-    // TODO: Implementare
-    // this.notesService.getAllCategories().subscribe({
-    //   next: (categories) => {
-    //     this.categories = categories;
-    //   },
-    //   error: (error) => {
-    //     console.error('Error loading categories:', error);
-    //   }
-    // });
+  retryLoadNotes(): void {
+    this.loadInitialData();
   }
+
+  // ========== GESTIONE FILTRI ==========
 
   /**
    * Gestisce il cambio della query di ricerca con debouncing
    */
   onSearchChange(): void {
     this.searchSubject.next(this.searchQuery);
-  }
-
-  /**
-   * Esegue la ricerca effettiva
-   */
-  private performSearch(searchTerm: string): void {
-    this.applyFilters();
   }
 
   /**
@@ -147,7 +137,14 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Applica tutti i filtri e l'ordinamento
+   * Gestisce il cambio dell'ordinamento
+   */
+  onSortChange(): void {
+    this.applyFilters();
+  }
+
+  /**
+   * Applica tutti i filtri e l'ordinamento localmente
    */
   private applyFilters(): void {
     let filtered = [...this.allNotes];
@@ -156,47 +153,72 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       filtered = filtered.filter(note => 
-        note.titolo.toLowerCase().includes(query) ||
+        note.title.toLowerCase().includes(query) ||
         note.preview.toLowerCase().includes(query) ||
-        note.categoria.toLowerCase().includes(query)
+        (note.category && note.category.toLowerCase().includes(query))
       );
     }
 
     // Applica filtro categoria
     if (this.selectedCategory) {
-      filtered = filtered.filter(note => note.categoria === this.selectedCategory);
+      filtered = filtered.filter(note => note.category === this.selectedCategory);
     }
 
     // Applica filtro tipo
     if (this.selectedType) {
-      filtered = filtered.filter(note => note.tipo === this.selectedType);
+      filtered = filtered.filter(note => note.accessibility === this.selectedType);
     }
 
     // Applica ordinamento
-    filtered = this.sortNotes(filtered, this.sortBy);
+    filtered = this.applySorting(filtered);
 
     this.filteredNotes = filtered;
   }
 
   /**
-   * Ordina le note secondo il criterio selezionato
+   * Applica l'ordinamento alle note
    */
-  private sortNotes(notes: NotePreview[], sortBy: 'alfabetico' | 'data' | 'lunghezza'): NotePreview[] {
-    return notes.sort((a, b) => {
+  private applySorting(notes: NotePreview[]): NotePreview[] {
+    if (!this.selectedSortOption) {
+      return notes;
+    }
+
+    const [sortBy, sortOrder] = this.selectedSortOption.split('-') as [SortType, 'asc' | 'desc'];
+
+    return [...notes].sort((a, b) => {
+      let comparison = 0;
+      
       switch (sortBy) {
         case 'alfabetico':
-          return a.titolo.localeCompare(b.titolo);
+          comparison = a.title.toLowerCase().localeCompare(b.title.toLowerCase(), 'it');
+          break;
         
         case 'data':
-          return new Date(b.data_ultima_modifica).getTime() - new Date(a.data_ultima_modifica).getTime();
+          comparison = new Date(a.last_modify).getTime() - new Date(b.last_modify).getTime();
+          break;
         
         case 'lunghezza':
-          return b.contentLength - a.contentLength;
-        
-        default:
-          return 0;
+          comparison = a.contentLength - b.contentLength;
+          break;
       }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
     });
+  }
+
+  /**
+   * Costruisce il filtro attuale per le query al server
+   */
+  private buildCurrentFilter(): NotesFilter {
+    const [sortBy, sortOrder] = (this.selectedSortOption || 'data-desc').split('-') as [SortType, 'asc' | 'desc'];
+    
+    return {
+      searchQuery: this.searchQuery,
+      category: this.selectedCategory || undefined,
+      accessibility: this.selectedType || undefined,
+      sortBy,
+      sortOrder
+    };
   }
 
   /**
@@ -221,15 +243,8 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.searchQuery = '';
     this.selectedCategory = '';
     this.selectedType = '';
-    this.sortBy = 'data';
+    this.selectedSortOption = 'data-desc';
     this.applyFilters();
-  }
-
-  /**
-   * Riprova il caricamento in caso di errore
-   */
-  retryLoadNotes(): void {
-    this.loadInitialData();
   }
 
   // ========== AZIONI NOTE ==========
@@ -242,86 +257,134 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Crea un nuovo gruppo (da implementare)
+   * Crea un nuovo gruppo - placeholder per ora
    */
   createGroup(): void {
-    // TODO: Implementare logica per creare gruppo
+    // TODO: Implementare modal o navigazione per creare gruppo
     console.log('Creazione gruppo - da implementare');
-    
-    // Placeholder per ora
-    alert('Funzionalità "Crea Gruppo" in arrivo!');
+    this.showSuccessMessage = 'Funzionalità "Crea Gruppo" sarà disponibile a breve!';
+    this.clearMessages();
+  }
+
+  /**
+   * Crea una nuova categoria
+   */
+  createCategory(): void {
+    // TODO: Implementare modal per creare categoria
+    console.log('Creazione categoria - da implementare');
+    this.showSuccessMessage = 'Funzionalità "Crea Categoria" sarà disponibile a breve!';
+    this.clearMessages();
+  }
+
+  /**
+   * Visualizza una nota in sola lettura
+   */
+  viewNote(noteId: string): void {
+    this.navigationService.goToViewNote(noteId);
   }
 
   /**
    * Modifica una nota esistente
    */
-  editNote(noteId: number): void {
+  editNote(noteId: string): void {
     this.navigationService.goToEditNote(noteId);
   }
 
   /**
    * Duplica una nota esistente
    */
-  duplicateNote(noteId: number): void {
-    this.navigationService.goToDuplicateNote(noteId);
-    
-    // Oppure gestire direttamente qui:
-    // this.notesService.duplicateNote(noteId).subscribe({
-    //   next: () => {
-    //     this.loadInitialData(); // Ricarica la lista
-    //   },
-    //   error: (error) => {
-    //     console.error('Error duplicating note:', error);
-    //   }
-    // });
+  duplicateNote(noteId: string): void {
+    // to do
   }
 
   /**
    * Copia il contenuto di una nota negli appunti
    */
-  copyNote(noteId: number): void {
-    // TODO: Implementare con service
-    // this.notesService.copyNoteContent(noteId).then(() => {
-    //   // Mostra feedback positivo
-    //   this.showSuccessMessage('Contenuto copiato negli appunti!');
-    // }).catch(error => {
-    //   console.error('Error copying note:', error);
-    // });
-    
-    console.log('Copia nota ID:', noteId);
+  copyNote(noteId: string): void {
+    this.notesService.copyNoteContent(noteId).then(success => {
+      if (success) {
+        this.showSuccessMessage = 'Contenuto copiato negli appunti!';
+      } else {
+        this.errorMessage = 'Errore nel copiare il contenuto';
+      }
+      this.clearMessages();
+    });
   }
 
   /**
    * Elimina una nota
    */
-  deleteNote(noteId: number): void {
-    if (confirm('Sei sicuro di voler eliminare questa nota?')) {
-      // TODO: Implementare con service
-      // this.notesService.deleteNote(noteId).subscribe({
-      //   next: () => {
-      //     this.loadInitialData(); // Ricarica la lista
-      //   },
-      //   error: (error) => {
-      //     console.error('Error deleting note:', error);
-      //   }
-      // });
-      
-      console.log('Elimina nota ID:', noteId);
+  deleteNote(noteId: string): void {
+    if (!confirm('Sei sicuro di voler eliminare questa nota? L\'azione non può essere annullata.')) {
+      return;
     }
+
+    this.isLoading = true;
+    
+    this.notesService.deleteNote({ note_id: noteId }).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.showSuccessMessage = 'Nota eliminata con successo!';
+          this.loadInitialData(); // Ricarica le note
+        }
+        this.clearMessages();
+      },
+      error: (error) => {
+        console.error('Errore nell\'eliminazione:', error);
+        this.errorMessage = 'Errore nell\'eliminazione della nota';
+        this.isLoading = false;
+        this.clearMessages();
+      }
+    });
+  }
+
+  // ========== UTILITY METHODS ==========
+
+  /**
+   * Ottiene l'etichetta per un tipo di nota
+   */
+  getTypeLabel(tipo: AccessibilityType): string {
+    const noteType = NOTE_TYPES.find(t => t.value === tipo);
+    return noteType?.label || 'Sconosciuto';
   }
 
   /**
    * TrackBy function per ottimizzare il rendering della lista
    */
-  trackByNoteId(index: number, note: NotePreview): number {
+  trackByNoteId(index: number, note: NotePreview): string {
     return note.id;
   }
 
   /**
-   * Mostra messaggio di successo (utility per future implementazioni)
+   * Ottiene l'etichetta per l'opzione di ordinamento selezionata
    */
-  private showSuccessMessage(message: string): void {
-    // TODO: Implementare toast/snackbar
-    console.log('Success:', message);
+  getSortOptionLabel(){
+    // to do
+  }
+
+  /**
+   * Formatta il numero di note per la visualizzazione
+   */
+  getNotesCountText(): string {
+    const count = this.filteredNotes.length;
+    const total = this.totalNotes;
+    
+    if (count === total) {
+      return `${total} nota${total !== 1 ? 'e' : ''}`;
+    } else {
+      return `${count} di ${total} nota${total !== 1 ? 'e' : ''}`;
+    }
+  }
+
+  /**
+   * Nasconde i messaggi dopo un delay
+   */
+  private clearMessages(): void {
+    setTimeout(() => {
+      this.showSuccessMessage = '';
+      this.errorMessage = '';
+    }, 3000);
   }
 }
