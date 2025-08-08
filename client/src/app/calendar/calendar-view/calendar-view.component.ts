@@ -1,7 +1,6 @@
-// calendar-view.component.ts
-import { Component, OnInit, OnDestroy, ViewChild, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
+import { FullCalendarModule } from '@fullcalendar/angular';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -18,18 +17,23 @@ import { TimeMachineListenerDirective } from '../../directive/time-machine-liste
 })
 export class CalendarViewComponent implements OnInit, OnDestroy {
   private timeMachine = inject(TimeMachineService);
-
-  @ViewChild(FullCalendarComponent) fc!: FullCalendarComponent;
+  private cdr = inject(ChangeDetectorRef);
 
   calendarOptions!: CalendarOptions;
+  calendarVisible = true;
 
   ngOnInit(): void {
+    this.generateCalendarOptions();
+  }
+
+  private generateCalendarOptions(): void {
     const now = this.timeMachine.getNow();
 
     this.calendarOptions = {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
       initialDate: now,
       now: () => now,
+      nowIndicator: true,
       headerToolbar: {
         left: 'prev,next today',
         center: 'title',
@@ -49,18 +53,16 @@ export class CalendarViewComponent implements OnInit, OnDestroy {
     };
   }
 
-  // chiamata automaticamente dalla direttiva quando cambia la data virtuale
   applyVirtualNowToCalendar(): void {
-    const now = this.timeMachine.getNow();
-    const api = this.fc?.getApi();
-    if (!api) return;
+    this.calendarVisible = false;
+    this.cdr.detectChanges();
+    this.generateCalendarOptions();
 
-    api.setOption('now', () => now);
-    api.gotoDate(now);
-    api.today(); // forza la “today cell” a essere ricalcolata
+    setTimeout(() => {
+      this.calendarVisible = true;
+      this.cdr.detectChanges();
+    }, 0);
   }
 
-  ngOnDestroy(): void {
-    // nessuna subscribe manuale: la direttiva gestisce tutto
-  }
+  ngOnDestroy(): void {}
 }
