@@ -13,6 +13,7 @@ import { TimeMachineService } from '../../service/time-machine.service';
 export class TimeMachineComponent implements OnInit {
   showForm = false;
   selectedDateTime: string = '';
+  imgSrc = 'assets/hourglass.svg';
 
   constructor(private timeMachineService: TimeMachineService) { }
   
@@ -58,12 +59,16 @@ export class TimeMachineComponent implements OnInit {
   }
 
   private setColor(): void {
-    document.documentElement.style.setProperty('--primary-bg', '#4badee');
-    document.documentElement.style.setProperty('--primary-hover-bg', '#75c8ff');
+    document.documentElement.style.setProperty('--primary-hover-bg', '#4badee');
+    document.documentElement.style.setProperty('--primary-bg', '#75c8ff');
+    this.imgSrc = 'assets/hourglass_tm.svg';
+    document.documentElement.style.setProperty('--time-machine-bg', '#fde289');
   }
 
   private resetColor(): void {
     document.documentElement.style.setProperty('--primary-bg', '#fbd65a');
     document.documentElement.style.setProperty('--primary-hover-bg', '#fde289');
+    this.imgSrc = 'assets/hourglass.svg';
+    document.documentElement.style.setProperty('--time-machine-bg', '#83CBEB');
   }
 }
