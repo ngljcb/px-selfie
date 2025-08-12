@@ -1,17 +1,18 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../service/auth.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule],
+  imports: [RouterModule, CommonModule],
   templateUrl: './header.component.html',
 })
 export class HeaderComponent {
   menuOpen = false;
   username = sessionStorage.getItem('username')?.toUpperCase();
+  home = '/';
 
   navLinks = [
     { label: 'Calendar', href: 'calendar' },

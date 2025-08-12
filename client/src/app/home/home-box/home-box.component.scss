@@ -1,7 +1,7 @@
 a.home-box {
   position: relative;
   display: block;
-  background-color: #fbd65a;
+  background-color: var(--primary-bg);
   border-radius: 1rem;
   padding: 2rem;
   height: 100%;
@@ -41,7 +41,7 @@ a.home-box {
   }
 
   &:hover {
-    background-color: #fcf3b5;
+    background-color: var(--primary-hover-bg);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 }

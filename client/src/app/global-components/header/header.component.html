@@ -1,7 +1,7 @@
-<header class="sticky top-0 w-full z-50 flex justify-between items-center bg-[#fbd65a]">
+<header class="sticky top-0 w-full z-50 flex justify-between items-center bg-[--primary-bg]">
     <!-- Logo -->
     <div class="flex items-center px-5 py-3 font-bold text-black">
-        <a href="/">
+        <a [routerLink]="home">
             <img src="logo.svg" alt="Selfie logo" title="Selfie" class="w-32 sm:w-60 h-auto" />
         </a>
     </div>
@@ -22,7 +22,7 @@
 
     <!-- Navbar desktop -->
     <nav *ngIf="!isRoot" class="hidden sm:flex ml-auto h-full">
-        <a *ngFor="let link of navLinks" [href]="link.href" class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:#fde289]">
+        <a *ngFor="let link of navLinks" [routerLink]="link.href" class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:#fde289]">
             {{ link.label }}
         </a>
     </nav>
@@ -38,7 +38,7 @@
 
 <!-- Mobile menu -->
 <div *ngIf="menuOpen" class="w-full sm:hidden flex flex-col bg-[#fde289] shadow-md">
-    <a *ngFor="let link of navLinks" [href]="link.href" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 ">
+    <a *ngFor="let link of navLinks" [routerLink]="link.href" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 ">
         {{ link.label }}
     </a>
 
