@@ -35,6 +35,7 @@ export class TimeMachineComponent implements OnInit {
     }
 
     this.timeMachineService.setVirtualNow(selected);
+    this.setColor();
     this.showForm = true;
   }
 
@@ -42,6 +43,7 @@ export class TimeMachineComponent implements OnInit {
     this.timeMachineService.reset();
     const now = this.timeMachineService.getNow();
     this.selectedDateTime = this.toDatetimeLocalString(now);
+    this.resetColor();
     this.showForm = true;
   }
 
@@ -53,5 +55,15 @@ export class TimeMachineComponent implements OnInit {
     const hour = pad(date.getHours());
     const minute = pad(date.getMinutes());
     return `${year}-${month}-${day}T${hour}:${minute}`;
+  }
+
+  private setColor(): void {
+    document.documentElement.style.setProperty('--primary-bg', '#4badee');
+    document.documentElement.style.setProperty('--primary-hover-bg', '#75c8ff');
+  }
+
+  private resetColor(): void {
+    document.documentElement.style.setProperty('--primary-bg', '#fbd65a');
+    document.documentElement.style.setProperty('--primary-hover-bg', '#fde289');
   }
 }
