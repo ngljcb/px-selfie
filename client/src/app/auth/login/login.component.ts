@@ -19,7 +19,7 @@ export class LoginComponent {
     private authService: AuthService,
     private router: Router
   ) {}
-  
+
   onSubmit(): void {
     this.loginError = null;
 

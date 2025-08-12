@@ -7,6 +7,8 @@ async function register(email, password, username, name, birthday) {
 
   await createUserProfile(user.id, email, username, name, birthday);
 
+  await createUserStatistics(user.id);
+ 
   return {
     user: {
       id: user.id,
@@ -103,6 +105,23 @@ async function findEmailByUsername(username) {
   }
 
   return data.email;
+}
+
+async function createUserStatistics(userId) {
+   // NUOVO: Crea la riga iniziale per le statistiche dell'utente
+  try {
+    const { error: statsError } = await supabase
+      .from('user_statistics')
+      .insert([{ 
+        user_id: data.user.id
+      }]);
+    if (statsError) {
+      console.error('Errore nella creazione delle statistiche iniziali:', statsError);
+      // Non blocchiamo la registrazione per questo errore
+    }
+  } catch (statsError) {
+    console.error('Errore nella creazione delle statistiche iniziali:', statsError);
+  }
 }
 
 module.exports = { register, login, logout };

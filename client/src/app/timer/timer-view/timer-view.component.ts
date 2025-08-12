@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TimerConfigComponent } from '../timer-config/timer-config.component';
+import { TimerStatsComponent } from '../timer-stats/timer-stats.component';
 import { 
   TimerService 
 } from '../../service/timer.service';
@@ -14,6 +15,7 @@ import {
   TimerStatus, 
   TimerPhase 
 } from '../../model/timer.interface';
+import { StatisticsService } from '../../service/statistics.service'; // NUOVO
 
 // Interfaccia per le notifiche
 interface TimerNotification {
@@ -26,7 +28,7 @@ interface TimerNotification {
 @Component({
   selector: 'app-timer-view',
   standalone: true,
-  imports: [CommonModule, TimerConfigComponent],
+  imports: [CommonModule, TimerConfigComponent, TimerStatsComponent],
   templateUrl: './timer-view.component.html',
   styleUrls: ['./timer-view.component.scss']
 })
@@ -47,7 +49,10 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   readonly TimerStatus = TimerStatus;
   readonly TimerPhase = TimerPhase;
 
-  constructor(private timerService: TimerService) {}
+  constructor(
+    private timerService: TimerService,
+    private statisticsService: StatisticsService // NUOVO
+  ) {}
 
   ngOnInit(): void {
     // Subscribe al timer state
@@ -66,11 +71,39 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     
     // Inizializza AudioContext con la prima interazione utente
     this.initializeAudioOnFirstInteraction();
+
+    // NUOVO: Controlla il login streak all'avvio
+    this.checkLoginStreak();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  // NUOVO: Controlla il login streak
+  private checkLoginStreak(): void {
+    this.statisticsService.checkLoginStreak()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (streakInfo) => {
+          console.log('Login streak checked:', streakInfo);
+          if (streakInfo.streakWasReset) {
+            this.showNotification(
+              `Il tuo streak è stato resettato.`, 
+              'phase-skipped'
+            );
+          } else if (streakInfo.canIncrementStreak) {
+            this.showNotification(
+              `Completa una sessione per continuare il tuo streak.`, 
+              'phase-skipped'
+            );
+          }
+        },
+        error: (error) => {
+          console.error('Errore nel controllo login streak:', error);
+        }
+      });
   }
 
   // ==================== GESTIONE NOTIFICHE ====================
@@ -81,7 +114,11 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     // Controlla se la sessione è stata completata PRIMA di tutto
     if (previousState.status !== TimerStatus.COMPLETED && 
         currentState.status === TimerStatus.COMPLETED) {
-      this.showNotification('🎊 Sessione completata! Ottimo lavoro!', 'session-complete');
+      
+      // NUOVO: Aggiorna le statistiche quando la sessione è completata
+      this.updateSessionStatistics(currentState);
+      
+      this.showNotification('Sessione completata! Ottimo lavoro!', 'session-complete');
       return; // Esci subito, non fare altre operazioni
     }
 
@@ -103,11 +140,34 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       
       // Mostra notifica appropriata
       if (currentState.currentPhase === TimerPhase.STUDY) {
-        this.showNotification('🎉 Tempo di pausa! Premi "Riprendi" quando sei pronto.', 'study-complete');
+        this.showNotification('Tempo di pausa!', 'study-complete');
       } else {
-        this.showNotification('📚 Torniamo a studiare! Premi "Riprendi" quando sei pronto.', 'break-complete');
+        this.showNotification('Torniamo a studiare!', 'break-complete');
       }
     }
+  }
+
+  // NUOVO: Aggiorna le statistiche quando una sessione è completata
+  private updateSessionStatistics(timerState: TimerState): void {
+    // Calcola il tempo totale di studio effettivo (solo fasi di studio, non pause)
+    const studyTimePerCycle = timerState.config.studyMinutes;
+    const completedCycles = timerState.config.totalCycles;
+    const totalStudyMinutes = completedCycles * studyTimePerCycle;
+
+    this.statisticsService.updateSessionStats(totalStudyMinutes)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedStats) => {
+          console.log('Statistiche aggiornate:', updatedStats);
+          this.showNotification(
+            `Statistiche aggiornate! Sessioni: ${updatedStats.totalCompletedSessions}, Tempo totale: ${updatedStats.totalStudyTimeFormatted}`, 
+            'session-complete'
+          );
+        },
+        error: (error) => {
+          console.error('Errore nell\'aggiornamento delle statistiche:', error);
+        }
+      });
   }
 
   private showNotification(message: string, type: TimerNotification['type']): void {
@@ -179,12 +239,11 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       if (currentState.currentPhase === TimerPhase.BREAK && 
           currentState.currentCycle >= currentState.config.totalCycles) {
         // Ultima pausa saltata = sessione completata
-        this.showNotification('🎊 Sessione completata! Ottimo lavoro!', 'session-complete');
         this.timerService.skipCurrentPhase(); // Questo dovrebbe portare a COMPLETED
         return;
       }
       
-      this.showNotification(`⏭️ Fase di ${skippedPhase} saltata!`, 'phase-skipped');
+      this.showNotification(`Fase di ${skippedPhase} saltata!`, 'phase-skipped');
       
       // Prima salta la fase, poi pausa
       this.timerService.skipCurrentPhase();

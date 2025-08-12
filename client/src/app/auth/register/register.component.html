@@ -8,11 +8,30 @@
       {{ registerError }}
     </div>
 
-    <input type="text" placeholder="name" [(ngModel)]="name" name="name" required #nameInput="ngModel" />
-    <input type="date" placeholder="birthday" [(ngModel)]="birthday" name="birthday" required #birthdayInput="ngModel" />
-    <input type="text" placeholder="username" [(ngModel)]="username" name="username" required #usernameInput="ngModel" />
-    <input type="email" placeholder="email" [(ngModel)]="email" name="email" required #emailInput="ngModel" />
-    <input type="password" placeholder="password" [(ngModel)]="password" name="password" required #passwordInput="ngModel" />
+    <div>
+      <label for="name">Name *</label>
+      <input type="text" placeholder="name" [(ngModel)]="name" name="name" required #nameInput="ngModel" />
+    </div>
+
+    <div>
+      <label for="birthday">Date of birth *</label>
+      <input type="date" placeholder="birthday" [(ngModel)]="birthday" name="birthday" required #birthdayInput="ngModel" />
+    </div>
+
+    <div>
+      <label for="username">Username *</label>
+      <input type="text" placeholder="username" [(ngModel)]="username" name="username" required #usernameInput="ngModel" />
+    </div>
+
+    <div>
+      <label for="email">Email *</label>
+      <input type="email" placeholder="email" [(ngModel)]="email" name="email" required #emailInput="ngModel" />
+    </div>
+
+    <div for="password">
+      <label>Password *</label>
+      <input type="password" placeholder="password" [(ngModel)]="password" name="password" required #passwordInput="ngModel" />
+    </div>
 
     <button type="submit" [disabled]="!registerForm.valid">
       Sign Up
