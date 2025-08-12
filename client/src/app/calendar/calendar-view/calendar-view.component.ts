@@ -90,7 +90,6 @@ export class CalendarViewComponent implements OnInit, OnDestroy {
     this.showCreate = false;
     this.selectedDate = '';
   }
-}
 
   applyVirtualNowToCalendar(): void {
     this.calendarVisible = false;

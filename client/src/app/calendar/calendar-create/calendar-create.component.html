@@ -19,12 +19,17 @@
             <input [(ngModel)]="title" name="title" required />
           </div>
 
-          <div>
+          <div *ngIf="type == 'attivita'">
+            <label>Data scadenza *</label>
+            <input type="date" [(ngModel)]="scadenza" name="scadenza" required />
+          </div>
+
+          <div *ngIf="type == 'evento'">
             <label>Luogo</label>
             <input [(ngModel)]="location" name="location" />
           </div>
 
-          <div class="row-group">
+          <div class="row-group" *ngIf="type == 'evento'">
             <div>
               <label>Data e Ora inizio *</label>
               <input type="datetime-local" [(ngModel)]="dataOraInizio" name="dataOraInizio" required />
@@ -34,16 +39,16 @@
               <input type="datetime-local" [(ngModel)]="dataOraFine" name="dataOraFine" />
             </div>
           </div>
-          <div *ngIf="erroreData" class="error-msg">
+          <div *ngIf="type == 'evento' && erroreData" class="error-msg">
             La data di inizio deve essere precedente a quella di fine.
           </div>
 
-          <div class="checkbox-row">
+          <div class="checkbox-row" *ngIf="type == 'evento'">
             <input type="checkbox" [(ngModel)]="isRecurring" name="isRecurring" />
             <label for="isRecurring">Evento ricorrente</label>
           </div>
 
-          <div *ngIf="isRecurring" class="giorni-frequenza">
+          <div *ngIf="type == 'evento' && isRecurring" class="giorni-frequenza">
             <label>Giorni della settimana:</label>
             <div class="checkbox-giorni">
               <label *ngFor="let giorno of giorniSettimana">
@@ -53,7 +58,7 @@
             </div>
           </div>
 
-          <div *ngIf="isRecurring" class="row-group">
+          <div *ngIf="type == 'evento' && isRecurring" class="row-group">
             <div>
               <label>Tipo di ripetizione *</label>
               <select [(ngModel)]="tipoRipetizione" name="tipoRipetizione">
@@ -62,11 +67,11 @@
                 <option value="scadenza">Data Scadenza</option>
               </select>
             </div>
-            <div *ngIf="tipoRipetizione == 'numeroFisso'">
+            <div *ngIf="type == 'evento' && tipoRipetizione == 'numeroFisso'">
               <label>Numero ripetizioni</label>
               <input type="number" min="1" [(ngModel)]="ripetizioni" name="ripetizioni" />
             </div>
-            <div *ngIf="tipoRipetizione == 'scadenza'">
+            <div *ngIf="type == 'evento' && tipoRipetizione == 'scadenza'">
               <label>Data scadenza</label>
               <input type="date" [(ngModel)]="fineRicorrenza" name="fineRicorrenza" />
             </div>

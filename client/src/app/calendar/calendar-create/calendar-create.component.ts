@@ -19,6 +19,8 @@ export class CalendarCreateComponent implements OnChanges {
   title: string = '';
   location: string = '';
 
+  scadenza: string = '';
+
   dataOraInizio: string = '';
   dataOraFine: string = '';
   duration: number = 1;
@@ -56,7 +58,7 @@ export class CalendarCreateComponent implements OnChanges {
       const fine = new Date(this.dataOraFine);
       if (inizio >= fine) {
         this.erroreData = true;
-        return; // blocca il submit
+        return;
       }
     }
 
