@@ -1,5 +1,5 @@
 :host ::ng-deep .fc-button {
-  background-color: #fbd65a;
+  background-color: var(--primary-bg);
   border: none;
   color: #422E29;
   font-weight: 600;
@@ -8,7 +8,7 @@
 }
 
 :host ::ng-deep .fc-button:hover {
-  background-color: #fde289 !important;
+  background-color: var(--primary-hover-bg) !important;
   outline: none;
   color: #f54c4c !important;
 }
@@ -24,7 +24,7 @@
 
 :host ::ng-deep .fc-today-button:hover,
 :host ::ng-deep .fc-today-button:focus {
-  background-color: #fde289 !important;
+  background-color: var(--primary-hover-bg) !important;
   outline: none;
   color: #f54c4c;
 }
@@ -59,6 +59,21 @@
 :host ::ng-deep .fc-timegrid-body {
   position: relative;
   z-index: 1;
+}
+
+:host ::ng-deep .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
+  background: var(--today-bg, #fff6cc) !important;
+}
+
+:host ::ng-deep .fc-timegrid-col.fc-day-today {
+  background: var(--today-bg, #fff6cc) !important;
+}
+:host ::ng-deep .fc-col-header-cell.fc-day-today {
+  background: var(--today-bg, #fff6cc) !important; /* header */
+}
+
+:host ::ng-deep .fc .fc-highlight {
+  background: var(--select-bg, #e0f3ff) !important;
 }
 
 @media (max-width: 640px) {

@@ -22,14 +22,14 @@
 
     <!-- Navbar desktop -->
     <nav *ngIf="!isRoot" class="hidden sm:flex ml-auto h-full">
-        <a *ngFor="let link of navLinks" [routerLink]="link.href" class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:#fde289]">
+        <a *ngFor="let link of navLinks" [routerLink]="link.href" class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:--primary-hover-bg]">
             {{ link.label }}
         </a>
     </nav>
     <div class="relative group hidden sm:flex h-full items-center justify-center w-40">
         <span class="text-black font-bold cursor-pointer py-9">{{ username }}</span>
-        <div class="absolute top-full left-0 w-full bg-[#ffd13b] text-black rounded shadow-md hidden group-hover:flex flex-col z-50">
-            <a (click)="onLogout()" class="px-4 py-4 hover:bg-yellow-400 cursor-pointer text-center">
+        <div class="absolute top-full left-0 w-full bg-[--primary-bg] text-black rounded shadow-md hidden group-hover:flex flex-col z-50">
+            <a (click)="onLogout()" class="px-4 py-4 hover:[background-color:--primary-hover-bg] cursor-pointer text-center">
                 <strong>Logout</strong>
             </a>
         </div>
@@ -37,12 +37,14 @@
 </header>
 
 <!-- Mobile menu -->
-<div *ngIf="menuOpen" class="w-full sm:hidden flex flex-col bg-[#fde289] shadow-md">
-    <a *ngFor="let link of navLinks" [routerLink]="link.href" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 ">
-        {{ link.label }}
-    </a>
+<div *ngIf="menuOpen" class="w-full sm:hidden flex flex-col bg-[--primary-hover-bg] shadow-md">
+    <div *ngIf="!isRoot">
+        <a *ngFor="let link of navLinks" [routerLink]="link.href" class="block w-full text-black no-underline hover:[background-color:--primary-bg] px-4 py-2 ">
+            {{ link.label }}
+        </a>
+    </div>
 
-    <a (click)="onLogout()" class="block w-full text-black no-underline hover:[background-color:#ffd13b] px-4 py-2 cursor-pointer">
+    <a (click)="onLogout()" class="block w-full text-black no-underline hover:[background-color:--primary-bg] px-4 py-2 cursor-pointer">
         <strong>Logout</strong>
     </a>
 </div>
