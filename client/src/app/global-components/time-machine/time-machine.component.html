@@ -1,0 +1,13 @@
+<div class="custom-alert" *ngIf="alertMessage">{{ alertMessage }}</div>
+
+<div class="time-machine-floating">
+  <div class="form-container" *ngIf="showForm">
+    <input type="datetime-local" [(ngModel)]="selectedDateTime" [class.error]="dateError" />
+    <button class="btn-set" (click)="setDate()">Set</button>
+    <button class="btn-reset" (click)="resetDate()" [disabled]="!isVirtualActive" [attr.aria-disabled]="!isVirtualActive">Reset</button>
+  </div>
+
+  <button class="icon-button" (click)="toggleForm()">
+    <img [src]='imgSrc' alt="Time Machine" />
+  </button>
+</div>

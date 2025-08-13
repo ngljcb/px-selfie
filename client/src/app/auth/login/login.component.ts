@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../service/auth.service';
-import { StatisticsService } from '../../service/statistics.service';
 
 @Component({
   selector: 'app-login',
@@ -12,38 +11,29 @@ import { StatisticsService } from '../../service/statistics.service';
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  email = '';
+  username = '';
   password = '';
   loginError: string | null = null;
 
   constructor(
     private authService: AuthService,
-    private router: Router,
-    private statisticsService: StatisticsService
+    private router: Router
   ) {}
-  
+
   onSubmit(): void {
     this.loginError = null;
 
-    if (!this.email || !this.password) {
+    if (!this.username || !this.password) {
       this.loginError = 'Tutti i campi sono obbligatori.';
       return;
     }
 
-    this.authService.login(this.email, this.password).subscribe({
-      next: () => {
-        // Login riuscito, ora controlla lo streak
-        this.statisticsService.checkLoginStreak().subscribe({
-          next: (streakInfo) => {
-            console.log('Controllo streak completato:', streakInfo);
-            this.router.navigate(['/']);
-          },
-          error: (streakError) => {
-            console.error('Errore nel controllo dello streak (non bloccante):', streakError);
-            // Non bloccare il login per questo errore
-            this.router.navigate(['/']);
-          }
-        });
+    this.authService.login(this.username, this.password).subscribe({
+      next: (res) => {
+        if (res?.user?.username) {
+          sessionStorage.setItem('username', res.user.username);
+        }
+        this.router.navigate(['/']);
       },
       error: (err: any) => {
         console.error('Errore login:', err);

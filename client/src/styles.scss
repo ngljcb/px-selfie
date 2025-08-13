@@ -11,3 +11,22 @@ html, body {
     overflow: scroll;
   }
 }
+
+:root {
+  --primary-bg: #fbd65a;
+  --primary-hover-bg: #fde289;
+
+  --time-machine-bg: #83CBEB;
+  --time-machine-reset-bg: #4badee;
+
+  --secondary-bg: #fde289;
+  --active-btn: #3498db;
+  --non-active-btn: #2ecc71;
+
+  --default-primary-bg: #fbd65a;
+  --time-machine-primary-bg: #4badee;
+  --time-machine-hover-bg: #75c8ff;
+
+  --today-bg: #fff6cc;
+  --select-bg: #e6f7ff;
+}

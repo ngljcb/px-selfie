@@ -1,7 +1,7 @@
 a.home-box {
   position: relative;
   display: block;
-  background-color: #fbd65a;
+  background-color: var(--primary-bg);
   border-radius: 1rem;
   padding: 2rem;
   height: 100%;
@@ -12,11 +12,11 @@ a.home-box {
 
   &::before {
     position: absolute;
-    bottom: -7rem;
+    bottom: -5rem;
     right: 1rem;
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
-    font-size: 30rem;
+    font-size: 15rem;
     opacity: 0.08;
     pointer-events: none;
     color: #000;
@@ -41,18 +41,18 @@ a.home-box {
   }
 
   &:hover {
-    background-color: #fcf3b5;
+    background-color: var(--primary-hover-bg);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 }
 
 .home-box-title {
-  font-size: 3rem;
+  font-size: 1.7rem;
   font-weight: 900;
 }
 
 .home-box-description {
-  font-size: 2rem;
+  font-size: 1.2rem;
 }
 
 

@@ -1,32 +1,31 @@
-
-<!-- CONTAINER PRINCIPALE -->
+  <!-- CONTAINER PRINCIPALE -->
 <div class="timer-app-container">
-  
-  @if (timerState) {
-    <div class="timer-view">
-      
-      <!-- NOTIFICHE -->
-      @if (notifications.length > 0) {
-        <div class="notifications-container">
-          @for (notification of notifications; track notification.id) {
-            <div class="notification" [class]="'notification-' + notification.type">
-              <span class="notification-message">{{ notification.message }}</span>
-              <button class="notification-close" (click)="dismissNotification(notification.id)">×</button>
-            </div>
-          }
-        </div>
-      }
-      
-      <!-- MAIN TIMER DISPLAY -->
-      <div [class]="getTimerDisplayClass()">
+    
+    @if (timerState) {
+      <div class="timer-view">
         
-        <!-- Icona configurazione -->
-        <button 
-          class="config-btn" 
-          (click)="openConfig()"
-          [disabled]="isRunning()">
-          <img src="https://pomofocus.io/icons/config-white.png" alt="Config">
-        </button>
+        <!-- NOTIFICHE -->
+        @if (notifications.length > 0) {
+          <div class="notifications-container">
+            @for (notification of notifications; track notification.id) {
+              <div class="notification" [class]="'notification-' + notification.type">
+                <span class="notification-message">{{ notification.message }}</span>
+                <button class="notification-close" (click)="dismissNotification(notification.id)">×</button>
+              </div>
+            }
+          </div>
+        }
+        
+        <!-- MAIN TIMER DISPLAY -->
+        <div [class]="getTimerDisplayClass()">
+          
+          <!-- Icona configurazione -->
+          <button 
+            class="config-btn" 
+            (click)="openConfig()"
+            [disabled]="isRunning()">
+            <img src="https://pomofocus.io/icons/config-white.png" alt="Config">
+          </button>
 
         <!-- Countdown principale -->
         <div class="time-display">
@@ -122,11 +121,11 @@
     </div>
   }
 
-  <!-- LOADING STATE -->
-  @if (!timerState) {
-    <div class="loading">
-      <p>Caricamento in corso...</p>
-    </div>
-  }
-  
+    <!-- LOADING STATE -->
+    @if (!timerState) {
+      <div class="loading">
+        <p>Caricamento in corso...</p>
+      </div>
+    }
+    
 </div>

@@ -31,6 +31,11 @@
   width: 300px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
 
+  label {
+    width: 100%;
+    font-size: 1rem;
+  }
+
   input {
     width: 100%;
     padding: 0.5rem;
