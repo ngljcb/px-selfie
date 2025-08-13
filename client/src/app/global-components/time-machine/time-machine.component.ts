@@ -59,16 +59,20 @@ export class TimeMachineComponent implements OnInit {
   }
 
   private setColor(): void {
+    this.imgSrc = 'assets/hourglass_tm.svg';
     document.documentElement.style.setProperty('--primary-hover-bg', '#4badee');
     document.documentElement.style.setProperty('--primary-bg', '#75c8ff');
-    this.imgSrc = 'assets/hourglass_tm.svg';
     document.documentElement.style.setProperty('--time-machine-bg', '#fde289');
+    document.documentElement.style.setProperty('--today-bg', '#e6f7ff');
+    document.documentElement.style.setProperty('--select-bg', '#fff6cc');
   }
 
   private resetColor(): void {
+    this.imgSrc = 'assets/hourglass.svg';
     document.documentElement.style.setProperty('--primary-bg', '#fbd65a');
     document.documentElement.style.setProperty('--primary-hover-bg', '#fde289');
-    this.imgSrc = 'assets/hourglass.svg';
     document.documentElement.style.setProperty('--time-machine-bg', '#83CBEB');
+    document.documentElement.style.setProperty('--today-bg', '#fff6cc');
+    document.documentElement.style.setProperty('--select-bg', '#e6f7ff');
   }
 }
