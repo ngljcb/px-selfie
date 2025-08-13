@@ -1,7 +1,41 @@
-<main class="min-h-screen pb-5">
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-5 px-4">
-        <app-home-box *ngFor="let box of boxes" [title]="box.title" [description]="box.description" [link]="box.link"
-            [iconClass]="box.iconClass" class="h-[28vh] sm:h-[42vh]">
-        </app-home-box>
-    </div>
+<main class="min-h-screen pb-6">
+
+    <!-- Menu cards: single row on desktop -->
+    <section class="mt-5 px-4 hidden md:block">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <app-home-box *ngFor="let box of boxes" [title]="box.title" [description]="box.description" [link]="box.link" [iconClass]="box.iconClass" class="h-[28vh] sm:h-[36vh] lg:h-[18vh]">
+            </app-home-box>
+        </div>
+    </section>
+
+    <!-- Preview area: calendar, notes, stats -->
+    <section class="mt-8 px-4">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Calendar preview (left, wide) -->
+            <div class="lg:col-span-8">
+                <div class="text-center bg-[--primary-bg] rounded-2xl shadow-lg p-4 h-[60vh] md:h-[65vh] border-2 border-dashed border-gray-400">
+                    <em>calendar preview</em>
+                    <!--app-calendar-preview class="w-full h-full block"></app-calendar-preview-->
+                </div>
+            </div>
+
+            <!-- Right column: Notes + Stats stacked -->
+            <div class="lg:col-span-4 grid grid-cols-1 gap-6">
+                <!-- Notes preview -->
+                <div class="text-center bg-[--primary-bg] rounded-2xl shadow-lg p-4 h-[28vh] md:h-[30vh] border-2 border-dashed border-gray-400">
+                    <em>notes preview</em>
+                    <!--app-notes-preview class="w-full h-full block"></app-notes-preview-->
+                </div>
+
+                <!-- Stats preview -->
+                <div class="text-center bg-[--primary-bg] rounded-2xl shadow-lg p-4 h-[28vh] md:h-[30vh] border-2 border-dashed border-gray-400">
+                    <em>stats preview</em>
+                    <!--app-stats-preview class="w-full h-full block"></app-stats-preview-->
+                </div>
+            </div>
+
+        </div>
+    </section>
+
 </main>
