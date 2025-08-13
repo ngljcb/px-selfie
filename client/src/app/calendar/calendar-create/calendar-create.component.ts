@@ -1,6 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivitiesService } from '../../service/activities.service';
+import { Activity } from '../../model/activity.model';
 
 @Component({
   selector: 'app-calendar-create',
@@ -12,9 +14,10 @@ import { FormsModule } from '@angular/forms';
 export class CalendarCreateComponent implements OnChanges {
   @Input() selectedDate: string = '';
   @Output() chiudi = new EventEmitter<void>();
+  @Output() activityCreated = new EventEmitter<void>();
 
-  type: '' | 'evento' | 'attivita' = '';
-  tipoRipetizione: 'nulla' | 'numeroFisso' | 'scadenza' = 'nulla';
+  type: '' | 'event' | 'activity' = '';
+  tipoRipetizione: '' | 'numeroFisso' | 'scadenza' = '';
 
   title: string = '';
   location: string = '';
@@ -29,18 +32,20 @@ export class CalendarCreateComponent implements OnChanges {
   ripetizioni: number | null = null;
   fineRicorrenza: string = '';
 
-  giorniSettimana: string[] = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+  giorniSettimana: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   giorniSelezionati: { [key: string]: boolean } = {
-    Lunedì: false,
-    Martedì: false,
-    Mercoledì: false,
-    Giovedì: false,
-    Venerdì: false,
-    Sabato: false,
-    Domenica: false
+    Monday: false,
+    Tuesday: false,
+    Wednesday: false,
+    Thursday: false,
+    Friday: false,
+    Saturday: false,
+    Sunday: false
   };
 
   erroreData: boolean = false;
+
+  constructor(private activitiesService: ActivitiesService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedDate'] && this.selectedDate) {
@@ -79,8 +84,26 @@ export class CalendarCreateComponent implements OnChanges {
       giorniSelezionati: giorniAttivi
     };
 
-    console.log('Nuovo elemento:', evento);
-    this.chiudi.emit();
+    if (this.type === 'activity') {
+      const newActivity: Activity = {
+        title: this.title,
+        due_date: this.scadenza.slice(0, 10),
+        status: 'pending'
+      };
+
+      this.activitiesService.create(newActivity).subscribe({
+        next: () => {
+          this.activityCreated.emit();
+          this.chiudi.emit();
+        },
+        error: (err) => {
+          console.error('Errore creazione attività:', err);
+        }
+      });
+    } else {
+      console.log('Nuovo elemento:', evento);
+      this.chiudi.emit();
+    }
   }
 
   annulla(): void {

@@ -7,7 +7,7 @@
   <div class="calendar-overlay" *ngIf="showCreate">
     <div class="calendar-create-wrapper">
       <button class="close-button" (click)="closeCreate()">×</button>
-      <app-calendar-create [selectedDate]="selectedDate" (chiudi)="closeCreate()"></app-calendar-create>
+      <app-calendar-create [selectedDate]="selectedDate" (chiudi)="closeCreate()" (activityCreated)="onActivityCreated()"></app-calendar-create>
     </div>
   </div>
 </main>

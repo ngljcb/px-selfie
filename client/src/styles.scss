@@ -3,7 +3,7 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100vh;
-  overflow: hidden;
+  overflow: visible;
 }
 
 @media (max-width: 640px) {
@@ -19,7 +19,7 @@ html, body {
   --time-machine-bg: #83CBEB;
   --time-machine-reset-bg: #4badee;
 
-  --secondary-bg: #fde289;
+  --secondary-bg: #fff6cc;
   --active-btn: #3498db;
   --non-active-btn: #2ecc71;
 

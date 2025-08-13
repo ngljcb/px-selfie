@@ -1,4 +1,3 @@
-// calendar-create.component.scss
 .calendar-create-wrapper {
   display: flex;
   margin-top: 1rem;
@@ -12,7 +11,7 @@
     min-height: 300px;
     max-height: 90vh;
     overflow-y: auto;
-    background-color: #fcf0b6;
+    background-color: var(--secondary-bg);
     max-width: 1000px;
     padding: 2rem;
     border-radius: 1rem;

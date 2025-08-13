@@ -12,11 +12,11 @@ a.home-box {
 
   &::before {
     position: absolute;
-    bottom: -5rem;
-    right: 1rem;
+    bottom: -10rem;
+    right: 3rem;
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
-    font-size: 15rem;
+    font-size: 20rem;
     opacity: 0.08;
     pointer-events: none;
     color: #000;
@@ -25,19 +25,24 @@ a.home-box {
 
   &.box-calendar::before {
     content: "\f073"; // fa-calendar-alt
+    transform: rotate(35deg);
+    bottom: -9.5rem;
   }
 
   &.box-notes::before {
     content: "\f15c"; // fa-sticky-note
+    transform: rotate(35deg);
   }
 
   &.box-pomodoro::before {
     content: "\f2f2"; // fa-stopwatch
+    transform: rotate(35deg);
+    bottom: -8rem;
   }
 
   &.box-voto::before {
     content: "\f501"; // fa-graduation-cap
-
+    transform: rotate(35deg);
   }
 
   &:hover {
@@ -53,29 +58,4 @@ a.home-box {
 
 .home-box-description {
   font-size: 1.2rem;
-}
-
-
-@media (max-width: 640px) {
-
-  a.home-box::before {
-    padding: 1rem;
-    bottom: -5rem;
-    right: -1rem;
-    font-size: clamp(12rem, 60vw, 19rem);
-  }
-
-  a.box-voto::before {
-    bottom: -3.5rem !important;
-    right: -2.5rem !important;
-  }
-  
-  .home-box-description {
-    font-size: 1rem;
-  }
-
-  .home-box-title {
-    font-size: 2rem;
-    font-weight: 700;
-  }
 }

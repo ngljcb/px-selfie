@@ -30,9 +30,8 @@ export class LoginComponent {
 
     this.authService.login(this.username, this.password).subscribe({
       next: (res) => {
-        if (res?.user?.username) {
-          sessionStorage.setItem('username', res.user.username);
-        }
+        if (res?.user?.username) sessionStorage.setItem('username', res.user.username);
+        if (res?.user?.id) sessionStorage.setItem('userid', res.user.id);
         this.router.navigate(['/']);
       },
       error: (err: any) => {
