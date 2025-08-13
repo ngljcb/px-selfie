@@ -14,6 +14,9 @@ export class TimeMachineComponent implements OnInit {
   showForm = false;
   selectedDateTime: string = '';
   imgSrc = 'assets/hourglass.svg';
+  alertMessage: string | null = null;
+  dateError = false;
+  isVirtualActive = false;
 
   constructor(private timeMachineService: TimeMachineService) { }
   
@@ -29,23 +32,45 @@ export class TimeMachineComponent implements OnInit {
   setDate(): void {
     if (!this.selectedDateTime) return;
 
+    this.dateError = false;
+    this.alertMessage = null;
+
     const selected = new Date(this.selectedDateTime);
     if (isNaN(selected.getTime())) {
-      alert('Data non valida');
+      this.showAlert('Data non valida');
+      this.dateError = true;
+      return;
+    }
+
+    const nowStr = this.toDatetimeLocalString(this.timeMachineService.getNow());
+    if (this.selectedDateTime === nowStr) {
+      this.showAlert('Date/time matches current. Choose another.');
+      this.dateError = true;
       return;
     }
 
     this.timeMachineService.setVirtualNow(selected);
     this.setColor();
     this.showForm = true;
+    this.isVirtualActive = true;
   }
 
   resetDate(): void {
+    if (!this.isVirtualActive) return;
+
+    this.dateError = false;
+
     this.timeMachineService.reset();
     const now = this.timeMachineService.getNow();
     this.selectedDateTime = this.toDatetimeLocalString(now);
     this.resetColor();
     this.showForm = true;
+    this.isVirtualActive = false;
+  }
+
+  showAlert(message: string) {
+    this.alertMessage = message;
+    setTimeout(() => this.alertMessage = null, 3000);
   }
 
   private toDatetimeLocalString(date: Date): string {

@@ -16,6 +16,12 @@
     border-radius: 1rem;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 
+    input.error {
+      color: #c0392b;
+      font-weight: 600;
+      border-color: #c0392b;
+    }
+
     input[type="datetime-local"] {
       border: none;
       padding: 0.4rem 0.6rem;
@@ -31,6 +37,13 @@
       font-size: 0.85rem;
       cursor: pointer;
       transition: background-color 0.2s;
+    }
+
+    .btn-reset[disabled],
+    .btn-reset[aria-disabled="true"] {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: grayscale(0.2);
     }
 
     .btn-set {
@@ -69,6 +82,27 @@
       transform: scale(1.1);
     }
   }
+}
+
+.custom-alert {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: #ffeaea;
+  color: #c0392b;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  z-index: 99999;
+  animation: fadeInOut 3s ease forwards;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-10px); }
 }
 
 @media (max-width: 768px) {
