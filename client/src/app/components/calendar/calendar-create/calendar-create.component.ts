@@ -1,8 +1,8 @@
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivitiesService } from '../../service/activities.service';
-import { Activity } from '../../model/activity.model';
+import { ActivitiesService } from '../../../service/activities.service';
+import { Activity } from '../../../model/activity.model';
 import { CalendarResponseComponent } from '../calendar-response/calendar-response.component';
 
 type Variant = 'success' | 'error' | 'info' | 'warning';

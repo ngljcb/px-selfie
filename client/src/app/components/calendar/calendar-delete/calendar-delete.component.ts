@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Activity } from '../../model/activity.model';
-import { ActivitiesService } from '../../service/activities.service';
+import { Activity } from '../../../model/activity.model';
+import { ActivitiesService } from '../../../service/activities.service';
 import { CalendarResponseComponent } from '../calendar-response/calendar-response.component';
 
 type Variant = 'success' | 'error';

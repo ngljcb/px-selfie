@@ -1,12 +1,12 @@
 import { Routes } from '@angular/router';
-import { CalendarViewComponent } from './calendar/calendar-view/calendar-view.component';
-import { CalendarCreateComponent } from './calendar/calendar-create/calendar-create.component';
-import { HomeViewComponent } from './home/home-view/home-view.component';
+import { CalendarViewComponent } from './components/calendar/calendar-view/calendar-view.component';
+import { CalendarCreateComponent } from './components/calendar/calendar-create/calendar-create.component';
+import { HomeViewComponent } from './components/home/home-view/home-view.component';
 import { NotesViewComponent } from './notes/notes-view/notes-view.component';
 import { NoteEditorComponent } from './notes/note-editor/note-editor.component';
-import { RegisterComponent } from './auth/register/register.component';
-import { LoginComponent } from './auth/login/login.component';
-import { AuthGuard } from './auth/guard/auth.guard';
+import { RegisterComponent } from './components/auth/register/register.component';
+import { LoginComponent } from './components/auth/login/login.component';
+import { AuthGuard } from './components/auth/guard/auth.guard';
 import { TimerViewComponent } from './timer/timer-view/timer-view.component';
 
 export const routes: Routes = [

@@ -7,10 +7,10 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { CalendarOptions, EventDropArg, EventClickArg } from '@fullcalendar/core';
 import { CalendarCreateComponent } from '../calendar-create/calendar-create.component';
 import { CalendarInfoComponent } from '../calendar-info/calendar-info.component';
-import { TimeMachineService } from '../../service/time-machine.service';
-import { TimeMachineListenerDirective } from '../../directive/time-machine-listener.directive';
-import { ActivitiesService } from '../../service/activities.service';
-import { Activity } from '../../model/activity.model';
+import { TimeMachineService } from '../../../service/time-machine.service';
+import { TimeMachineListenerDirective } from '../../../directives/time-machine-listener.directive';
+import { ActivitiesService } from '../../../service/activities.service';
+import { Activity } from '../../../model/activity.model';
 
 @Component({
   selector: 'app-calendar-view',
@@ -125,7 +125,7 @@ export class CalendarViewComponent implements OnInit, OnDestroy {
   closeInfo(): void {
     this.showInfo = false;
     this.selectedActivity = null;
-    this.loadActivitiesAndRender(); 
+    this.loadActivitiesAndRender();
   }
 
   deleteActivity(id: number): void {

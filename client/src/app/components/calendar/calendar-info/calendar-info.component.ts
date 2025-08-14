@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Activity } from '../../model/activity.model';
+import { Activity } from '../../../model/activity.model';
 import { CalendarDeleteComponent } from '../calendar-delete/calendar-delete.component';
 import { CalendarModifyComponent } from '../calendar-modify/calendar-modify.component';
 

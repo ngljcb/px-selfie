@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TimeMachineService } from '../../service/time-machine.service';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({
   selector: 'app-time-machine',
@@ -19,7 +19,7 @@ export class TimeMachineComponent implements OnInit {
   isVirtualActive = false;
 
   constructor(private timeMachineService: TimeMachineService) { }
-  
+
   ngOnInit(): void {
     const now = this.timeMachineService.getNow();
     this.selectedDateTime = this.toDatetimeLocalString(now);
