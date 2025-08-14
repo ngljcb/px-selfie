@@ -3,11 +3,17 @@
     <full-calendar *ngIf="calendarVisible" [options]="calendarOptions"></full-calendar>
   </div>
 
-  <!-- Overlay calendar-create -->
   <div class="calendar-overlay" *ngIf="showCreate">
     <div class="calendar-create-wrapper">
       <button class="close-button" (click)="closeCreate()">×</button>
       <app-calendar-create [selectedDate]="selectedDate" (chiudi)="closeCreate()" (activityCreated)="onActivityCreated()"></app-calendar-create>
+    </div>
+  </div>
+
+  <div class="calendar-overlay" *ngIf="showInfo">
+    <div class="calendar-create-wrapper">
+      <button class="close-button" (click)="closeInfo()">×</button>
+      <app-calendar-info [activity]="selectedActivity" (close)="closeInfo()" (delete)="deleteActivity($event)" (modify)="modifyActivity($event)"></app-calendar-info>
     </div>
   </div>
 </main>

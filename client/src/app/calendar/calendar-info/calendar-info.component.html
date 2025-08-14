@@ -1,0 +1,43 @@
+<div class="modal-overlay">
+  <div class="modal-container">
+    <div class="calendar-info-wrapper">
+      <div class="header-row">
+        <h2>Activity details</h2>
+        <button type="button" class="btn-close" (click)="onClose()" aria-label="Close">×</button>
+      </div>
+
+      <div class="info-grid" *ngIf="activity">
+        <div>
+          <label>Title</label>
+          <input [value]="activity.title" readonly />
+        </div>
+
+        <div>
+          <label>Due date</label>
+          <input [value]="activity.due_date" readonly />
+        </div>
+
+        <div>
+          <label>Status</label>
+          <input [value]="activity.status || 'pending'" readonly />
+        </div>
+
+        <div *ngIf="activity.finished_at">
+          <label>Finished at</label>
+          <input [value]="activity.finished_at" readonly />
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="btn-modify" (click)="onModify()">
+          <em class="fa fa-pen"></em> Modify
+        </button>
+        <button type="button" class="btn-delete" (click)="onDelete()">
+          <em class="fa fa-trash"></em> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-calendar-delete *ngIf="showDeleteConfirm" [activity]="activity" (deleted)="onConfirmDelete($event)" (cancel)="onCancelDelete()" />

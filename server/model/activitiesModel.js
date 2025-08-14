@@ -1,7 +1,7 @@
 const supabase = require('../persistence/supabase');
 
 /**
- * Expected table schema: activities
+ * table name: activities
  * columns:
  *  - id: int8 (auto)
  *  - user_id: uuid (fk to auth.users.id), not null

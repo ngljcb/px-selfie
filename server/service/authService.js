@@ -2,7 +2,7 @@ const authModel = require('../model/authModel');
 
 async function register(email, password, username, name, birthday) {
   const { user, access_token } = await authModel.createAuthUser(email, password, username);
-  await authModel.createAuthUserupdateUserMetadata(access_token, { full_name: username });
+  await authModel.updateUserMetadata(access_token, { full_name: username });
   await authModel.createUserProfile(user.id, email, username, name, birthday);
   await authModel.createUserStatistics(user.id);
  

@@ -1,0 +1,20 @@
+<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-[100002]">
+  <div class="bg-[--secondary-bg] rounded-xl shadow-2xl w-[90%] max-w-md p-6 relative text-center animate-scaleIn">
+    <button (click)="onClose()" class="absolute top-3 right-4 text-xl font-bold text-yellow-900 hover:text-red-600" aria-label="Close">
+      ×
+    </button>
+
+    <div class="mb-3">
+      <em [class]="iconClass" class="text-4xl"></em>
+    </div>
+
+    <h2 class="text-xl font-bold text-yellow-900 mb-1">{{ title }}</h2>
+    <p class="text-yellow-800 font-medium mb-6">{{ message }}</p>
+
+    <div>
+      <button (click)="onClose()" class="px-6 py-2 rounded-lg text-white font-semibold shadow-lg bg-gradient-to-b {{ gradientClass }} hover:opacity-90 active:translate-y-[1px] transition">
+        {{ buttonText }}
+      </button>
+    </div>
+  </div>
+</div>

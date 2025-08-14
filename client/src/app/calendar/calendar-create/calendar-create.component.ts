@@ -3,11 +3,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivitiesService } from '../../service/activities.service';
 import { Activity } from '../../model/activity.model';
+import { CalendarResponseComponent } from '../calendar-response/calendar-response.component';
+
+type Variant = 'success' | 'error' | 'info' | 'warning';
 
 @Component({
   selector: 'app-calendar-create',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CalendarResponseComponent],
   templateUrl: './calendar-create.component.html',
   styleUrl: './calendar-create.component.scss'
 })
@@ -45,6 +48,13 @@ export class CalendarCreateComponent implements OnChanges {
 
   erroreData: boolean = false;
 
+  // ---- response modal state ----
+  showResponse = false;
+  responseTitle = 'Notice';
+  responseMessage = '';
+  responseVariant: Variant = 'info';
+  private createdOk = false;
+
   constructor(private activitiesService: ActivitiesService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -52,6 +62,7 @@ export class CalendarCreateComponent implements OnChanges {
       const base = this.selectedDate.slice(0, 10); // YYYY-MM-DD
       this.dataOraInizio = `${base}T09:00`;
       this.dataOraFine = `${base}T10:00`;
+      this.scadenza = base;
     }
   }
 
@@ -93,15 +104,32 @@ export class CalendarCreateComponent implements OnChanges {
 
       this.activitiesService.create(newActivity).subscribe({
         next: () => {
-          this.activityCreated.emit();
-          this.chiudi.emit();
+          // mostra modal di risposta → al close emetti activityCreated + chiudi
+          this.createdOk = true;
+          this.responseTitle = 'Saved';
+          this.responseMessage = 'Activity created successfully.';
+          this.responseVariant = 'success';
+          this.showResponse = true;
         },
-        error: (err) => {
-          console.error('Errore creazione attività:', err);
+        error: () => {
+          this.createdOk = false;
+          this.responseTitle = 'Creation failed';
+          this.responseMessage = 'Unable to create the activity. Please try again.';
+          this.responseVariant = 'error';
+          this.showResponse = true;
         }
       });
     } else {
+      // Manteniamo il comportamento attuale per gli eventi
       console.log('Nuovo elemento:', evento);
+      this.chiudi.emit();
+    }
+  }
+
+  onResponseClose(): void {
+    this.showResponse = false;
+    if (this.createdOk) {
+      this.activityCreated.emit();
       this.chiudi.emit();
     }
   }

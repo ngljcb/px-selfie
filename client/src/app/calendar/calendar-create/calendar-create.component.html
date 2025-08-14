@@ -85,3 +85,5 @@
     </div>
   </div>
 </div>
+
+<app-calendar-response *ngIf="showResponse" [title]="responseTitle" [message]="responseMessage" [variant]="responseVariant" buttonText="OK" (close)="onResponseClose()" />

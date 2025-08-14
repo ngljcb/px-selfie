@@ -15,7 +15,6 @@ export class TimeMachineListenerDirective implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.sub = this.timeMachine.virtualNow$().subscribe(() => {
-      console.log('[TimeMachineListener] trigger');
       if (typeof this.refreshFn === 'function') {
         this.refreshFn();
       }

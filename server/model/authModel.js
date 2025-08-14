@@ -1,7 +1,7 @@
 const supabase = require('../persistence/supabase');
 
 /**
- * Expected table schema: profiles
+ * table name: profiles
  * columns:
  *  - id: uuid (fk to auth.users.id), not null
  *  - email: text (fk to auth.users.email), not null
