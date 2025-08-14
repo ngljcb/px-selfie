@@ -41,3 +41,4 @@
 </div>
 
 <app-calendar-delete *ngIf="showDeleteConfirm" [activity]="activity" (deleted)="onConfirmDelete($event)" (cancel)="onCancelDelete()" />
+<app-calendar-modify *ngIf="showModify" [activity]="activity" (close)="onCancelModify()" (saved)="onSaved($event)" />

@@ -1,0 +1,41 @@
+<div class="modal-overlay">
+  <div class="modal-container">
+    <div class="calendar-info-wrapper">
+      <div class="header-row">
+        <h2>Modify activity</h2>
+        <button type="button" class="btn-close" (click)="onCancel()" aria-label="Close">×</button>
+      </div>
+
+      <div class="info-grid">
+        <div>
+          <label>Title *</label>
+          <input [(ngModel)]="title" name="title" />
+        </div>
+
+        <div>
+          <label>Due date *</label>
+          <input type="date" [(ngModel)]="due_date" name="due_date" />
+        </div>
+
+        <div>
+          <label>Status</label>
+          <select [(ngModel)]="status" name="status">
+            <option value="pending">pending</option>
+            <option value="done">done</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="button-row">
+        <button type="button" class="btn-save" (click)="onSave()">
+          <em class="fa fa-save"></em> Save
+        </button>
+        <button type="button" class="btn-cancel" (click)="onCancel()">
+          <em class="fa fa-times"></em> Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-calendar-response *ngIf="showResponse" [title]="responseTitle" [message]="responseMessage" [variant]="responseVariant" buttonText="OK" (close)="onResponseClose()" />

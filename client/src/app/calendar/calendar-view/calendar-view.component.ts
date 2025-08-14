@@ -135,6 +135,7 @@ export class CalendarViewComponent implements OnInit, OnDestroy {
 
   modifyActivity(id: number): void {
     this.closeInfo();
+    this.loadActivitiesAndRender();
   }
 
   applyVirtualNowToCalendar(): void {
