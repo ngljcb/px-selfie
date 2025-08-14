@@ -7,6 +7,8 @@ import { RegisterComponent } from './auth/register/register.component';
 import { LoginComponent } from './auth/login/login.component';
 import { AuthGuard } from './auth/guard/auth.guard';
 import { TimerViewComponent } from './timer/timer-view/timer-view.component';
+import { GroupComponent } from './notes/group/group.component';
+import { CategoryComponent } from './notes/category/category.component';
 
 export const routes: Routes = [
   {
@@ -28,27 +30,19 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
   },
   {
-    path: 'notes/new',
+    path: 'notes/create',
     component: NoteEditorComponent,
     canActivate: [AuthGuard],
   },
   {
     path: 'notes/:id',
     component: NoteEditorComponent,
-    canActivate: [AuthGuard],
-    data: { mode: 'view' }
+    canActivate: [AuthGuard]
   },
   {
     path: 'notes/:id/edit',
     component: NoteEditorComponent,
-    canActivate: [AuthGuard],
-    data: { mode: 'edit' }
-  },
-  {
-    path: 'notes/:id/duplicate',
-    component: NoteEditorComponent,
-    canActivate: [AuthGuard],
-    data: { mode: 'duplicate' }
+    canActivate: [AuthGuard]
   },
   {
     path: 'note',
@@ -64,5 +58,15 @@ export const routes: Routes = [
     path: 'timer',
     component: TimerViewComponent,
     canActivate: [AuthGuard],
+  },
+  {
+    path: 'groups',
+    component: GroupComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'categories', 
+    component: CategoryComponent,
+    canActivate: [AuthGuard]
   }
 ];

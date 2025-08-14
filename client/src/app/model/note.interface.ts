@@ -1,173 +1,256 @@
-// notes/client/model/note.interface.ts
-
-// Enum per i tipi di accessibilità (corrispondente all'enum del DB)
-export type AccessibilityType = 'private' | 'public' | 'authorized' | 'group';
-
-// Enum per i tipi di ordinamento
-export type SortType = 'alfabetico' | 'data' | 'lunghezza';
-
-// Configurazione costanti per le note
-export const NOTES_CONFIG = {
-  PREVIEW_LENGTH: 200, // Minimo 200 caratteri come da specifiche
-  AUTOSAVE_DELAY: 2000, // Delay per auto-save in ms
-  MAX_TITLE_LENGTH: 100,
-  MAX_CATEGORY_LENGTH: 50
-} as const;
-
-// Opzioni per l'ordinamento delle note
-export const SORT_OPTIONS = [
-  { value: 'alfabetico' as const, label: 'Ordine Alfabetico' },
-  { value: 'data' as const, label: 'Data Modifica' },
-  { value: 'lunghezza' as const, label: 'Lunghezza Contenuto' }
-] as const;
-
-// Opzioni per i tipi di accessibilità
-export const NOTE_TYPES = [
-  { value: 'private' as const, label: 'Privata'},
-  { value: 'public' as const, label: 'Pubblica'},
-  { value: 'authorized' as const, label: 'Condivisa'},
-  { value: 'group' as const, label: 'Di Gruppo'}
-] as const;
-
-// Interfaccia principale per una nota (corrispondente alla tabella DB)
-export interface Note {
-  id: string;
-  creator: string;
-  title: string;
-  text: string;
-  created_at: Date;
-  last_modify: Date;
-  category: string | null;
-  accessibility: AccessibilityType;
-  group_name: string | null;
+/**
+ * Enum for note accessibility types
+ */
+export enum AccessibilityType {
+  PRIVATE = 'private',
+  PUBLIC = 'public', 
+  AUTHORIZED = 'authorized',
+  GROUP = 'group'
 }
 
-// Interfaccia per l'anteprima delle note (usata nella lista)
-export interface NotePreview {
-  id: string;
-  title: string;
-  preview: string; // Primi N caratteri del testo
-  category: string | null;
-  accessibility: AccessibilityType;
-  created_at: Date;
-  last_modify: Date;
-  creator: string;
-  group_name: string | null;
-  contentLength: number; // Lunghezza totale del contenuto per ordinamento
-  isOwner: boolean; // Se l'utente corrente è il proprietario
+/**
+ * Enum for note sorting options
+ */
+export enum NoteSortType {
+  ALPHABETICAL = 'alphabetical',
+  CREATION_DATE = 'creation_date',
+  LAST_MODIFIED = 'last_modified',
+  CONTENT_LENGTH = 'content_length'
 }
 
-// Interfaccia per i dati del form di creazione/modifica nota
-export interface NoteFormData {
-  title: string;
-  text: string;
-  category: string | null;
-  accessibility: AccessibilityType;
-  group_name?: string | null;
-}
-
-// Interfaccia per i filtri delle note
-export interface NotesFilter {
-  searchQuery?: string;
-  category?: string;
-  accessibility?: AccessibilityType;
-  sortBy: SortType;
-  sortOrder: 'asc' | 'desc';
-}
-
-// Interfaccia per le categorie
+/**
+ * Interface for Category entity
+ */
 export interface Category {
+  id: string;
   name: string;
+  creator: string;
 }
 
-// Interfaccia per i gruppi
+/**
+ * Interface for Group entity
+ */
 export interface Group {
   name: string;
   creator: string | null;
 }
 
-// Interfaccia per gli utenti autorizzati ad accedere a una nota
+/**
+ * Interface for Group member
+ */
+export interface GroupUser {
+  groupName: string;
+  userId: string;
+}
+
+/**
+ * Interface for Note authorized user
+ */
 export interface NoteAuthorizedUser {
   id: string;
-  note_id: string;
-  user_id: string;
-  granted_at: Date;
+  noteId: string;
+  userId: string;
+  grantedAt: Date;
 }
 
-// DTO per la creazione di una nuova nota
-export interface CreateNoteDto {
-  title: string;
-  text: string;
-  category: string;
+/**
+ * Main Note interface
+ */
+export interface Note {
+  id: string;
+  creator: string;
+  title: string | null;
+  text: string | null;
+  createdAt: Date;
+  lastModify: Date;
+  category: string | null;
   accessibility: AccessibilityType;
-  group_name: string;
+  groupName: string | null;
 }
 
-// DTO per l'aggiornamento di una nota
-export interface UpdateNoteDto {
+/**
+ * Extended Note interface with related data for frontend use
+ */
+export interface NoteWithDetails extends Note {
+  categoryDetails?: Category;
+  groupDetails?: Group;
+  authorizedUsers?: NoteAuthorizedUser[];
+  canEdit?: boolean;
+  canDelete?: boolean;
+  preview?: string;
+  contentLength?: number;
+}
+
+/**
+ * DTO for creating a new note
+ */
+export interface CreateNoteRequest {
+  title?: string;
+  text?: string;
+  category?: string;
+  accessibility: AccessibilityType;
+  groupName?: string;
+  authorizedUserIds?: string[];
+}
+
+/**
+ * DTO for updating an existing note
+ */
+export interface UpdateNoteRequest {
   title?: string;
   text?: string;
   category?: string;
   accessibility?: AccessibilityType;
-  group_name?: string;
+  groupName?: string;
+  authorizedUserIds?: string[];
 }
 
-// DTO per la duplicazione di una nota
-export interface DuplicateNoteDto {
-  original_note_id: string;
-  new_title?: string;
+/**
+ * DTO for note filtering and search
+ */
+export interface NoteFilterParams {
+  searchQuery?: string;
+  categoryId?: string;
+  accessibility?: AccessibilityType;
+  groupName?: string;
+  sortBy?: NoteSortType;
+  sortOrder?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
 }
 
-// DTO per l'eliminazione di una nota
-export interface DeleteNoteDto {
-  note_id: string;
-}
-
-// Response type per le operazioni sulle note
-export interface NotesResponse<T = any> {
-  data: T;
-  error: string | null;
-  success: boolean;
-}
-
-// Response type per la lista paginata di note
-export interface NotesListResponse {
-  notes: NotePreview[];
+/**
+ * Response interface for paginated notes
+ */
+export interface NotesResponse {
+  notes: NoteWithDetails[];
   total: number;
-  page: number;
-  pageSize: number;
   hasMore: boolean;
 }
 
-// Interfaccia per le statistiche delle note (opzionale, per dashboard)
-export interface NotesStats {
+/**
+ * DTO for duplicating a note
+ */
+export interface DuplicateNoteRequest {
+  sourceNoteId: string;
+  newTitle?: string;
+  accessibility?: AccessibilityType;
+  groupName?: string;
+  authorizedUserIds?: string[];
+}
+
+/**
+ * Interface for note preview display
+ */
+export interface NotePreview {
+  id: string;
+  title: string | null;
+  preview: string;
+  createdAt: Date;
+  lastModify: Date;
+  categoryName?: string;
+  accessibility: AccessibilityType;
+  contentLength: number;
+  canEdit: boolean;
+  canDelete: boolean;
+}
+
+/**
+ * Interface for creating a new category
+ */
+export interface CreateCategoryRequest {
+  name: string;
+}
+
+/**
+ * Interface for creating a new group
+ */
+export interface CreateGroupRequest {
+  name: string;
+  userIds?: string[];
+}
+
+/**
+ * Interface for managing group members
+ */
+export interface ManageGroupMembersRequest {
+  groupName: string;
+  addUserIds?: string[];
+  removeUserIds?: string[];
+}
+
+/**
+ * Interface for user information (minimal)
+ */
+export interface User {
+  id: string;
+  email?: string;
+  displayName?: string;
+}
+
+/**
+ * Interface for note sharing/authorization
+ */
+export interface ShareNoteRequest {
+  noteId: string;
+  userIds: string[];
+}
+
+/**
+ * Interface for note access permissions
+ */
+export interface NotePermissions {
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  canShare: boolean;
+}
+
+/**
+ * Utility type for note operations
+ */
+export type NoteOperation = 'create' | 'read' | 'update' | 'delete' | 'duplicate' | 'share';
+
+/**
+ * Interface for note statistics (optional, for dashboard)
+ */
+export interface NoteStats {
   totalNotes: number;
-  notesByCategory: Record<string, number>;
-  notesByAccessibility: Record<AccessibilityType, number>;
+  privateNotes: number;
+  publicNotes: number;
+  groupNotes: number;
+  authorizedNotes: number;
+  categoriesCount: number;
   averageNoteLength: number;
-  lastCreated: Date | null;
-  lastModified: Date | null;
 }
 
-// Utility types per la gestione dello stato
-export type NoteLoadingState = 'idle' | 'loading' | 'success' | 'error';
-
-export interface NotesState {
-  notes: NotePreview[];
-  categories: Category[];
-  groups: Group[];
-  currentNote: Note | null;
-  filters: NotesFilter;
-  loading: NoteLoadingState;
-  error: string | null;
-  totalNotes: number;
+/**
+ * Validation interface for note content
+ */
+export interface NoteValidation {
+  isValid: boolean;
+  errors: string[];
+  warnings?: string[];
 }
 
-// Interfaccia per l'editor delle note
-export interface NoteEditorState {
-  mode: 'create' | 'edit' | 'view' | 'duplicate';
-  isReadOnly: boolean;
-  hasUnsavedChanges: boolean;
-  lastSaved: Date | null;
-  autoSaveEnabled: boolean;
+/**
+ * Interface for bulk operations on notes
+ */
+export interface BulkNoteOperation {
+  operation: 'delete' | 'changeCategory' | 'changeAccessibility';
+  noteIds: string[];
+  newCategoryId?: string;
+  newAccessibility?: AccessibilityType;
+  newGroupName?: string;
 }
+
+/**
+ * Constants for note functionality
+ */
+export const NOTE_CONSTANTS = {
+  PREVIEW_LENGTH: 200,
+  MAX_TITLE_LENGTH: 255,
+  MAX_CATEGORY_NAME_LENGTH: 100,
+  MAX_GROUP_NAME_LENGTH: 100,
+  DEFAULT_PAGE_SIZE: 20
+} as const;

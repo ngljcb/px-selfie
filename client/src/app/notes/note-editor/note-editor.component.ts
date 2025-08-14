@@ -1,25 +1,35 @@
-// notes/client/components/note-editor/note-editor.component.ts
+// note-editor.component.ts
 
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
 
 import { 
-  Note, 
-  NoteFormData, 
+  NoteWithDetails, 
+  CreateNoteRequest, 
+  UpdateNoteRequest, 
   Category, 
-  NoteType, 
-  NOTE_TYPES, 
-  NOTES_CONFIG 
+  AccessibilityType, 
+  Group,
+  NOTE_CONSTANTS 
 } from '../../model/note.interface';
-import { NotesNavigationService } from '../../service/notes-navigation.service';
-// import { NotesClientService } from '../../services/notes-client.service'; // Da implementare
+import { NotesService } from '../../service/notes.service';
+import { CategoriesService } from '../../service/categories.service';
+import { GroupsService } from '../../service/groups.service';
 
-type EditorMode = 'create' | 'edit' | 'duplicate' | 'view';
-type ViewMode = 'write' | 'preview' | 'split';
+type EditorMode = 'create' | 'edit';
 type AutoSaveStatus = 'saved' | 'saving' | 'error' | null;
+
+interface NoteFormData {
+  title: string;
+  content: string;
+  categoryId: string;
+  accessibility: AccessibilityType;
+  groupName: string;
+  authorizedUserIds: string[];
+}
 
 @Component({
   selector: 'app-note-editor',
@@ -29,23 +39,23 @@ type AutoSaveStatus = 'saved' | 'saving' | 'error' | null;
 })
 export class NoteEditorComponent implements OnInit, OnDestroy {
 
-  // Modalità editor
+  // Editor modes (only create and edit)
   mode: EditorMode = 'create';
-  editorMode: ViewMode = 'preview'; // Default a preview per modalità view
-  isReadOnly = false;
 
-  // Dati della nota
+  // Note data
   noteData: NoteFormData = {
-    titolo: '',
-    contenuto: '',
-    categoria: '',
-    tipo: 'privato'
+    title: '',
+    content: '',
+    categoryId: '',
+    accessibility: AccessibilityType.PRIVATE,
+    groupName: '',
+    authorizedUserIds: []
   };
 
-  originalNote: Note | null = null;
-  noteId: number | null = null;
+  originalNote: NoteWithDetails | null = null;
+  noteId: string | null = null;
   
-  // Stato form
+  // Form state
   hasChanges = false;
   showValidationErrors = false;
   isSaving = false;
@@ -53,28 +63,53 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   lastSaved: Date | null = null;
   autoSaveStatus: AutoSaveStatus = null;
 
-  // Categorie e tipi
+  // Categories and groups
   categories: Category[] = [];
-  noteTypes = NOTE_TYPES;
-  newCategoryName = '';
+  groups: Group[] = [];
 
-  // Gestione auto-save
+  // Constants for template
+  accessibilityTypes = [
+    { 
+      value: AccessibilityType.PRIVATE, 
+      label: 'Private', 
+      description: 'Only you can see this note',
+    },
+    { 
+      value: AccessibilityType.PUBLIC, 
+      label: 'Public', 
+      description: 'Visible to all users',
+    },
+    { 
+      value: AccessibilityType.AUTHORIZED, 
+      label: 'Authorized', 
+      description: 'Visible to specific people you choose',
+    },
+    { 
+      value: AccessibilityType.GROUP, 
+      label: 'Group', 
+      description: 'Visible to group members',
+    }
+  ];
+
+  // Auto-save management
   private autoSaveSubject = new Subject<void>();
   private destroy$ = new Subject<void>();
   private initialFormState: string = '';
 
   constructor(
     private route: ActivatedRoute,
-    private navigationService: NotesNavigationService
-    // private notesService: NotesClientService // Da implementare
+    private router: Router,
+    private notesService: NotesService,
+    private categoriesService: CategoriesService,
+    private groupsService: GroupsService
   ) {
-    // Setup auto-save con debouncing
+    // Setup auto-save with debouncing
     this.autoSaveSubject.pipe(
-      debounceTime(NOTES_CONFIG.AUTOSAVE_DELAY),
+      debounceTime(3000), // 3 seconds delay
       distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(() => {
-      if (this.hasChanges && this.isFormValid()) {
+      if (this.hasChanges && this.isFormValid() && this.mode === 'edit') {
         this.performAutoSave();
       }
     });
@@ -82,7 +117,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initializeEditor();
-    this.loadCategories();
+    this.loadSupportingData();
   }
 
   ngOnDestroy(): void {
@@ -91,173 +126,108 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Previene la chiusura accidentale con modifiche non salvate
+   * Prevent accidental close with unsaved changes
    */
   @HostListener('window:beforeunload', ['$event'])
   unloadNotification(event: any): void {
     if (this.hasChanges) {
-      event.returnValue = 'Hai modifiche non salvate. Sei sicuro di voler uscire?';
+      event.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
     }
   }
 
-  // ========== INIZIALIZZAZIONE ==========
+  // ========== INITIALIZATION ==========
 
   /**
-   * Inizializza l'editor basandosi sulla route
+   * Initialize editor based on route
    */
   private initializeEditor(): void {
     this.isLoading = true;
 
-    // Determina modalità dalla route
-    this.mode = this.route.snapshot.data['mode'] || 'create';
-    this.noteId = this.route.snapshot.params['id'] ? parseInt(this.route.snapshot.params['id'], 10) : null;
+    // Get note ID from route
+    this.noteId = this.route.snapshot.params['id'] || null;
 
-    switch (this.mode) {
-      case 'create':
-        this.initializeNewNote();
-        break;
-      case 'edit':
-        this.loadNoteForEdit();
-        break;
-      case 'duplicate':
-        this.loadNoteForDuplicate();
-        break;
-      case 'view':
-        this.loadNoteForView();
-        break;
+    if (this.noteId) {
+      this.mode = 'edit';
+      this.loadNoteForEdit();
+    } else {
+      this.mode = 'create';
+      this.initializeNewNote();
     }
   }
 
   /**
-   * Inizializza una nuova nota
+   * Initialize new note
    */
   private initializeNewNote(): void {
     this.noteData = {
-      titolo: '',
-      contenuto: '',
-      categoria: '',
-      tipo: 'privato'
+      title: '',
+      content: '',
+      categoryId: '',
+      accessibility: AccessibilityType.PRIVATE,
+      groupName: '',
+      authorizedUserIds: []
     };
     
-    this.isReadOnly = false;
-    this.editorMode = 'write';
     this.setInitialFormState();
     this.isLoading = false;
   }
 
   /**
-   * Carica nota esistente per modifica
+   * Load existing note for editing
    */
   private loadNoteForEdit(): void {
     if (!this.noteId) {
-      this.navigationService.goToNotesView();
+      this.router.navigate(['/notes']);
       return;
     }
 
-    // TODO: Implementare con service
-    // this.notesService.getNoteById(this.noteId).subscribe({
-    //   next: (note) => {
-    //     this.originalNote = note;
-    //     this.noteData = {
-    //       titolo: note.titolo,
-    //       contenuto: note.contenuto,
-    //       categoria: note.categoria,
-    //       tipo: note.tipo
-    //     };
-    //     this.setInitialFormState();
-    //     this.isLoading = false;
-    //   },
-    //   error: (error) => {
-    //     console.error('Errore nel caricamento della nota:', error);
-    //     this.navigationService.goToNotesView();
-    //   }
-    // });
-
-    // Simulazione per ora
-    setTimeout(() => {
-      this.isReadOnly = false;
-      this.editorMode = 'write';
-      this.isLoading = false;
-    }, 1000);
+    this.notesService.getNoteById(this.noteId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (note) => {
+        this.originalNote = note;
+        this.noteData = {
+          title: note.title || '',
+          content: note.text || '',
+          categoryId: note.category || '',
+          accessibility: note.accessibility,
+          groupName: note.groupName || '',
+          authorizedUserIds: note.authorizedUsers?.map(u => u.userId) || []
+        };
+        this.setInitialFormState();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading note:', error);
+        this.router.navigate(['/notes']);
+      }
+    });
   }
 
   /**
-   * Carica nota esistente per duplicazione
+   * Load supporting data (categories and groups)
    */
-  private loadNoteForDuplicate(): void {
-    if (!this.noteId) {
-      this.navigationService.goToNotesView();
-      return;
-    }
-
-    // TODO: Implementare con service
-    // Simile a loadNoteForEdit ma con titolo modificato
-    setTimeout(() => {
-      this.noteData.titolo = `Copia di ${this.noteData.titolo}`;
-      this.isReadOnly = false;
-      this.editorMode = 'write';
-      this.setInitialFormState();
-      this.isLoading = false;
-    }, 1000);
+  private loadSupportingData(): void {
+    combineLatest([
+      this.categoriesService.getUserCategories(),
+      this.groupsService.getUserGroups()
+    ]).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: ([categories, groups]) => {
+        this.categories = categories;
+        this.groups = groups;
+      },
+      error: (error) => {
+        console.error('Error loading supporting data:', error);
+      }
+    });
   }
 
-  /**
-   * Carica nota esistente per visualizzazione sola lettura
-   */
-  private loadNoteForView(): void {
-    if (!this.noteId) {
-      this.navigationService.goToNotesView();
-      return;
-    }
-
-    // TODO: Implementare con service
-    // this.notesService.getNoteById(this.noteId).subscribe({
-    //   next: (note) => {
-    //     this.originalNote = note;
-    //     this.noteData = {
-    //       titolo: note.titolo,
-    //       contenuto: note.contenuto,
-    //       categoria: note.categoria,
-    //       tipo: note.tipo
-    //     };
-    //     this.isReadOnly = true;
-    //     this.editorMode = 'preview';
-    //     this.setInitialFormState();
-    //     this.isLoading = false;
-    //   },
-    //   error: (error) => {
-    //     console.error('Errore nel caricamento della nota:', error);
-    //     this.navigationService.goToNotesView();
-    //   }
-    // });
-
-    // Simulazione per ora
-    setTimeout(() => {
-      this.isReadOnly = true;
-      this.editorMode = 'preview';
-      this.isLoading = false;
-    }, 1000);
-  }
+  // ========== FORM MANAGEMENT ==========
 
   /**
-   * Carica le categorie disponibili
-   */
-  private loadCategories(): void {
-    // TODO: Implementare con service
-    // this.notesService.getAllCategories().subscribe({
-    //   next: (categories) => {
-    //     this.categories = categories;
-    //   },
-    //   error: (error) => {
-    //     console.error('Errore nel caricamento delle categorie:', error);
-    //   }
-    // });
-  }
-
-  // ========== GESTIONE FORM ==========
-
-  /**
-   * Imposta lo stato iniziale del form
+   * Set initial form state
    */
   private setInitialFormState(): void {
     this.initialFormState = JSON.stringify(this.noteData);
@@ -265,25 +235,37 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Gestisce i cambiamenti del form
+   * Handle form changes
    */
   onFormChange(): void {
-    if (this.isReadOnly) return;
     this.checkForChanges();
     this.triggerAutoSave();
   }
 
   /**
-   * Gestisce i cambiamenti del contenuto
+   * Handle content changes
    */
   onContentChange(): void {
-    if (this.isReadOnly) return;
     this.checkForChanges();
     this.triggerAutoSave();
   }
 
   /**
-   * Controlla se ci sono modifiche rispetto allo stato iniziale
+   * Handle accessibility type change
+   */
+  onAccessibilityChange(): void {
+    // Reset related fields when changing accessibility type
+    if (this.noteData.accessibility !== AccessibilityType.GROUP) {
+      this.noteData.groupName = '';
+    }
+    if (this.noteData.accessibility !== AccessibilityType.AUTHORIZED) {
+      this.noteData.authorizedUserIds = [];
+    }
+    this.onFormChange();
+  }
+
+  /**
+   * Check for changes compared to initial state
    */
   private checkForChanges(): void {
     const currentState = JSON.stringify(this.noteData);
@@ -291,170 +273,140 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Valida il form
+   * Validate form
    */
   isFormValid(): boolean {
     return !!(
-      this.noteData.titolo.trim() &&
-      this.noteData.tipo &&
-      this.getFinalCategory()
+      this.noteData.title.trim() &&
+      this.noteData.content.trim() &&
+      this.isAccessibilityValid()
     );
   }
 
   /**
-   * Ottiene la categoria finale (gestisce nuova categoria)
+   * Validate accessibility-specific requirements
    */
-  private getFinalCategory(): string {
-    if (this.noteData.categoria === '__new__') {
-      return this.newCategoryName.trim();
+  private isAccessibilityValid(): boolean {
+    switch (this.noteData.accessibility) {
+      case AccessibilityType.GROUP:
+        return !!this.noteData.groupName;
+      case AccessibilityType.AUTHORIZED:
+        return this.noteData.authorizedUserIds.length > 0;
+      default:
+        return true;
     }
-    return this.noteData.categoria;
+  }
+
+  /**
+   * Get final category (handles empty category)
+   */
+  private getFinalCategoryId(): string | undefined {
+    return this.noteData.categoryId || undefined;
   }
 
   // ========== AUTO-SAVE ==========
 
   /**
-   * Triggera l'auto-save
+   * Trigger auto-save
    */
   private triggerAutoSave(): void {
-    if (this.isReadOnly) return;
     this.autoSaveSubject.next();
   }
 
   /**
-   * Esegue l'auto-save
+   * Perform auto-save
    */
   private async performAutoSave(): Promise<void> {
-    if (this.mode === 'create' || this.isReadOnly) return; // Non auto-save per nuove note o sola lettura
+    if (this.mode !== 'edit' || !this.noteId) return;
 
     this.autoSaveStatus = 'saving';
 
     try {
-      // TODO: Implementare con service
-      // await this.notesService.updateNote(this.noteId!, this.noteData).toPromise();
-      
-      // Simulazione
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const updateRequest: UpdateNoteRequest = {
+        title: this.noteData.title,
+        text: this.noteData.content,
+        category: this.getFinalCategoryId(),
+        accessibility: this.noteData.accessibility,
+        groupName: this.noteData.groupName || undefined,
+        authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
+      };
+
+      await this.notesService.updateNote(this.noteId, updateRequest).toPromise();
       
       this.autoSaveStatus = 'saved';
       this.lastSaved = new Date();
+      this.setInitialFormState(); // Update baseline after successful save
       
-      // Reset status dopo 3 secondi
+      // Reset status after 3 seconds
       setTimeout(() => {
         this.autoSaveStatus = null;
       }, 3000);
 
     } catch (error) {
-      console.error('Errore nell\'auto-save:', error);
+      console.error('Error in auto-save:', error);
       this.autoSaveStatus = 'error';
     }
   }
 
-  // ========== AZIONI EDITOR ==========
+  // ========== EDITOR ACTIONS ==========
 
   /**
-   * Cambia modalità di visualizzazione
-   */
-  setEditorMode(mode: ViewMode): void {
-    this.editorMode = mode;
-  }
-
-  /**
-   * Salva come bozza
-   */
-  async saveDraft(): Promise<void> {
-    if (!this.isFormValid()) {
-      this.showValidationErrors = true;
-      return;
-    }
-
-    this.isSaving = true;
-
-    try {
-      const noteToSave = {
-        ...this.noteData,
-        categoria: this.getFinalCategory()
-      };
-
-      // TODO: Implementare con service
-      // if (this.mode === 'create') {
-      //   await this.notesService.createNote(noteToSave).toPromise();
-      // } else {
-      //   await this.notesService.updateNote(this.noteId!, noteToSave).toPromise();
-      // }
-
-      // Simulazione
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      this.setInitialFormState();
-      this.lastSaved = new Date();
-
-    } catch (error) {
-      console.error('Errore nel salvataggio bozza:', error);
-    } finally {
-      this.isSaving = false;
-    }
-  }
-
-  /**
-   * Salva e pubblica la nota
+   * Save and finish note
    */
   async saveNote(): Promise<void> {
     if (!this.isFormValid()) {
       this.showValidationErrors = true;
+      this.scrollToFirstError();
       return;
     }
 
     this.isSaving = true;
 
     try {
-      const noteToSave = {
-        ...this.noteData,
-        categoria: this.getFinalCategory()
-      };
+      if (this.mode === 'create') {
+        const createRequest: CreateNoteRequest = {
+          title: this.noteData.title,
+          text: this.noteData.content,
+          category: this.getFinalCategoryId(),
+          accessibility: this.noteData.accessibility,
+          groupName: this.noteData.groupName || undefined,
+          authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
+        };
 
-      // Crea nuova categoria se necessario
-      if (this.noteData.categoria === '__new__' && this.newCategoryName.trim()) {
-        await this.createNewCategory(this.newCategoryName.trim());
+        const createdNote = await this.notesService.createNote(createRequest).toPromise();
+        if (createdNote) {
+          this.noteId = createdNote.id;
+        }
+      } else if (this.noteId) {
+        const updateRequest: UpdateNoteRequest = {
+          title: this.noteData.title,
+          text: this.noteData.content,
+          category: this.getFinalCategoryId(),
+          accessibility: this.noteData.accessibility,
+          groupName: this.noteData.groupName || undefined,
+          authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
+        };
+
+        await this.notesService.updateNote(this.noteId, updateRequest).toPromise();
       }
 
-      // TODO: Implementare con service
-      // if (this.mode === 'create' || this.mode === 'duplicate') {
-      //   await this.notesService.createNote(noteToSave).toPromise();
-      // } else {
-      //   await this.notesService.updateNote(this.noteId!, noteToSave).toPromise();
-      // }
-
-      // Simulazione
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Torna alla vista principale
-      this.navigationService.goToNotesView();
+      this.setInitialFormState();
+      this.lastSaved = new Date();
+      this.router.navigate(['/notes']);
 
     } catch (error) {
-      console.error('Errore nel salvataggio:', error);
+      console.error('Error saving note:', error);
     } finally {
       this.isSaving = false;
     }
   }
 
   /**
-   * Crea una nuova categoria
-   */
-  private async createNewCategory(name: string): Promise<void> {
-    // TODO: Implementare con service
-    // await this.notesService.createCategory(name).toPromise();
-    
-    // Aggiunge alla lista locale
-    this.categories.push({ nome: name });
-  }
-
-  /**
-   * Annulla le modifiche
+   * Discard changes
    */
   discardChanges(): void {
     if (this.hasChanges) {
-      const confirmMessage = 'Hai modifiche non salvate. Sei sicuro di voler annullare?';
+      const confirmMessage = 'You have unsaved changes. Are you sure you want to discard them?';
       if (!confirm(confirmMessage)) {
         return;
       }
@@ -464,133 +416,97 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Torna indietro
+   * Go back
    */
   goBack(): void {
-    this.navigationService.goBack();
+    this.router.navigate(['/notes']);
   }
 
   // ========== UTILITY METHODS ==========
 
   /**
-   * Ottiene il messaggio per l'auto-save
+   * Get auto-save status message
    */
   getAutoSaveMessage(): string {
     switch (this.autoSaveStatus) {
-      case 'saving': return 'Salvando...';
-      case 'saved': return 'Salvato automaticamente';
-      case 'error': return 'Errore nel salvataggio';
+      case 'saving': return 'Saving...';
+      case 'saved': return 'Auto-saved';
+      case 'error': return 'Save failed';
       default: return '';
     }
   }
 
   /**
-   * Ottiene il testo del pulsante salva
+   * Get save button text
    */
   getSaveButtonText(): string {
     if (this.isSaving) {
-      return this.mode === 'create' ? 'Creando...' : 'Salvando...';
+      return this.mode === 'create' ? 'Creating...' : 'Saving...';
     }
     
-    switch (this.mode) {
-      case 'create': return 'Crea Nota';
-      case 'edit': return 'Salva Modifiche';
-      case 'duplicate': return 'Duplica Nota';
-      case 'view': return 'Modifica'; // In modalità view, diventa "modifica"
-      default: return 'Salva';
-    }
+    return this.mode === 'create' ? 'Create Note' : 'Save Changes';
   }
 
   /**
-   * Ottiene il messaggio di loading
+   * Get loading message
    */
   getLoadingMessage(): string {
-    switch (this.mode) {
-      case 'edit': return 'Caricamento nota in corso...';
-      case 'duplicate': return 'Preparazione duplicazione...';
-      case 'view': return 'Caricamento nota...';
-      default: return 'Caricamento...';
-    }
+    return this.mode === 'edit' ? 'Loading note...' : 'Loading...';
   }
 
   /**
-   * Ottiene la descrizione del tipo di nota
+   * Get accessibility type description
    */
-  getTypeDescription(tipo: NoteType): string {
-    const descriptions = {
-      privato: 'Solo tu puoi vedere questa nota',
-      pubblico: 'Visibile a tutti gli utenti',
-      condiviso: 'Visibile a persone specifiche che scegli',
-      di_gruppo: 'Visibile ai membri del gruppo'
-    };
-    return descriptions[tipo] || '';
+  getAccessibilityDescription(type: AccessibilityType): string {
+    const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
+    return accessibilityType?.description || '';
   }
 
   /**
-   * Conta le parole nel contenuto
-   */
-  getWordCount(): number {
-    if (!this.noteData.contenuto.trim()) return 0;
-    return this.noteData.contenuto.trim().split(/\s+/).length;
-  }
-
-  /**
-   * Stima il tempo di lettura
-   */
-  getReadingTime(): number {
-    const wordsPerMinute = 200;
-    const words = this.getWordCount();
-    return Math.max(1, Math.ceil(words / wordsPerMinute));
-  }
-
-  /**
-   * Genera anteprima Markdown (semplificata)
+   * Generate Markdown preview (simplified)
    */
   getMarkdownPreview(): string {
-    if (!this.noteData.contenuto) return '';
+    if (!this.noteData.content) return '<p class="text-gray-400">No content to preview</p>';
 
-    let html = this.noteData.contenuto;
+    let html = this.noteData.content;
 
-    // Conversioni Markdown basilari
-    // Titoli
-    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+    // Basic Markdown conversions
+    // Headers
+    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-3">$1</h1>');
 
-    // Grassetto e corsivo
-    html = html.replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>');
-    html = html.replace(/\*(.*)\*/gim, '<em>$1</em>');
+    // Bold and italic
+    html = html.replace(/\*\*(.*?)\*\*/gim, '<strong class="font-semibold">$1</strong>');
+    html = html.replace(/\*(.*?)\*/gim, '<em class="italic">$1</em>');
 
-    // Codice inline
-    html = html.replace(/`(.*?)`/gim, '<code>$1</code>');
+    // Inline code
+    html = html.replace(/`(.*?)`/gim, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
 
-    // Link
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    // Links
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener" class="text-blue-600 hover:underline">$1</a>');
 
-    // Liste puntate
-    html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
-    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    // Lists
+    html = html.replace(/^\- (.+$)/gim, '<li class="ml-4">• $1</li>');
+    html = html.replace(/^\d+\. (.+$)/gim, '<li class="ml-4">$1</li>');
 
-    // Liste numerate
-    html = html.replace(/^\d+\. (.*$)/gim, '<li>$1</li>');
-
-    // Interruzioni di riga
-    html = html.replace(/\n\n/gim, '</p><p>');
+    // Line breaks
+    html = html.replace(/\n\n/gim, '</p><p class="mb-3">');
     html = html.replace(/\n/gim, '<br>');
 
     // Wrap in paragraphs
-    if (html && !html.startsWith('<h') && !html.startsWith('<ul') && !html.startsWith('<ol')) {
-      html = '<p>' + html + '</p>';
+    if (html && !html.startsWith('<h') && !html.startsWith('<li')) {
+      html = '<p class="mb-3">' + html + '</p>';
     }
 
     return html;
   }
 
   /**
-   * Formatta una data
+   * Format date
    */
   formatDate(date: Date): string {
-    return new Date(date).toLocaleString('it-IT', {
+    return new Date(date).toLocaleString('en-US', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -599,15 +515,13 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ========== GESTIONE ERRORI ==========
+  // ========== VALIDATION HELPERS ==========
 
   /**
-   * Mostra errori di validazione
+   * Scroll to first error field
    */
-  private showValidErrors(): void {
-    this.showValidationErrors = true;
-    
-    // Scroll al primo campo con errore
+  private scrollToFirstError(): void {
+    // Scroll to first field with error
     setTimeout(() => {
       const firstError = document.querySelector('.border-red-300');
       if (firstError) {
@@ -617,45 +531,45 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Reset errori di validazione
+   * Get validation errors
    */
-  private resetValidationErrors(): void {
-    this.showValidationErrors = false;
-  }
-
-  // ========== METODI MODALITÀ VIEW ==========
-
-  /**
-   * Passa dalla modalità VIEW a EDIT
-   */
-  switchToEditMode(): void {
-    if (this.noteId) {
-      this.navigationService.goToEditNote(this.noteId);
+  getValidationErrors(): string[] {
+    const errors: string[] = [];
+    
+    if (!this.noteData.title.trim()) {
+      errors.push('Title is required');
     }
-  }
-
-  /**
-   * Duplica nota dalla modalità VIEW
-   */
-  duplicateFromView(): void {
-    if (this.noteId) {
-      this.navigationService.goToDuplicateNote(this.noteId);
+    
+    if (!this.noteData.content.trim()) {
+      errors.push('Content is required');
     }
+    
+    if (this.noteData.accessibility === AccessibilityType.GROUP && !this.noteData.groupName) {
+      errors.push('Group selection is required for group notes');
+    }
+    
+    if (this.noteData.accessibility === AccessibilityType.AUTHORIZED && this.noteData.authorizedUserIds.length === 0) {
+      errors.push('At least one authorized user is required');
+    }
+    
+    return errors;
+  }
+
+  // ========== CATEGORY AND GROUP HELPERS ==========
+
+  /**
+   * Get category name by ID
+   */
+  getCategoryName(categoryId: string): string {
+    const category = this.categories.find(c => c.id === categoryId);
+    return category?.name || 'Unknown';
   }
 
   /**
-   * Ottiene l'icona per il tipo di nota
+   * Get group display name
    */
-  getTypeIcon(tipo: NoteType): string {
-    const noteType = NOTE_TYPES.find(t => t.value === tipo);
-    return noteType?.icon || '📝';
-  }
-
-  /**
-   * Ottiene l'etichetta per il tipo di nota
-   */
-  getTypeLabel(tipo: NoteType): string {
-    const noteType = NOTE_TYPES.find(t => t.value === tipo);
-    return noteType?.label || 'Sconosciuto';
+  getGroupDisplayName(groupName: string): string {
+    const group = this.groups.find(g => g.name === groupName);
+    return group ? group.name : groupName;
   }
 }

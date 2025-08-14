@@ -1,8 +1,9 @@
-// notes/client/components/notes-view/notes-view.component.ts
+// notes-view.component.ts
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
 
 // Import del componente NoteBoxComponent
@@ -10,16 +11,23 @@ import { NoteBoxComponent } from '../note-box/note-box.component';
 
 // Import modelli e servizi
 import { 
-  NotePreview, 
+  NoteWithDetails, 
   Category, 
-  NotesFilter, 
-  SORT_OPTIONS, 
   AccessibilityType,
-  NOTE_TYPES,
-  SortType
+  NoteSortType,
+  NoteFilterParams
 } from '../../model/note.interface';
-import { NotesNavigationService } from '../../service/notes-navigation.service';
 import { NotesService } from '../../service/notes.service';
+import { CategoriesService } from '../../service/categories.service';
+import { GroupsService } from '../../service/groups.service';
+
+// Type definitions for component
+type SortOption = {
+  value: string;
+  label: string;
+  sortBy: NoteSortType;
+  sortOrder: 'asc' | 'desc';
+};
 
 @Component({
   selector: 'app-notes-view',
@@ -33,34 +41,79 @@ import { NotesService } from '../../service/notes.service';
 })
 export class NotesViewComponent implements OnInit, OnDestroy {
   
-  // Dati delle note
-  allNotes: NotePreview[] = [];
-  filteredNotes: NotePreview[] = [];
+  // Notes data
+  allNotes: NoteWithDetails[] = [];
+  filteredNotes: NoteWithDetails[] = [];
   categories: Category[] = [];
   totalNotes = 0;
 
-  // Stati dell'interfaccia
+  // UI states
   isLoading = false;
   errorMessage = '';
   showSuccessMessage = '';
 
-  // Filtri
+  // Filters
   searchQuery = '';
-  selectedCategory = '';
-  selectedType: AccessibilityType | '' = '';
-  selectedSortOption = 'data-desc'; // Formato: 'sortBy-sortOrder'
+  selectedCategoryId = '';
+  selectedAccessibilityType: AccessibilityType | '' = '';
+  selectedSortOption = 'creation_date-desc'; // Default to newest first
 
-  // Costanti per il template
-  noteTypes = NOTE_TYPES;
-  sortOptions = SORT_OPTIONS;
+  // Constants for template
+  accessibilityTypes = [
+    { value: AccessibilityType.PRIVATE, label: 'Private'},
+    { value: AccessibilityType.PUBLIC, label: 'Public'},
+    { value: AccessibilityType.AUTHORIZED, label: 'Authorized'},
+    { value: AccessibilityType.GROUP, label: 'Group'}
+  ];
 
-  // Subject per cleanup
+  sortOptions: SortOption[] = [
+    { 
+      value: 'alphabetical-asc', 
+      label: 'A-Z', 
+      sortBy: NoteSortType.ALPHABETICAL, 
+      sortOrder: 'asc' 
+    },
+    { 
+      value: 'alphabetical-desc', 
+      label: 'Z-A', 
+      sortBy: NoteSortType.ALPHABETICAL, 
+      sortOrder: 'desc' 
+    },
+    { 
+      value: 'creation_date-desc', 
+      label: 'Newest First', 
+      sortBy: NoteSortType.CREATION_DATE, 
+      sortOrder: 'desc' 
+    },
+    { 
+      value: 'creation_date-asc', 
+      label: 'Oldest First', 
+      sortBy: NoteSortType.CREATION_DATE, 
+      sortOrder: 'asc' 
+    },
+    { 
+      value: 'content_length-asc', 
+      label: 'Shortest First', 
+      sortBy: NoteSortType.CONTENT_LENGTH, 
+      sortOrder: 'asc' 
+    },
+    { 
+      value: 'content_length-desc', 
+      label: 'Longest First', 
+      sortBy: NoteSortType.CONTENT_LENGTH, 
+      sortOrder: 'desc' 
+    }
+  ];
+
+  // Subject for cleanup
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
   constructor(
-    private navigationService: NotesNavigationService,
     private notesService: NotesService,
+    private categoriesService: CategoriesService,
+    private groupsService: GroupsService,
+    private router: Router
   ) {
     // Setup search debouncing
     this.searchSubject.pipe(
@@ -81,155 +134,140 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ========== CARICAMENTO DATI ==========
+  // ========== DATA LOADING ==========
 
   /**
-   * Carica i dati iniziali (note e categorie)
+   * Load initial data (notes and categories)
    */
   private loadInitialData(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // Carica sia note che categorie in parallelo
+    // Load both notes and categories in parallel
     combineLatest([
       this.notesService.getNotes(this.buildCurrentFilter()),
+      this.categoriesService.getUserCategories()
     ]).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
-      next: ([notesResponse]) => {
-        if (notesResponse) {
-          this.allNotes = notesResponse.notes;
-          this.totalNotes = notesResponse.total;
-          this.applyFilters();
-        }
-
+      next: ([notesResponse, categories]) => {
+        this.allNotes = notesResponse.notes;
+        this.totalNotes = notesResponse.total;
+        this.categories = categories;
+        this.applyFilters();
         this.isLoading = false;
       },
       error: (error) => {
-        console.error('Errore nel caricamento dei dati:', error);
-        this.errorMessage = 'Errore nel caricamento delle note';
+        console.error('Error loading data:', error);
+        this.errorMessage = 'Error loading notes. Please try again.';
         this.isLoading = false;
       }
     });
   }
 
   /**
-   * Riprova il caricamento in caso di errore
+   * Retry loading in case of error
    */
   retryLoadNotes(): void {
     this.loadInitialData();
   }
 
-  // ========== GESTIONE FILTRI ==========
+  // ========== FILTER MANAGEMENT ==========
 
   /**
-   * Gestisce il cambio della query di ricerca con debouncing
+   * Handle search input change with debouncing
    */
   onSearchChange(): void {
     this.searchSubject.next(this.searchQuery);
   }
 
   /**
-   * Gestisce il cambio dei filtri
+   * Handle filter changes
    */
   onFiltersChange(): void {
     this.applyFilters();
   }
 
   /**
-   * Gestisce il cambio dell'ordinamento
+   * Handle sort option change
    */
   onSortChange(): void {
     this.applyFilters();
   }
 
   /**
-   * Applica tutti i filtri e l'ordinamento localmente
+   * Apply all filters and sorting locally
    */
   private applyFilters(): void {
     let filtered = [...this.allNotes];
 
-    // Applica filtro ricerca
+    // Apply search filter
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       filtered = filtered.filter(note => 
-        note.title.toLowerCase().includes(query) ||
-        note.preview.toLowerCase().includes(query) ||
-        (note.category && note.category.toLowerCase().includes(query))
+        (note.title?.toLowerCase().includes(query)) ||
+        (note.text?.toLowerCase().includes(query)) ||
+        (note.categoryDetails?.name?.toLowerCase().includes(query))
       );
     }
 
-    // Applica filtro categoria
-    if (this.selectedCategory) {
-      filtered = filtered.filter(note => note.category === this.selectedCategory);
+    // Apply category filter
+    if (this.selectedCategoryId) {
+      filtered = filtered.filter(note => note.category === this.selectedCategoryId);
     }
 
-    // Applica filtro tipo
-    if (this.selectedType) {
-      filtered = filtered.filter(note => note.accessibility === this.selectedType);
+    // Apply accessibility type filter
+    if (this.selectedAccessibilityType) {
+      filtered = filtered.filter(note => note.accessibility === this.selectedAccessibilityType);
     }
 
-    // Applica ordinamento
+    // Apply sorting
     filtered = this.applySorting(filtered);
 
     this.filteredNotes = filtered;
   }
 
   /**
-   * Applica l'ordinamento alle note
+   * Apply sorting to notes
    */
-  private applySorting(notes: NotePreview[]): NotePreview[] {
+  private applySorting(notes: NoteWithDetails[]): NoteWithDetails[] {
     if (!this.selectedSortOption) {
       return notes;
     }
 
-    const [sortBy, sortOrder] = this.selectedSortOption.split('-') as [SortType, 'asc' | 'desc'];
+    const selectedOption = this.sortOptions.find(opt => opt.value === this.selectedSortOption);
+    if (!selectedOption) {
+      return notes;
+    }
 
-    return [...notes].sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortBy) {
-        case 'alfabetico':
-          comparison = a.title.toLowerCase().localeCompare(b.title.toLowerCase(), 'it');
-          break;
-        
-        case 'data':
-          comparison = new Date(a.last_modify).getTime() - new Date(b.last_modify).getTime();
-          break;
-        
-        case 'lunghezza':
-          comparison = a.contentLength - b.contentLength;
-          break;
-      }
-      
-      return sortOrder === 'asc' ? comparison : -comparison;
-    });
+    return this.notesService.sortNotesLocally(notes, selectedOption.sortBy, selectedOption.sortOrder);
   }
 
   /**
-   * Costruisce il filtro attuale per le query al server
+   * Build current filter for server queries
    */
-  private buildCurrentFilter(): NotesFilter {
-    const [sortBy, sortOrder] = (this.selectedSortOption || 'data-desc').split('-') as [SortType, 'asc' | 'desc'];
+  private buildCurrentFilter(): NoteFilterParams {
+    const selectedOption = this.sortOptions.find(opt => opt.value === this.selectedSortOption);
     
     return {
-      searchQuery: this.searchQuery,
-      category: this.selectedCategory || undefined,
-      accessibility: this.selectedType || undefined,
-      sortBy,
-      sortOrder
+      searchQuery: this.searchQuery || undefined,
+      categoryId: this.selectedCategoryId || undefined,
+      accessibility: this.selectedAccessibilityType || undefined,
+      sortBy: selectedOption?.sortBy || NoteSortType.CREATION_DATE,
+      sortOrder: selectedOption?.sortOrder || 'desc',
+      limit: 50
     };
   }
 
   /**
-   * Controlla se ci sono filtri attivi
+   * Check if there are active filters
    */
   hasActiveFilters(): boolean {
-    return !!(this.searchQuery || this.selectedCategory || this.selectedType);
+    return !!(this.searchQuery || this.selectedCategoryId || this.selectedAccessibilityType);
   }
 
   /**
-   * Pulisce la ricerca
+   * Clear search
    */
   clearSearch(): void {
     this.searchQuery = '';
@@ -237,103 +275,77 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Reset tutti i filtri
+   * Reset all filters
    */
   clearAllFilters(): void {
     this.searchQuery = '';
-    this.selectedCategory = '';
-    this.selectedType = '';
-    this.selectedSortOption = 'data-desc';
+    this.selectedCategoryId = '';
+    this.selectedAccessibilityType = '';
+    this.selectedSortOption = 'creation_date-desc';
     this.applyFilters();
   }
 
-  // ========== AZIONI NOTE ==========
+  // ========== NOTE ACTIONS ==========
 
   /**
-   * Naviga alla creazione di una nuova nota
+   * Navigate to create new note
    */
   createNewNote(): void {
-    this.navigationService.goToCreateNote();
+    this.router.navigate(['/notes/create']);
   }
 
   /**
-   * Crea un nuovo gruppo - placeholder per ora
+   * Create a new group
    */
   createGroup(): void {
-    // TODO: Implementare modal o navigazione per creare gruppo
-    console.log('Creazione gruppo - da implementare');
-    this.showSuccessMessage = 'Funzionalità "Crea Gruppo" sarà disponibile a breve!';
-    this.clearMessages();
+    this.router.navigate(['/groups']);
   }
 
   /**
-   * Crea una nuova categoria
+   * Create a new category
    */
   createCategory(): void {
-    // TODO: Implementare modal per creare categoria
-    console.log('Creazione categoria - da implementare');
-    this.showSuccessMessage = 'Funzionalità "Crea Categoria" sarà disponibile a breve!';
-    this.clearMessages();
+    this.router.navigate(['/categories']);
   }
 
   /**
-   * Visualizza una nota in sola lettura
+   * View a note - handled by note-box component
    */
   viewNote(noteId: string): void {
-    this.navigationService.goToViewNote(noteId);
+    // This is now handled directly by note-box component
+    // Kept for compatibility if needed
+    this.router.navigate(['/notes', noteId]);
   }
 
   /**
-   * Modifica una nota esistente
+   * Edit an existing note - handled by note-box component
    */
   editNote(noteId: string): void {
-    this.navigationService.goToEditNote(noteId);
+    // This is now handled directly by note-box component
+    // Kept for compatibility if needed
+    this.router.navigate(['/notes', noteId, 'edit']);
   }
 
   /**
-   * Duplica una nota esistente
-   */
-  duplicateNote(noteId: string): void {
-    // to do
-  }
-
-  /**
-   * Copia il contenuto di una nota negli appunti
-   */
-  copyNote(noteId: string): void {
-    this.notesService.copyNoteContent(noteId).then(success => {
-      if (success) {
-        this.showSuccessMessage = 'Contenuto copiato negli appunti!';
-      } else {
-        this.errorMessage = 'Errore nel copiare il contenuto';
-      }
-      this.clearMessages();
-    });
-  }
-
-  /**
-   * Elimina una nota
+   * Delete a note
    */
   deleteNote(noteId: string): void {
-    if (!confirm('Sei sicuro di voler eliminare questa nota? L\'azione non può essere annullata.')) {
-      return;
-    }
+    const note = this.allNotes.find(n => n.id === noteId);
+    if (!note) return;
 
     this.isLoading = true;
     
-    this.notesService.deleteNote({ note_id: noteId }).pipe(
+    this.notesService.deleteNote(noteId).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.showSuccessMessage = 'Nota eliminata con successo!';
-          this.loadInitialData(); // Ricarica le note
-        }
+      next: () => {
+        this.showSuccessMessage = 'Note deleted successfully!';
+        this.loadInitialData(); // Reload notes
         this.clearMessages();
       },
       error: (error) => {
-        console.error('Errore nell\'eliminazione:', error);
-        this.errorMessage = 'Errore nell\'eliminazione della nota';
+        console.error('Error deleting note:', error);
+        this.errorMessage = 'Error deleting note';
         this.isLoading = false;
         this.clearMessages();
       }
@@ -343,48 +355,167 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   // ========== UTILITY METHODS ==========
 
   /**
-   * Ottiene l'etichetta per un tipo di nota
+   * Get label for accessibility type
    */
-  getTypeLabel(tipo: AccessibilityType): string {
-    const noteType = NOTE_TYPES.find(t => t.value === tipo);
-    return noteType?.label || 'Sconosciuto';
+  getAccessibilityTypeLabel(type: AccessibilityType): string {
+    const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
+    return accessibilityType?.label || 'Unknown';
   }
 
   /**
-   * TrackBy function per ottimizzare il rendering della lista
+   * TrackBy function to optimize list rendering
    */
-  trackByNoteId(index: number, note: NotePreview): string {
+  trackByNoteId(index: number, note: NoteWithDetails): string {
     return note.id;
   }
 
   /**
-   * Ottiene l'etichetta per l'opzione di ordinamento selezionata
+   * Get label for selected sort option
    */
-  getSortOptionLabel(){
-    // to do
+  getSortOptionLabel(): string {
+    const selectedOption = this.sortOptions.find(opt => opt.value === this.selectedSortOption);
+    return selectedOption?.label || 'Newest First';
   }
 
   /**
-   * Formatta il numero di note per la visualizzazione
+   * Format notes count for display
    */
   getNotesCountText(): string {
     const count = this.filteredNotes.length;
     const total = this.totalNotes;
     
     if (count === total) {
-      return `${total} nota${total !== 1 ? 'e' : ''}`;
+      return `${total} note${total !== 1 ? 's' : ''}`;
     } else {
-      return `${count} di ${total} nota${total !== 1 ? 'e' : ''}`;
+      return `${count} of ${total} note${total !== 1 ? 's' : ''}`;
     }
   }
 
   /**
-   * Nasconde i messaggi dopo un delay
+   * Get category name by ID
+   */
+  getCategoryName(categoryId: string | null): string {
+    if (!categoryId) return 'Uncategorized';
+    const category = this.categories.find(c => c.id === categoryId);
+    return category?.name || 'Unknown Category';
+  }
+
+  /**
+   * Format date for display
+   */
+  formatDate(date: Date): string {
+    const now = new Date();
+    const noteDate = new Date(date);
+    const diffTime = now.getTime() - noteDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+
+    if (diffMinutes < 1) {
+      return 'Just now';
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    } else {
+      return noteDate.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: noteDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
+    }
+  }
+
+  /**
+   * Hide messages after delay
    */
   private clearMessages(): void {
     setTimeout(() => {
       this.showSuccessMessage = '';
       this.errorMessage = '';
     }, 3000);
+  }
+
+  // ========== NAVIGATION HELPERS ==========
+
+  /**
+   * Navigate to categories management
+   */
+  manageCategories(): void {
+    this.router.navigate(['/categories']);
+  }
+
+  /**
+   * Navigate to groups management
+   */
+  manageGroups(): void {
+    this.router.navigate(['/groups']);
+  }
+
+  /**
+   * Refresh data from server
+   */
+  refreshData(): void {
+    this.loadInitialData();
+  }
+
+  // ========== FILTER UTILITIES ==========
+
+  /**
+   * Get filter summary text
+   */
+  getFilterSummary(): string {
+    const filters: string[] = [];
+    
+    if (this.searchQuery) {
+      filters.push(`Search: "${this.searchQuery}"`);
+    }
+    
+    if (this.selectedCategoryId) {
+      const categoryName = this.getCategoryName(this.selectedCategoryId);
+      filters.push(`Category: ${categoryName}`);
+    }
+    
+    if (this.selectedAccessibilityType) {
+      const typeName = this.getAccessibilityTypeLabel(this.selectedAccessibilityType);
+      filters.push(`Type: ${typeName}`);
+    }
+    
+    return filters.join(', ');
+  }
+
+  /**
+   * Get placeholder text for search input
+   */
+  getSearchPlaceholder(): string {
+    return '🔍 Search in notes, titles, and categories...';
+  }
+
+  /**
+   * Check if there are no notes at all
+   */
+  hasNoNotes(): boolean {
+    return !this.isLoading && !this.errorMessage && this.totalNotes === 0;
+  }
+
+  /**
+   * Check if filters are active but no results
+   */
+  hasNoFilterResults(): boolean {
+    return !this.isLoading && !this.errorMessage && this.filteredNotes.length === 0 && this.totalNotes > 0;
+  }
+
+  /**
+   * Check if there are results to display
+   */
+  hasResults(): boolean {
+    return !this.isLoading && !this.errorMessage && this.filteredNotes.length > 0;
   }
 }

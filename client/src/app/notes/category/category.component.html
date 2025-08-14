@@ -1,1 +1,206 @@
-<p>category works!</p>
+<!-- category.component.html -->
+
+<main class="min-h-screen bg-gray-50">
+  <!-- Header Section -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <div class="flex justify-between items-center">
+        <!-- Title and Navigation -->
+        <div class="flex items-center gap-4">
+          <button 
+            (click)="goBackToNotes()"
+            class="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+            <span class="text-lg">←</span>
+            <span class="font-medium">Back to Notes</span>
+          </button>
+          
+          <div class="h-6 w-px bg-gray-300"></div>
+          
+          <div class="flex items-center">
+            <h1 class="text-2xl font-bold text-gray-900 mr-4">My Categories</h1>
+            <span class="text-sm text-gray-500" *ngIf="getTotalCategoriesCount() > 0">
+              {{ getTotalCategoriesCount() }} categor{{ getTotalCategoriesCount() !== 1 ? 'ies' : 'y' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-3">
+          <button 
+            (click)="showCreateCategoryForm()"
+            class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors duration-200 shadow-sm">
+            <span>➕</span>
+            <span>Create Category</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback Messages -->
+  <div class="max-w-7xl mx-auto px-4 mt-4">
+    <!-- Success message -->
+    <div *ngIf="successMessage" 
+         class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+      <div class="flex items-center">
+        <span class="text-green-500 text-lg mr-2">✅</span>
+        <span class="text-green-700">{{ successMessage }}</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Create Category Form -->
+  <div *ngIf="showCreateForm" class="max-w-7xl mx-auto px-4 mb-6">
+    <div class="bg-white rounded-lg shadow-sm p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Category</h2>
+      
+      <div class="space-y-4">
+        <div>
+          <label for="categoryName" class="block text-sm font-medium text-gray-700 mb-2">
+            Category Name <span class="text-red-500">*</span>
+          </label>
+          <input
+            id="categoryName"
+            type="text"
+            [(ngModel)]="newCategoryName"
+            placeholder="Enter category name..."
+            maxlength="100"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent"
+            [class.border-red-300]="!isCategoryNameValid() && newCategoryName.length > 0">
+          
+          <div class="flex justify-between items-center mt-1">
+            <span *ngIf="!isCategoryNameValid() && newCategoryName.length > 0" class="text-sm text-red-600">
+              Category name must be at least 2 characters
+            </span>
+            <span class="text-xs text-gray-500 ml-auto">
+              {{ newCategoryName.length }}/100 characters
+            </span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button
+            (click)="createCategory()"
+            [disabled]="!isCategoryNameValid() || creatingCategory"
+            class="flex items-center gap-2 px-4 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span class="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" *ngIf="creatingCategory"></span>
+            <span>{{ creatingCategory ? 'Creating...' : 'Create Category' }}</span>
+          </button>
+
+          <button
+            (click)="hideCreateCategoryForm()"
+            [disabled]="creatingCategory"
+            class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 pb-8">
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#fbd65a]"></div>
+      <span class="ml-3 text-gray-600">Loading categories...</span>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="hasNoCategories()" class="text-center py-16">
+      <div class="text-6xl mb-4">📁</div>
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">No categories yet!</h3>
+    </div>
+
+    <!-- Categories Content -->
+    <div *ngIf="!isLoading && !hasNoCategories()">
+
+      <!-- Categories Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+        <div *ngFor="let category of categories; trackBy: trackByCategoryId" 
+             class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
+          
+          <!-- Category Header -->
+          <div class="flex items-start justify-between mb-4">
+            <div class="flex-1 min-w-0">
+              <h3 class="text-lg font-semibold text-gray-900 truncate mb-2" [title]="category.name">
+                {{ category.name }}
+              </h3>
+              <div class="flex items-center text-sm text-gray-600">
+                <span>📝 {{ getCategoryUsageCount(category) }} note{{ getCategoryUsageCount(category) !== 1 ? 's' : '' }}</span>
+              </div>
+            </div>
+            
+            <!-- Category Color Indicator -->
+            <div class="w-6 h-6 rounded-full flex-shrink-0 ml-2"
+                 [style.background-color]="generateCategoryColor(category.name)">
+            </div>
+          </div>
+
+          <!-- Category Actions -->
+          <div class="flex flex-col gap-2">
+            <button
+              (click)="viewCategoryNotes(category)"
+              class="w-full px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm font-medium">
+              📝 View Notes
+            </button>
+            
+            <div class="flex gap-2">
+              <button
+                (click)="editCategory(category)"
+                class="flex-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg transition-colors text-sm">
+                ✏️ Edit
+              </button>
+              
+              <button
+                (click)="deleteCategory(category)"
+                class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm"
+                [disabled]="!canDeleteCategory(category)"
+                [title]="!canDeleteCategory(category) ? 'Cannot delete category with notes' : 'Delete category'">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <section class="bg-white rounded-lg shadow-sm p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Category Statistics</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div>
+            <div class="text-2xl font-bold text-gray-900">{{ getCategoryStats().total }}</div>
+            <div class="text-sm text-gray-600">Total Categories</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-green-600">{{ getCategoryStats().inUse }}</div>
+            <div class="text-sm text-gray-600">Categories in Use</div>
+          </div>
+          <div>
+            <div class="text-2xl font-bold text-orange-600">{{ getCategoryStats().empty }}</div>
+            <div class="text-sm text-gray-600">Empty Categories</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Helper Info -->
+      <div class="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex items-start">
+          <span class="text-blue-500 text-lg mr-2">💡</span>
+          <div class="text-blue-700 text-sm">
+            <p class="font-medium mb-1">Tips for managing categories:</p>
+            <ul class="list-disc list-inside space-y-1">
+              <li>Categories help organize your notes by topic or subject</li>
+              <li>You can edit category names by clicking the Edit button</li>
+              <li>Empty categories (with no notes) can be safely deleted</li>
+              <li>Categories are sorted alphabetically for easy browsing</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>

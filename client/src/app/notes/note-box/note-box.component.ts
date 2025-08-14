@@ -1,4 +1,4 @@
-// notes/client/components/note-box/note-box.component.ts
+// note-box.component.ts
 
 import { 
   Component, 
@@ -9,13 +9,14 @@ import {
   ElementRef 
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 
 import { 
-  NotePreview, 
-  NOTE_TYPES, 
-  NOTES_CONFIG, 
-  AccessibilityType
+  NoteWithDetails, 
+  AccessibilityType,
+  NOTE_CONSTANTS
 } from '../../model/note.interface';
+import { NotesService } from '../../service/notes.service';
 
 @Component({
   selector: 'app-note-box',
@@ -25,29 +26,39 @@ import {
 })
 export class NoteBoxComponent {
   
-  @Input() note!: NotePreview;
+  @Input() note!: NoteWithDetails;
   
-  // Eventi per le azioni - aggiornati per usare string invece di number
+  // Events for actions - using string IDs
   @Output() onEdit = new EventEmitter<string>();
-  @Output() onDuplicate = new EventEmitter<string>();
-  @Output() onCopy = new EventEmitter<string>();
   @Output() onDelete = new EventEmitter<string>();
   @Output() onView = new EventEmitter<string>();
 
-  // Stati componente
+  // Component states
   showMenu = false;
   feedbackMessage = '';
   feedbackType: 'success' | 'error' = 'success';
   
-  // Costanti
-  previewLength = NOTES_CONFIG.PREVIEW_LENGTH;
+  // Constants
+  previewLength = NOTE_CONSTANTS.PREVIEW_LENGTH;
 
-  constructor(private elementRef: ElementRef) {}
+  // Accessibility type definitions
+  accessibilityTypes = [
+    { value: AccessibilityType.PRIVATE, label: 'Private', icon: '🔒' },
+    { value: AccessibilityType.PUBLIC, label: 'Public', icon: '🌍' },
+    { value: AccessibilityType.AUTHORIZED, label: 'Authorized', icon: '👥' },
+    { value: AccessibilityType.GROUP, label: 'Group', icon: '👨‍👩‍👧‍👦' }
+  ];
 
-  // ========== GESTIONE MENU ==========
+  constructor(
+    private elementRef: ElementRef,
+    private router: Router,
+    private notesService: NotesService
+  ) {}
+
+  // ========== MENU MANAGEMENT ==========
 
   /**
-   * Toggle del menu opzioni
+   * Toggle options menu
    */
   toggleMenu(event: Event): void {
     event.stopPropagation();
@@ -55,7 +66,7 @@ export class NoteBoxComponent {
   }
 
   /**
-   * Chiude il menu se si clicca fuori
+   * Close menu if clicked outside
    */
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
@@ -64,257 +75,162 @@ export class NoteBoxComponent {
     }
   }
 
-  // ========== AZIONI PRINCIPALI ==========
+  // ========== MAIN ACTIONS ==========
 
   /**
-   * Gestisce il click sulla card per aprire la nota
+   * Handle card click to open note for viewing
    */
   onCardClick(event?: Event): void {
     if (event) {
-      // Previeni il click se si sta cliccando su un bottone
+      // Prevent click if clicking on a button
       const target = event.target as HTMLElement;
       if (target.closest('button') || target.closest('.menu-container')) {
         return;
       }
     }
-    this.onView.emit(this.note.id);
+    this.router.navigate(['/notes', this.note.id]);
   }
 
   /**
-   * Modifica nota
+   * Edit note
    */
   onEditClick(event: Event): void {
     event.stopPropagation();
     
-    if (!this.note.isOwner) {
-      this.showFeedback('Solo il proprietario può modificare questa nota', 'error');
+    if (!this.note.canEdit) {
+      this.showFeedback('Only the owner can edit this note', 'error');
       return;
     }
     
-    this.onEdit.emit(this.note.id);
+    this.router.navigate(['/notes', this.note.id, 'edit']);
   }
 
   /**
-   * Duplica nota
+   * Duplicate note - creates a copy with "Copy of" prefix
    */
-  onDuplicateClick(event: Event): void {
+  async onDuplicateClick(event: Event): Promise<void> {
     event.stopPropagation();
-    this.onDuplicate.emit(this.note.id);
-    this.showFeedback('Nota duplicata con successo!', 'success');
+    
+    try {
+      // Create the note content for duplication
+      const noteContent = `# ${this.note.title || 'Untitled'}\n\n${this.note.text || this.note.preview || ''}`;
+      
+      // Copy to clipboard
+      await this.copyToClipboard(noteContent);
+      
+      this.showFeedback('Note content copied to clipboard! You can now paste it into a new note.', 'success');
+      
+      // Optionally navigate to create new note
+      setTimeout(() => {
+        this.router.navigate(['/notes/create']);
+      }, 1500);
+      
+    } catch (error) {
+      console.error('Error duplicating note:', error);
+      this.showFeedback('Error copying note content', 'error');
+    }
   }
 
   /**
-   * Copia contenuto negli appunti
+   * Copy content to clipboard
    */
   async onCopyClick(event: Event): Promise<void> {
     event.stopPropagation();
     
     try {
-      // Usa l'API Clipboard se disponibile
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(this.note.preview);
-      } else {
-        // Fallback per browser più vecchi
-        this.copyTextFallback(this.note.preview);
-      }
-      
-      this.onCopy.emit(this.note.id);
-      this.showFeedback('Contenuto copiato negli appunti!', 'success');
+      const contentToCopy = this.note.text || this.note.preview || '';
+      await this.copyToClipboard(contentToCopy);
+      this.showFeedback('Content copied to clipboard!', 'success');
       
     } catch (error) {
-      console.error('Errore nel copiare il contenuto:', error);
-      this.showFeedback('Errore nel copiare il contenuto', 'error');
+      console.error('Error copying content:', error);
+      this.showFeedback('Error copying content', 'error');
     }
   }
 
   /**
-   * Elimina nota con conferma
+   * Delete note with confirmation
    */
   onDeleteClick(event: Event): void {
     event.stopPropagation();
     
-    if (!this.note.isOwner) {
-      this.showFeedback('Solo il proprietario può eliminare questa nota', 'error');
+    if (!this.note.canDelete) {
+      this.showFeedback('Only the owner can delete this note', 'error');
       return;
     }
 
-    const confirmMessage = `Sei sicuro di voler eliminare la nota "${this.note.title}"?\n\nQuesta azione non può essere annullata.`;
+    const confirmMessage = `Are you sure you want to delete "${this.note.title || 'Untitled'}"?\n\nThis action cannot be undone.`;
     
     if (confirm(confirmMessage)) {
       this.onDelete.emit(this.note.id);
-      this.showFeedback('Nota eliminata', 'success');
+      this.showFeedback('Note deleted', 'success');
     }
   }
 
-  // ========== AZIONI MENU ==========
+  // ========== MENU ACTIONS ==========
 
   /**
-   * Visualizza dettagli nota
+   * View note details (same as card click)
    */
   viewDetails(event: Event): void {
     event.stopPropagation();
     this.showMenu = false;
-    this.onView.emit(this.note.id);
+    this.router.navigate(['/notes', this.note.id]);
   }
 
   /**
-   * Condividi nota
+   * Copy note title and content with markdown formatting
    */
-  shareNote(event: Event): void {
-    event.stopPropagation();
-    this.showMenu = false;
-    
-    // TODO: Implementare condivisione
-    this.showFeedback('Funzionalità condivisione in sviluppo', 'success');
-  }
-
-  /**
-   * Esporta nota
-   */
-  exportNote(event: Event): void {
+  async copyNoteWithTitle(event: Event): Promise<void> {
     event.stopPropagation();
     this.showMenu = false;
     
     try {
-      const content = `# ${this.note.title}\n\n${this.note.preview}\n\n---\nCategoria: ${this.note.category}\nCreata: ${this.formatDate(this.note.created_at)}\nUltima modifica: ${this.formatDate(this.note.last_modify)}`;
-      const blob = new Blob([content], { type: 'text/markdown' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${this.note.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.md`;
-      link.click();
-      
-      URL.revokeObjectURL(url);
-      this.showFeedback('Nota esportata con successo!', 'success');
+      const noteContent = `# ${this.note.title || 'Untitled'}\n\n${this.note.text || this.note.preview || ''}`;
+      await this.copyToClipboard(noteContent);
+      this.showFeedback('Note with title copied to clipboard!', 'success');
       
     } catch (error) {
-      console.error('Errore nell\'esportazione:', error);
-      this.showFeedback('Errore nell\'esportazione', 'error');
+      console.error('Error copying:', error);
+      this.showFeedback('Error copying note', 'error');
     }
   }
 
   /**
-   * Segnala nota
+   * Copy only note content (without title)
    */
-  reportNote(event: Event): void {
+  async copyContentOnly(event: Event): Promise<void> {
     event.stopPropagation();
     this.showMenu = false;
     
-    // TODO: Implementare sistema di segnalazioni
-    this.showFeedback('Segnalazione inviata', 'success');
+    try {
+      const content = this.note.text || this.note.preview || '';
+      await this.copyToClipboard(content);
+      this.showFeedback('Content copied to clipboard!', 'success');
+      
+    } catch (error) {
+      console.error('Error copying:', error);
+      this.showFeedback('Error copying content', 'error');
+    }
   }
 
   // ========== UTILITY METHODS ==========
 
   /**
-   * Ottiene la classe CSS per il badge del tipo
+   * Copy text to clipboard with fallback
    */
-  getTypeBadgeClass(tipo: AccessibilityType): string {
-    const baseClasses = 'border transition-colors';
-    
-    switch (tipo) {
-      case 'private':
-        return `${baseClasses} bg-gray-100 text-gray-700 border-gray-300`;
-      case 'public':
-        return `${baseClasses} bg-blue-100 text-blue-700 border-blue-300`;
-      case 'authorized':
-        return `${baseClasses} bg-green-100 text-green-700 border-green-300`;
-      case 'group':
-        return `${baseClasses} bg-purple-100 text-purple-700 border-purple-300`;
-      default:
-        return `${baseClasses} bg-gray-100 text-gray-700 border-gray-300`;
-    }
-  }
-
-  /**
-   * Ottiene l'etichetta per il tipo di nota
-   */
-  getTypeLabel(tipo: AccessibilityType): string {
-    const noteType = NOTE_TYPES.find(t => t.value === tipo);
-    return noteType?.label || 'Sconosciuto';
-  }
-
-  /**
-   * Formatta la data in modo user-friendly
-   */
-  formatDate(date: Date): string {
-    const now = new Date();
-    const noteDate = new Date(date);
-    const diffTime = now.getTime() - noteDate.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-    const diffMinutes = Math.floor(diffTime / (1000 * 60));
-
-    if (diffMinutes < 1) {
-      return 'Ora';
-    } else if (diffMinutes < 60) {
-      return `${diffMinutes} min fa`;
-    } else if (diffHours < 24) {
-      return `${diffHours} ore fa`;
-    } else if (diffDays === 1) {
-      return 'Ieri';
-    } else if (diffDays < 7) {
-      return `${diffDays} giorni fa`;
-    } else if (diffDays < 30) {
-      const weeks = Math.floor(diffDays / 7);
-      return `${weeks} settimana${weeks > 1 ? 'e' : ''} fa`;
+  private async copyToClipboard(text: string): Promise<void> {
+    // Use Clipboard API if available
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
     } else {
-      return noteDate.toLocaleDateString('it-IT', {
-        day: 'numeric',
-        month: 'short',
-        year: noteDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-      });
+      // Fallback for older browsers
+      this.copyTextFallback(text);
     }
   }
 
   /**
-   * Controlla se la nota è stata modificata di recente (ultime 24 ore)
-   */
-  isRecentlyModified(date: Date): boolean {
-    const now = new Date();
-    const noteDate = new Date(date);
-    const diffHours = (now.getTime() - noteDate.getTime()) / (1000 * 60 * 60);
-    return diffHours <= 24;
-  }
-
-  /**
-   * Calcola il tempo di lettura stimato
-   */
-  getReadingTime(): number {
-    const wordsPerMinute = 200;
-    const words = this.note.contentLength / 5; // Stima approssimativa: 5 caratteri per parola
-    return Math.max(1, Math.ceil(words / wordsPerMinute));
-  }
-
-  /**
-   * Ottiene la priorità visiva della nota basata su tipo e data
-   */
-  getNotePriority(): 'high' | 'medium' | 'low' {
-    if (this.isRecentlyModified(this.note.last_modify)) {
-      return 'high';
-    }
-    if (this.note.accessibility === 'authorized' || this.note.accessibility === 'group') {
-      return 'medium';
-    }
-    return 'low';
-  }
-
-  /**
-   * Mostra messaggio di feedback temporaneo
-   */
-  private showFeedback(message: string, type: 'success' | 'error'): void {
-    this.feedbackMessage = message;
-    this.feedbackType = type;
-    
-    // Nasconde il messaggio dopo 3 secondi
-    setTimeout(() => {
-      this.feedbackMessage = '';
-    }, 3000);
-  }
-
-  /**
-   * Fallback per copiare testo in browser senza Clipboard API
+   * Fallback for copying text in browsers without Clipboard API
    */
   private copyTextFallback(text: string): void {
     const textArea = document.createElement('textarea');
@@ -325,7 +241,7 @@ export class NoteBoxComponent {
     
     document.body.appendChild(textArea);
     textArea.select();
-    textArea.setSelectionRange(0, 99999); // Per dispositivi mobile
+    textArea.setSelectionRange(0, 99999); // For mobile devices
     
     try {
       document.execCommand('copy');
@@ -335,24 +251,235 @@ export class NoteBoxComponent {
   }
 
   /**
-   * Condivide la nota usando l'API Web Share (se disponibile)
+   * Get CSS class for accessibility type badge
    */
-  async shareNoteNative(): Promise<void> {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: this.note.title,
-          text: this.note.preview,
-          url: window.location.href // TODO: URL specifica della nota
-        });
-        this.showFeedback('Nota condivisa!', 'success');
-      } catch (error) {
-        console.error('Errore nella condivisione nativa:', error);
-        this.showFeedback('Errore nella condivisione', 'error');
-      }
-    } else {
-      // Fallback alla condivisione personalizzata
-      this.shareNote(new Event('click'));
+  getAccessibilityBadgeClass(type: AccessibilityType): string {
+    const baseClasses = 'border transition-colors';
+    
+    switch (type) {
+      case AccessibilityType.PRIVATE:
+        return `${baseClasses} bg-gray-100 text-gray-700 border-gray-300`;
+      case AccessibilityType.PUBLIC:
+        return `${baseClasses} bg-blue-100 text-blue-700 border-blue-300`;
+      case AccessibilityType.AUTHORIZED:
+        return `${baseClasses} bg-green-100 text-green-700 border-green-300`;
+      case AccessibilityType.GROUP:
+        return `${baseClasses} bg-purple-100 text-purple-700 border-purple-300`;
+      default:
+        return `${baseClasses} bg-gray-100 text-gray-700 border-gray-300`;
     }
+  }
+
+  /**
+   * Get label for accessibility type
+   */
+  getAccessibilityLabel(type: AccessibilityType): string {
+    const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
+    return accessibilityType?.label || 'Unknown';
+  }
+
+  /**
+   * Get icon for accessibility type
+   */
+  getAccessibilityIcon(type: AccessibilityType): string {
+    const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
+    return accessibilityType?.icon || '🔒';
+  }
+
+  /**
+   * Get category name
+   */
+  getCategoryName(): string {
+    return this.note.categoryDetails?.name || 'Uncategorized';
+  }
+
+  /**
+   * Get group name if applicable
+   */
+  getGroupName(): string | null {
+    return this.note.groupName || null;
+  }
+
+  /**
+   * Format date in user-friendly way
+   */
+  formatDate(date: Date | string): string {
+    const now = new Date();
+    const noteDate = new Date(date);
+    const diffTime = now.getTime() - noteDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffTime / (1000 * 60));
+
+    if (diffMinutes < 1) {
+      return 'Just now';
+    } else if (diffMinutes < 60) {
+      return `${diffMinutes} min ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    } else {
+      return noteDate.toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short',
+        year: noteDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
+    }
+  }
+
+  /**
+   * Check if note was recently modified (last 24 hours)
+   */
+  isRecentlyModified(date: Date | string): boolean {
+    const now = new Date();
+    const noteDate = new Date(date);
+    const diffHours = (now.getTime() - noteDate.getTime()) / (1000 * 60 * 60);
+    return diffHours <= 24;
+  }
+
+  /**
+   * Calculate estimated reading time
+   */
+  getReadingTime(): number {
+    const wordsPerMinute = 200;
+    const contentLength = this.note.contentLength || 0;
+    const words = contentLength / 5; // Rough estimate: 5 characters per word
+    return Math.max(1, Math.ceil(words / wordsPerMinute));
+  }
+
+  /**
+   * Get preview text (ensuring it exists)
+   */
+  getPreviewText(): string {
+    return this.note.preview || this.note.text?.substring(0, NOTE_CONSTANTS.PREVIEW_LENGTH) || 'No content';
+  }
+
+  /**
+   * Check if content is truncated
+   */
+  isContentTruncated(): boolean {
+    const contentLength = this.note.contentLength || 0;
+    return contentLength > this.previewLength;
+  }
+
+  /**
+   * Get truncated content length
+   */
+  getTruncatedLength(): number {
+    const contentLength = this.note.contentLength || 0;
+    return Math.max(0, contentLength - this.previewLength);
+  }
+
+  /**
+   * Show temporary feedback message
+   */
+  private showFeedback(message: string, type: 'success' | 'error'): void {
+    this.feedbackMessage = message;
+    this.feedbackType = type;
+    
+    // Hide message after 3 seconds
+    setTimeout(() => {
+      this.feedbackMessage = '';
+    }, 3000);
+  }
+
+  // ========== ACCESS CONTROL ==========
+
+  /**
+   * Check if current user can edit note
+   */
+  canEdit(): boolean {
+    return this.note.canEdit || false;
+  }
+
+  /**
+   * Check if current user can delete note
+   */
+  canDelete(): boolean {
+    return this.note.canDelete || false;
+  }
+
+  /**
+   * Check if note is owned by current user
+   */
+  isOwner(): boolean {
+    return this.note.canDelete || false; // Assuming only owners can delete
+  }
+
+  // ========== DISPLAY HELPERS ==========
+
+  /**
+   * Get display title (fallback to 'Untitled')
+   */
+  getDisplayTitle(): string {
+    return this.note.title || 'Untitled';
+  }
+
+  /**
+   * Get accessibility display text
+   */
+  getAccessibilityDisplay(): string {
+    const icon = this.getAccessibilityIcon(this.note.accessibility);
+    const label = this.getAccessibilityLabel(this.note.accessibility);
+    return `${icon} ${label}`;
+  }
+
+  /**
+   * Get content length display
+   */
+  getContentLengthDisplay(): string {
+    const length = this.note.contentLength || 0;
+    return `${length} character${length !== 1 ? 's' : ''}`;
+  }
+
+  /**
+   * Get reading time display
+   */
+  getReadingTimeDisplay(): string {
+    const time = this.getReadingTime();
+    return `~${time} min read`;
+  }
+
+  /**
+   * Check if note has group information
+   */
+  hasGroupInfo(): boolean {
+    return this.note.accessibility === AccessibilityType.GROUP && !!this.note.groupName;
+  }
+
+  /**
+   * Get additional info text
+   */
+  getAdditionalInfo(): string {
+    const parts: string[] = [];
+    
+    if (this.hasGroupInfo()) {
+      parts.push(`Group: ${this.note.groupName}`);
+    }
+    
+    if (this.note.authorizedUsers && this.note.authorizedUsers.length > 0) {
+      parts.push(`Shared with ${this.note.authorizedUsers.length} user${this.note.authorizedUsers.length > 1 ? 's' : ''}`);
+    }
+    
+    return parts.join(' • ');
+  }
+
+  /**
+   * Get note card CSS classes based on state
+   */
+  getNoteCardClasses(): string {
+    const baseClasses = 'relative note-box bg-[#fbd65a] rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-[#fcf3b5] group cursor-pointer';
+    
+    if (this.isRecentlyModified(this.note.lastModify)) {
+      return `${baseClasses} ring-2 ring-blue-200`;
+    }
+    
+    return baseClasses;
   }
 }
