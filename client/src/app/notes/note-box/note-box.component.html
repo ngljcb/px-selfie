@@ -90,13 +90,13 @@
           <span class="text-sm">✏️</span>
         </button>
 
-        <!-- Duplicate (Copy to clipboard + navigate to create) -->
-        <button
-          (click)="onDuplicateClick($event)"
-          title="Duplicate note (copy content and create new)"
-          class="p-2 rounded-lg text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors duration-200 flex items-center justify-center">
-          <span class="text-sm">📋</span>
-        </button>
+          <!-- Duplicate (Copy to editor) --> 
+          <button
+            (click)="onDuplicateClick($event)"
+            title="Duplicate note (copy to new note)"
+            class="p-2 rounded-lg text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors duration-200 flex items-center justify-center">
+            <span class="text-sm">📋</span>
+          </button>
 
         <!-- Copy content only -->
         <button
@@ -154,6 +154,15 @@
               <span>📄</span>
               <span>Copy content only</span>
             </button>
+
+            <button
+              (click)="duplicateFromMenu($event)"
+              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
+              <span>📋</span>
+              <span>Duplicate note</span>
+            </button>
+            
+            <hr class="my-1 border-gray-200">
             
           </div>
         </div>

@@ -14,17 +14,15 @@ export enum AccessibilityType {
 export enum NoteSortType {
   ALPHABETICAL = 'alphabetical',
   CREATION_DATE = 'creation_date',
-  LAST_MODIFIED = 'last_modified',
+  LAST_MODIFY = 'last_modify',
   CONTENT_LENGTH = 'content_length'
 }
 
 /**
- * Interface for Category entity
+ * Interface for predefined Category entity (read-only)
  */
 export interface Category {
-  id: string;
-  name: string;
-  creator: string;
+  name: string; // Primary key as per DB schema
 }
 
 /**
@@ -63,7 +61,7 @@ export interface Note {
   text: string | null;
   createdAt: Date;
   lastModify: Date;
-  category: string | null;
+  category: string | null; // References category.name
   accessibility: AccessibilityType;
   groupName: string | null;
 }
@@ -87,7 +85,7 @@ export interface NoteWithDetails extends Note {
 export interface CreateNoteRequest {
   title?: string;
   text?: string;
-  category?: string;
+  category?: string; // Category name (must exist in DB)
   accessibility: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
@@ -99,7 +97,7 @@ export interface CreateNoteRequest {
 export interface UpdateNoteRequest {
   title?: string;
   text?: string;
-  category?: string;
+  category?: string; // Category name (must exist in DB)
   accessibility?: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
@@ -110,7 +108,7 @@ export interface UpdateNoteRequest {
  */
 export interface NoteFilterParams {
   searchQuery?: string;
-  categoryId?: string;
+  categoryName?: string; // Changed from categoryId to categoryName
   accessibility?: AccessibilityType;
   groupName?: string;
   sortBy?: NoteSortType;
@@ -153,13 +151,6 @@ export interface NotePreview {
   contentLength: number;
   canEdit: boolean;
   canDelete: boolean;
-}
-
-/**
- * Interface for creating a new category
- */
-export interface CreateCategoryRequest {
-  name: string;
 }
 
 /**
@@ -239,7 +230,7 @@ export interface NoteValidation {
 export interface BulkNoteOperation {
   operation: 'delete' | 'changeCategory' | 'changeAccessibility';
   noteIds: string[];
-  newCategoryId?: string;
+  newCategoryName?: string; // Changed from newCategoryId to newCategoryName
   newAccessibility?: AccessibilityType;
   newGroupName?: string;
 }

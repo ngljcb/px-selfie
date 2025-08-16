@@ -105,30 +105,38 @@ export class NoteBoxComponent {
     this.router.navigate(['/notes', this.note.id, 'edit']);
   }
 
-  /**
+/**
    * Duplicate note - creates a copy with "Copy of" prefix
    */
   async onDuplicateClick(event: Event): Promise<void> {
     event.stopPropagation();
     
     try {
-      // Create the note content for duplication
-      const noteContent = `# ${this.note.title || 'Untitled'}\n\n${this.note.text || this.note.preview || ''}`;
-      
-      // Copy to clipboard
-      await this.copyToClipboard(noteContent);
-      
-      this.showFeedback('Note content copied to clipboard! You can now paste it into a new note.', 'success');
-      
-      // Optionally navigate to create new note
-      setTimeout(() => {
-        this.router.navigate(['/notes/create']);
-      }, 1500);
+      // Navigate to create new note with duplicated data as query parameters
+      this.router.navigate(['/notes/create'], {
+        queryParams: {
+          duplicate: 'true',
+          title: this.note.title || '',
+          content: this.note.text || '',
+          category: this.note.category || '',
+          accessibility: this.note.accessibility,
+          groupName: this.note.groupName || ''
+        }
+      });
       
     } catch (error) {
       console.error('Error duplicating note:', error);
-      this.showFeedback('Error copying note content', 'error');
+      this.showFeedback('Error duplicating note', 'error');
     }
+  }
+
+/**
+   * Duplicate note from menu - same as main duplicate button
+   */
+  duplicateFromMenu(event: Event): void {
+    event.stopPropagation();
+    this.showMenu = false;
+    this.onDuplicateClick(event);
   }
 
   /**

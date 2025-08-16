@@ -13,22 +13,29 @@ import {
   Category, 
   AccessibilityType, 
   Group,
+  User,
   NOTE_CONSTANTS 
 } from '../../model/note.interface';
 import { NotesService } from '../../service/notes.service';
 import { CategoriesService } from '../../service/categories.service';
 import { GroupsService } from '../../service/groups.service';
+import { UsersService } from '../../service/users.service';
 
 type EditorMode = 'create' | 'edit';
-type AutoSaveStatus = 'saved' | 'saving' | 'error' | null;
 
 interface NoteFormData {
   title: string;
   content: string;
-  categoryId: string;
+  categoryName: string;
   accessibility: AccessibilityType;
   groupName: string;
   authorizedUserIds: string[];
+}
+
+interface SelectedUser {
+  id: string;
+  displayName: string;
+  email?: string;
 }
 
 @Component({
@@ -46,7 +53,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   noteData: NoteFormData = {
     title: '',
     content: '',
-    categoryId: '',
+    categoryName: '',
     accessibility: AccessibilityType.PRIVATE,
     groupName: '',
     authorizedUserIds: []
@@ -60,12 +67,17 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   showValidationErrors = false;
   isSaving = false;
   isLoading = false;
-  lastSaved: Date | null = null;
-  autoSaveStatus: AutoSaveStatus = null;
 
   // Categories and groups
   categories: Category[] = [];
   groups: Group[] = [];
+
+  // User search and selection
+  userSearchQuery = '';
+  userSearchResults: User[] = [];
+  selectedUsers: SelectedUser[] = [];
+  isSearchingUsers = false;
+  userSearchError = '';
 
   // Constants for template
   accessibilityTypes = [
@@ -91,8 +103,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }
   ];
 
-  // Auto-save management
-  private autoSaveSubject = new Subject<void>();
+  // User search management
+  private userSearchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
   private initialFormState: string = '';
 
@@ -101,17 +113,16 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     private router: Router,
     private notesService: NotesService,
     private categoriesService: CategoriesService,
-    private groupsService: GroupsService
+    private groupsService: GroupsService,
+    private usersService: UsersService
   ) {
-    // Setup auto-save with debouncing
-    this.autoSaveSubject.pipe(
-      debounceTime(3000), // 3 seconds delay
+    // Setup user search with debouncing
+    this.userSearchSubject.pipe(
+      debounceTime(500), // 500ms delay for user search
       distinctUntilChanged(),
       takeUntil(this.destroy$)
-    ).subscribe(() => {
-      if (this.hasChanges && this.isFormValid() && this.mode === 'edit') {
-        this.performAutoSave();
-      }
+    ).subscribe(query => {
+      this.performUserSearch(query);
     });
   }
 
@@ -145,10 +156,17 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
 
     // Get note ID from route
     this.noteId = this.route.snapshot.params['id'] || null;
+    
+    // Check for duplicate parameters
+    const queryParams = this.route.snapshot.queryParams;
+    const isDuplicate = queryParams['duplicate'] === 'true';
 
     if (this.noteId) {
       this.mode = 'edit';
       this.loadNoteForEdit();
+    } else if (isDuplicate) {
+      this.mode = 'create';
+      this.initializeNoteFromDuplicate(queryParams);
     } else {
       this.mode = 'create';
       this.initializeNewNote();
@@ -162,14 +180,44 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.noteData = {
       title: '',
       content: '',
-      categoryId: '',
+      categoryName: '',
       accessibility: AccessibilityType.PRIVATE,
       groupName: '',
       authorizedUserIds: []
     };
     
+    this.selectedUsers = [];
     this.setInitialFormState();
     this.isLoading = false;
+  }
+
+  /**
+   * Initialize new note from duplicate parameters
+   */
+  private initializeNoteFromDuplicate(queryParams: any): void {
+    // Get the original title and add "Copy of" prefix
+    const originalTitle = queryParams['title'] || '';
+    const duplicatedTitle = originalTitle ? `Copy of ${originalTitle}` : '';
+
+    this.noteData = {
+      title: duplicatedTitle,
+      content: queryParams['content'] || '',
+      categoryName: queryParams['category'] || '',
+      accessibility: queryParams['accessibility'] || AccessibilityType.PRIVATE,
+      groupName: queryParams['groupName'] || '',
+      authorizedUserIds: [] // Reset authorized users for new note
+    };
+    
+    this.selectedUsers = []; // Reset selected users for security
+    this.setInitialFormState();
+    this.isLoading = false;
+    
+    // Clear query parameters from URL after loading
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {},
+      replaceUrl: true
+    });
   }
 
   /**
@@ -189,11 +237,17 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
         this.noteData = {
           title: note.title || '',
           content: note.text || '',
-          categoryId: note.category || '',
+          categoryName: note.category || '',
           accessibility: note.accessibility,
           groupName: note.groupName || '',
           authorizedUserIds: note.authorizedUsers?.map(u => u.userId) || []
         };
+        
+        // Load authorized users details if any
+        if (this.noteData.authorizedUserIds.length > 0) {
+          this.loadAuthorizedUsers();
+        }
+        
         this.setInitialFormState();
         this.isLoading = false;
       },
@@ -205,11 +259,35 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Load authorized users details
+   */
+  private loadAuthorizedUsers(): void {
+    if (this.noteData.authorizedUserIds.length === 0) {
+      return;
+    }
+
+    this.usersService.getUsersByIds(this.noteData.authorizedUserIds).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (users) => {
+        this.selectedUsers = users.map(user => ({
+          id: user.id,
+          displayName: user.displayName || user.email || user.id,
+          email: user.email
+        }));
+      },
+      error: (error) => {
+        console.error('Error loading authorized users:', error);
+      }
+    });
+  }
+
+  /**
    * Load supporting data (categories and groups)
    */
   private loadSupportingData(): void {
     combineLatest([
-      this.categoriesService.getUserCategories(),
+      this.categoriesService.getCategories(),
       this.groupsService.getUserGroups()
     ]).pipe(
       takeUntil(this.destroy$)
@@ -224,13 +302,97 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ========== USER SEARCH AND MANAGEMENT ==========
+
+  /**
+   * Handle user search input
+   */
+  onUserSearchInput(): void {
+    this.userSearchSubject.next(this.userSearchQuery);
+  }
+
+  /**
+   * Perform user search
+   */
+  private performUserSearch(query: string): void {
+    if (!query.trim()) {
+      this.userSearchResults = [];
+      return;
+    }
+
+    this.isSearchingUsers = true;
+    this.userSearchError = '';
+
+    this.usersService.searchUsersByUsername(query).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (users) => {
+        // Filter out already selected users
+        this.userSearchResults = users.filter(user => 
+          !this.selectedUsers.some(selected => selected.id === user.id)
+        );
+        this.isSearchingUsers = false;
+      },
+      error: (error) => {
+        console.error('Error searching users:', error);
+        this.userSearchError = 'Error searching users. Please try again.';
+        this.userSearchResults = [];
+        this.isSearchingUsers = false;
+      }
+    });
+  }
+
+  /**
+   * Add user to authorized list
+   */
+  addUserToAuthorized(user: User): void {
+    const selectedUser: SelectedUser = {
+      id: user.id,
+      displayName: user.displayName || user.email || user.id,
+      email: user.email
+    };
+
+    this.selectedUsers.push(selectedUser);
+    this.noteData.authorizedUserIds.push(user.id);
+    
+    // Remove from search results
+    this.userSearchResults = this.userSearchResults.filter(u => u.id !== user.id);
+    
+    // Clear search
+    this.userSearchQuery = '';
+    this.userSearchResults = [];
+    
+    this.onFormChange();
+  }
+
+  /**
+   * Remove user from authorized list
+   */
+  removeUserFromAuthorized(userId: string): void {
+    this.selectedUsers = this.selectedUsers.filter(user => user.id !== userId);
+    this.noteData.authorizedUserIds = this.noteData.authorizedUserIds.filter(id => id !== userId);
+    this.onFormChange();
+  }
+
+  /**
+   * Clear user search
+   */
+  clearUserSearch(): void {
+    this.userSearchQuery = '';
+    this.userSearchResults = [];
+    this.userSearchError = '';
+  }
+
   // ========== FORM MANAGEMENT ==========
 
   /**
    * Set initial form state
    */
   private setInitialFormState(): void {
-    this.initialFormState = JSON.stringify(this.noteData);
+    this.initialFormState = JSON.stringify({
+      ...this.noteData,
+      selectedUsers: this.selectedUsers
+    });
     this.hasChanges = false;
   }
 
@@ -239,7 +401,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
    */
   onFormChange(): void {
     this.checkForChanges();
-    this.triggerAutoSave();
   }
 
   /**
@@ -247,7 +408,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
    */
   onContentChange(): void {
     this.checkForChanges();
-    this.triggerAutoSave();
   }
 
   /**
@@ -260,6 +420,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }
     if (this.noteData.accessibility !== AccessibilityType.AUTHORIZED) {
       this.noteData.authorizedUserIds = [];
+      this.selectedUsers = [];
+      this.clearUserSearch();
     }
     this.onFormChange();
   }
@@ -268,7 +430,10 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
    * Check for changes compared to initial state
    */
   private checkForChanges(): void {
-    const currentState = JSON.stringify(this.noteData);
+    const currentState = JSON.stringify({
+      ...this.noteData,
+      selectedUsers: this.selectedUsers
+    });
     this.hasChanges = currentState !== this.initialFormState;
   }
 
@@ -300,52 +465,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   /**
    * Get final category (handles empty category)
    */
-  private getFinalCategoryId(): string | undefined {
-    return this.noteData.categoryId || undefined;
-  }
-
-  // ========== AUTO-SAVE ==========
-
-  /**
-   * Trigger auto-save
-   */
-  private triggerAutoSave(): void {
-    this.autoSaveSubject.next();
-  }
-
-  /**
-   * Perform auto-save
-   */
-  private async performAutoSave(): Promise<void> {
-    if (this.mode !== 'edit' || !this.noteId) return;
-
-    this.autoSaveStatus = 'saving';
-
-    try {
-      const updateRequest: UpdateNoteRequest = {
-        title: this.noteData.title,
-        text: this.noteData.content,
-        category: this.getFinalCategoryId(),
-        accessibility: this.noteData.accessibility,
-        groupName: this.noteData.groupName || undefined,
-        authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
-      };
-
-      await this.notesService.updateNote(this.noteId, updateRequest).toPromise();
-      
-      this.autoSaveStatus = 'saved';
-      this.lastSaved = new Date();
-      this.setInitialFormState(); // Update baseline after successful save
-      
-      // Reset status after 3 seconds
-      setTimeout(() => {
-        this.autoSaveStatus = null;
-      }, 3000);
-
-    } catch (error) {
-      console.error('Error in auto-save:', error);
-      this.autoSaveStatus = 'error';
-    }
+  private getFinalCategoryName(): string | undefined {
+    return this.noteData.categoryName || undefined;
   }
 
   // ========== EDITOR ACTIONS ==========
@@ -367,7 +488,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
         const createRequest: CreateNoteRequest = {
           title: this.noteData.title,
           text: this.noteData.content,
-          category: this.getFinalCategoryId(),
+          category: this.getFinalCategoryName(),
           accessibility: this.noteData.accessibility,
           groupName: this.noteData.groupName || undefined,
           authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
@@ -381,7 +502,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
         const updateRequest: UpdateNoteRequest = {
           title: this.noteData.title,
           text: this.noteData.content,
-          category: this.getFinalCategoryId(),
+          category: this.getFinalCategoryName(),
           accessibility: this.noteData.accessibility,
           groupName: this.noteData.groupName || undefined,
           authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
@@ -391,7 +512,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
       }
 
       this.setInitialFormState();
-      this.lastSaved = new Date();
       this.router.navigate(['/notes']);
 
     } catch (error) {
@@ -423,18 +543,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   // ========== UTILITY METHODS ==========
-
-  /**
-   * Get auto-save status message
-   */
-  getAutoSaveMessage(): string {
-    switch (this.autoSaveStatus) {
-      case 'saving': return 'Saving...';
-      case 'saved': return 'Auto-saved';
-      case 'error': return 'Save failed';
-      default: return '';
-    }
-  }
 
   /**
    * Get save button text
@@ -558,10 +666,10 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   // ========== CATEGORY AND GROUP HELPERS ==========
 
   /**
-   * Get category name by ID
+   * Get category display name
    */
-  getCategoryName(categoryId: string): string {
-    const category = this.categories.find(c => c.id === categoryId);
+  getCategoryDisplayName(categoryName: string): string {
+    const category = this.categories.find(c => c.name === categoryName);
     return category?.name || 'Unknown';
   }
 
@@ -571,5 +679,39 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   getGroupDisplayName(groupName: string): string {
     const group = this.groups.find(g => g.name === groupName);
     return group ? group.name : groupName;
+  }
+
+  // ========== USER SEARCH HELPERS ==========
+
+  /**
+   * Get user display text for search results
+   */
+  getUserDisplayText(user: User): string {
+    if (user.displayName) {
+      return user.email ? `${user.displayName} (${user.email})` : user.displayName;
+    }
+    return user.email || user.id;
+  }
+
+  /**
+   * Check if user search has results
+   */
+  hasUserSearchResults(): boolean {
+    return this.userSearchResults.length > 0;
+  }
+
+  /**
+   * Check if any users are selected
+   */
+  hasSelectedUsers(): boolean {
+    return this.selectedUsers.length > 0;
+  }
+
+  /**
+   * Get selected users count text
+   */
+  getSelectedUsersCountText(): string {
+    const count = this.selectedUsers.length;
+    return `${count} user${count !== 1 ? 's' : ''} selected`;
   }
 }

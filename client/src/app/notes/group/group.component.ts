@@ -17,14 +17,11 @@ import { CreateGroupRequest } from '../../model/note.interface';
 })
 export class GroupComponent implements OnInit, OnDestroy {
 
-  // Groups data
-  myGroups: GroupWithDetails[] = []; // Groups I created
-  otherGroups: GroupWithDetails[] = []; // Groups created by others
-  recentlyJoinedGroups: string[] = []; // Track recently joined groups
+  // Groups data - single list, sorted
+  groups: GroupWithDetails[] = [];
 
   // UI states
   isLoading = false;
-  isCreatingGroup = false;
   errorMessage = '';
   successMessage = '';
 
@@ -53,7 +50,7 @@ export class GroupComponent implements OnInit, OnDestroy {
   // ========== DATA LOADING ==========
 
   /**
-   * Load all groups and separate them
+   * Load and sort all groups
    */
   private loadGroups(): void {
     this.isLoading = true;
@@ -63,7 +60,7 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response) => {
-        this.separateGroups(response.groups);
+        this.sortGroups(response.groups);
         this.isLoading = false;
       },
       error: (error) => {
@@ -75,25 +72,17 @@ export class GroupComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Separate groups into my groups and others
+   * Sort groups: member groups first, then others by name
    */
-  private separateGroups(allGroups: GroupWithDetails[]): void {
-    this.myGroups = allGroups.filter(group => group.isOwner);
-    
-    // Sort other groups: recently joined first, then by member count
-    this.otherGroups = allGroups
-      .filter(group => !group.isOwner)
-      .sort((a, b) => {
-        // Recently joined groups go first
-        const aRecentlyJoined = this.recentlyJoinedGroups.includes(a.name);
-        const bRecentlyJoined = this.recentlyJoinedGroups.includes(b.name);
-        
-        if (aRecentlyJoined && !bRecentlyJoined) return -1;
-        if (!aRecentlyJoined && bRecentlyJoined) return 1;
-        
-        // Then by member count (descending)
-        return b.memberCount - a.memberCount;
-      });
+  private sortGroups(allGroups: GroupWithDetails[]): void {
+    this.groups = allGroups.sort((a, b) => {
+      // Member groups (owner or member) go first
+      if ((a.isOwner || a.isMember) && !(b.isOwner || b.isMember)) return -1;
+      if (!(a.isOwner || a.isMember) && (b.isOwner || b.isMember)) return 1;
+      
+      // Within same category, sort alphabetically
+      return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+    });
   }
 
   // ========== GROUP CREATION ==========
@@ -118,7 +107,7 @@ export class GroupComponent implements OnInit, OnDestroy {
    * Create new group
    */
   createGroup(): void {
-    if (!this.newGroupName.trim()) {
+    if (!this.isGroupNameValid()) {
       return;
     }
 
@@ -132,7 +121,10 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (newGroup) => {
-        this.myGroups.unshift(newGroup); // Add to top of my groups
+        // Add to groups and re-sort
+        this.groups.push(newGroup);
+        this.sortGroups(this.groups);
+        
         this.successMessage = `Group "${newGroup.name}" created successfully!`;
         this.hideCreateGroupForm();
         this.clearMessages();
@@ -164,15 +156,17 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        // Update local state
-        const updatedGroup = { ...group, isMember: true, memberCount: group.memberCount + 1 };
-        this.updateGroupInList(updatedGroup);
-        
-        // Track as recently joined
-        this.recentlyJoinedGroups.unshift(group.name);
-        
-        // Re-sort to show recently joined group at top
-        this.separateGroups([...this.myGroups, ...this.otherGroups]);
+        // Update group in list
+        const index = this.groups.findIndex(g => g.name === group.name);
+        if (index !== -1) {
+          this.groups[index] = { 
+            ...group, 
+            isMember: true, 
+            memberCount: group.memberCount + 1 
+          };
+          // Re-sort to move joined group to top
+          this.sortGroups(this.groups);
+        }
         
         this.successMessage = `Successfully joined "${group.name}"!`;
         this.clearMessages();
@@ -197,12 +191,17 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        // Update local state
-        const updatedGroup = { ...group, isMember: false, memberCount: Math.max(0, group.memberCount - 1) };
-        this.updateGroupInList(updatedGroup);
-        
-        // Remove from recently joined if present
-        this.recentlyJoinedGroups = this.recentlyJoinedGroups.filter(name => name !== group.name);
+        // Update group in list
+        const index = this.groups.findIndex(g => g.name === group.name);
+        if (index !== -1) {
+          this.groups[index] = { 
+            ...group, 
+            isMember: false, 
+            memberCount: Math.max(0, group.memberCount - 1) 
+          };
+          // Re-sort to move left group to bottom
+          this.sortGroups(this.groups);
+        }
         
         this.successMessage = `Left "${group.name}" successfully!`;
         this.clearMessages();
@@ -219,7 +218,11 @@ export class GroupComponent implements OnInit, OnDestroy {
    * Delete a group (only for owners)
    */
   deleteGroup(group: GroupWithDetails): void {
-    const confirmMessage = `Are you sure you want to delete "${group.name}"?\n\nThis action cannot be undone and will remove all group notes.`;
+    if (!group.isOwner) {
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete "${group.name}"?\n\nThis action cannot be undone.`;
     
     if (!confirm(confirmMessage)) {
       return;
@@ -229,8 +232,8 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        // Remove from local state
-        this.myGroups = this.myGroups.filter(g => g.name !== group.name);
+        // Remove from groups list
+        this.groups = this.groups.filter(g => g.name !== group.name);
         this.successMessage = `Group "${group.name}" deleted successfully!`;
         this.clearMessages();
       },
@@ -243,14 +246,7 @@ export class GroupComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * View group details/notes
-   */
-  viewGroup(group: GroupWithDetails): void {
-    this.router.navigate(['/notes'], { queryParams: { group: group.name } });
-  }
-
-  /**
-   * Go back to previous page (usually notes view)
+   * Go back to previous page
    */
   goBack(): void {
     this.router.navigate(['/notes']);
@@ -259,59 +255,62 @@ export class GroupComponent implements OnInit, OnDestroy {
   // ========== HELPER METHODS ==========
 
   /**
-   * Update group in the appropriate list
+   * Get button text for group action
    */
-  private updateGroupInList(updatedGroup: GroupWithDetails): void {
-    // Update in my groups if it exists there
-    const myGroupIndex = this.myGroups.findIndex(g => g.name === updatedGroup.name);
-    if (myGroupIndex !== -1) {
-      this.myGroups[myGroupIndex] = updatedGroup;
-    }
-
-    // Update in other groups if it exists there
-    const otherGroupIndex = this.otherGroups.findIndex(g => g.name === updatedGroup.name);
-    if (otherGroupIndex !== -1) {
-      this.otherGroups[otherGroupIndex] = updatedGroup;
-    }
-  }
-
-  /**
-   * Check if group was recently joined
-   */
-  isRecentlyJoined(groupName: string): boolean {
-    return this.recentlyJoinedGroups.includes(groupName);
-  }
-
-  /**
-   * Get group member count display
-   */
-  getMemberCountDisplay(count: number): string {
-    return `${count} member${count !== 1 ? 's' : ''}`;
-  }
-
-  /**
-   * Get group badge class based on membership
-   */
-  getGroupBadgeClass(group: GroupWithDetails): string {
-    if (group.isOwner) {
-      return 'bg-blue-100 text-blue-700 border border-blue-300';
-    } else if (group.isMember) {
-      return 'bg-green-100 text-green-700 border border-green-300';
+  getActionButtonText(group: GroupWithDetails): string {
+    if (group.isOwner || group.isMember) {
+      return 'Leave';
     } else {
-      return 'bg-gray-100 text-gray-700 border border-gray-300';
+      return 'Join';
     }
+  }
+
+  /**
+   * Get button class for group action
+   */
+  getActionButtonClass(group: GroupWithDetails): string {
+    if (group.isOwner || group.isMember) {
+      return 'px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium';
+    } else {
+      return 'px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors text-sm font-medium';
+    }
+  }
+
+  /**
+   * Handle group action click
+   */
+  handleGroupAction(group: GroupWithDetails): void {
+    if (group.isOwner || group.isMember) {
+      this.leaveGroup(group);
+    } else {
+      this.joinGroup(group);
+    }
+  }
+
+  /**
+   * Check if group can be deleted
+   */
+  canDeleteGroup(group: GroupWithDetails): boolean {
+    return group.isOwner;
+  }
+
+  /**
+   * Check if user is member of group
+   */
+  isMemberOfGroup(group: GroupWithDetails): boolean {
+    return group.isOwner || group.isMember;
   }
 
   /**
    * Get group status text
    */
-  getGroupStatus(group: GroupWithDetails): string {
+  getGroupStatusText(group: GroupWithDetails): string {
     if (group.isOwner) {
-      return '👑 Owner';
+      return 'Owner';
     } else if (group.isMember) {
-      return '✅ Member';
+      return 'Member';
     } else {
-      return '🚪 Join';
+      return '';
     }
   }
 
@@ -336,73 +335,6 @@ export class GroupComponent implements OnInit, OnDestroy {
    * Check if there are no groups at all
    */
   hasNoGroups(): boolean {
-    return !this.isLoading && this.myGroups.length === 0 && this.otherGroups.length === 0;
+    return !this.isLoading && this.groups.length === 0;
   }
-
-  /**
-   * Format group creation date (if available)
-   */
-  formatDate(date: Date | undefined): string {
-    if (!date) return '';
-    
-    const now = new Date();
-    const groupDate = new Date(date);
-    const diffDays = Math.floor((now.getTime() - groupDate.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return 'Today';
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return groupDate.toLocaleDateString('en-US', {
-        day: 'numeric',
-        month: 'short',
-        year: groupDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-      });
-    }
-  }
-
-  /**
-   * Generate group color for visual distinction
-   */
-  generateGroupColor(groupName: string): string {
-    let hash = 0;
-    for (let i = 0; i < groupName.length; i++) {
-      const char = groupName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    
-    const hue = Math.abs(hash % 360);
-    return `hsl(${hue}, 65%, 75%)`;
-  }
-
-  /**
-   * Get action button text
-   */
-  getActionButtonText(group: GroupWithDetails): string {
-    if (group.isOwner) {
-      return 'Manage';
-    } else if (group.isMember) {
-      return 'Leave';
-    } else {
-      return 'Join';
-    }
-  }
-
-  /**
-   * Handle group action click
-   */
-  handleGroupAction(group: GroupWithDetails): void {
-    if (group.isOwner) {
-      this.viewGroup(group);
-    } else if (group.isMember) {
-      this.leaveGroup(group);
-    } else {
-      this.joinGroup(group);
-    }
-  }
-
 }

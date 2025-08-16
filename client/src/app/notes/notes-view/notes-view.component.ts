@@ -54,7 +54,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
 
   // Filters
   searchQuery = '';
-  selectedCategoryId = '';
+  selectedCategoryName = '';
   selectedAccessibilityType: AccessibilityType | '' = '';
   selectedSortOption = 'creation_date-desc'; // Default to newest first
 
@@ -146,7 +146,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     // Load both notes and categories in parallel
     combineLatest([
       this.notesService.getNotes(this.buildCurrentFilter()),
-      this.categoriesService.getUserCategories()
+      this.categoriesService.getCategories()
     ]).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
@@ -212,8 +212,8 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     }
 
     // Apply category filter
-    if (this.selectedCategoryId) {
-      filtered = filtered.filter(note => note.category === this.selectedCategoryId);
+    if (this.selectedCategoryName) {
+      filtered = filtered.filter(note => note.category === this.selectedCategoryName);
     }
 
     // Apply accessibility type filter
@@ -251,7 +251,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     
     return {
       searchQuery: this.searchQuery || undefined,
-      categoryId: this.selectedCategoryId || undefined,
+      categoryName: this.selectedCategoryName || undefined,
       accessibility: this.selectedAccessibilityType || undefined,
       sortBy: selectedOption?.sortBy || NoteSortType.CREATION_DATE,
       sortOrder: selectedOption?.sortOrder || 'desc',
@@ -263,7 +263,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    * Check if there are active filters
    */
   hasActiveFilters(): boolean {
-    return !!(this.searchQuery || this.selectedCategoryId || this.selectedAccessibilityType);
+    return !!(this.searchQuery || this.selectedCategoryName || this.selectedAccessibilityType);
   }
 
   /**
@@ -279,7 +279,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    */
   clearAllFilters(): void {
     this.searchQuery = '';
-    this.selectedCategoryId = '';
+    this.selectedCategoryName = '';
     this.selectedAccessibilityType = '';
     this.selectedSortOption = 'creation_date-desc';
     this.applyFilters();
@@ -299,13 +299,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    */
   createGroup(): void {
     this.router.navigate(['/groups']);
-  }
-
-  /**
-   * Create a new category
-   */
-  createCategory(): void {
-    this.router.navigate(['/categories']);
   }
 
   /**
@@ -392,11 +385,11 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get category name by ID
+   * Get category name by name
    */
-  getCategoryName(categoryId: string | null): string {
-    if (!categoryId) return 'Uncategorized';
-    const category = this.categories.find(c => c.id === categoryId);
+  getCategoryName(categoryName: string | null): string {
+    if (!categoryName) return 'Uncategorized';
+    const category = this.categories.find(c => c.name === categoryName);
     return category?.name || 'Unknown Category';
   }
 
@@ -446,20 +439,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   // ========== NAVIGATION HELPERS ==========
 
   /**
-   * Navigate to categories management
-   */
-  manageCategories(): void {
-    this.router.navigate(['/categories']);
-  }
-
-  /**
-   * Navigate to groups management
-   */
-  manageGroups(): void {
-    this.router.navigate(['/groups']);
-  }
-
-  /**
    * Refresh data from server
    */
   refreshData(): void {
@@ -478,8 +457,8 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       filters.push(`Search: "${this.searchQuery}"`);
     }
     
-    if (this.selectedCategoryId) {
-      const categoryName = this.getCategoryName(this.selectedCategoryId);
+    if (this.selectedCategoryName) {
+      const categoryName = this.getCategoryName(this.selectedCategoryName);
       filters.push(`Category: ${categoryName}`);
     }
     

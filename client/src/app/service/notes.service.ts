@@ -46,7 +46,7 @@ export class NotesService {
     
     if (filters) {
       if (filters.searchQuery) params = params.set('search', filters.searchQuery);
-      if (filters.categoryId) params = params.set('category', filters.categoryId);
+      if (filters.categoryName) params = params.set('category', filters.categoryName);
       if (filters.accessibility) params = params.set('accessibility', filters.accessibility);
       if (filters.groupName) params = params.set('group', filters.groupName);
       if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
@@ -74,7 +74,7 @@ export class NotesService {
   /**
    * Get note previews for home page display
    */
-  getNotePreviews(sortBy: NoteSortType = NoteSortType.LAST_MODIFIED): Observable<NotePreview[]> {
+  getNotePreviews(sortBy: NoteSortType = NoteSortType.LAST_MODIFY): Observable<NotePreview[]> {
     const params = new HttpParams()
       .set('preview', 'true')
       .set('sortBy', sortBy)
@@ -266,8 +266,8 @@ export class NotesService {
   /**
    * Get notes by category
    */
-  getNotesByCategory(categoryId: string): Observable<NoteWithDetails[]> {
-    return this.getNotes({ categoryId }).pipe(
+  getNotesByCategory(categoryName: string): Observable<NoteWithDetails[]> {
+    return this.getNotes({ categoryName }).pipe(
       map(response => response.notes)
     );
   }
@@ -511,7 +511,7 @@ export class NotesService {
           comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
           break;
           
-        case NoteSortType.LAST_MODIFIED:
+        case NoteSortType.LAST_MODIFY:
           comparison = new Date(a.lastModify).getTime() - new Date(b.lastModify).getTime();
           break;
           
@@ -631,12 +631,12 @@ export class NotesService {
     switch (viewType) {
       case 'home':
         filters = { 
-          sortBy: NoteSortType.LAST_MODIFIED, 
+          sortBy: NoteSortType.LAST_MODIFY, 
           limit: 20 
         };
         break;
       case 'category':
-        filters = { categoryId: identifier };
+        filters = { categoryName: identifier };
         break;
       case 'group':
         filters = { groupName: identifier };
@@ -644,7 +644,7 @@ export class NotesService {
       case 'list':
       default:
         filters = { 
-          sortBy: NoteSortType.LAST_MODIFIED,
+          sortBy: NoteSortType.LAST_MODIFY,
           limit: NOTE_CONSTANTS.DEFAULT_PAGE_SIZE
         };
     }

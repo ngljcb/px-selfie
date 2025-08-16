@@ -3,7 +3,7 @@
 <main class="min-h-screen bg-gray-50">
   <!-- Header Section -->
   <div class="bg-white shadow-sm border-b">
-    <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="max-w-4xl mx-auto px-4 py-6">
       <div class="flex justify-between items-center">
         <!-- Navigation and Title -->
         <div class="flex items-center">
@@ -16,24 +16,22 @@
           
           <div class="h-6 w-px bg-gray-300 mr-4"></div>
           
-          <h1 class="text-2xl font-bold text-gray-900 mr-4">Groups</h1>
+          <h1 class="text-2xl font-bold text-gray-900">Groups</h1>
         </div>
 
-        <!-- Actions -->
-        <div class="flex items-center gap-3">
-          <button 
-            (click)="showCreateGroupForm()"
-            class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors duration-200 shadow-sm">
-            <span>➕</span>
-            <span>Create Group</span>
-          </button>
-        </div>
+        <!-- Create Group Button -->
+        <button 
+          (click)="showCreateGroupForm()"
+          class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors duration-200 shadow-sm">
+          <span>➕</span>
+          <span>Create Group</span>
+        </button>
       </div>
     </div>
   </div>
 
   <!-- Feedback Messages -->
-  <div class="max-w-7xl mx-auto px-4 mt-4">
+  <div class="max-w-4xl mx-auto px-4 mt-4">
     <!-- Success message -->
     <div *ngIf="successMessage" 
          class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
@@ -42,10 +40,19 @@
         <span class="text-green-700">{{ successMessage }}</span>
       </div>
     </div>
+
+    <!-- Error message -->
+    <div *ngIf="errorMessage" 
+         class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+      <div class="flex items-center">
+        <span class="text-red-500 text-lg mr-2">❌</span>
+        <span class="text-red-700">{{ errorMessage }}</span>
+      </div>
+    </div>
   </div>
 
   <!-- Create Group Form -->
-  <div *ngIf="showCreateForm" class="max-w-7xl mx-auto px-4 mb-6">
+  <div *ngIf="showCreateForm" class="max-w-4xl mx-auto px-4 mb-6">
     <div class="bg-white rounded-lg shadow-sm p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Group</h2>
       
@@ -94,7 +101,7 @@
   </div>
 
   <!-- Main Content -->
-  <div class="max-w-7xl mx-auto px-4 pb-8">
+  <div class="max-w-4xl mx-auto px-4 pb-8">
 
     <!-- Loading State -->
     <div *ngIf="isLoading" class="flex justify-center items-center py-12">
@@ -108,141 +115,52 @@
       <h3 class="text-xl font-semibold text-gray-700 mb-2">No groups found!</h3>
     </div>
 
-    <!-- Groups Content -->
-    <div *ngIf="!isLoading && !hasNoGroups()" class="space-y-8">
-
-      <!-- My Groups Section -->
-      <section *ngIf="myGroups.length > 0">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900">
-            👑 My Groups ({{ myGroups.length }})
-          </h2>
-        </div>
+    <!-- Groups List -->
+    <div *ngIf="!isLoading && !hasNoGroups()" class="space-y-3">
+      
+      <div *ngFor="let group of groups; trackBy: trackByGroupName" 
+           class="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow duration-200">
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div *ngFor="let group of myGroups; trackBy: trackByGroupName" 
-               class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200">
+        <div class="flex items-center justify-between">
+          <!-- Group Info -->
+          <div class="flex items-center gap-3">
+            <!-- Group Name -->
+            <h3 class="text-lg font-semibold text-gray-900">
+              {{ group.name }}
+            </h3>
             
-            <!-- Group Header -->
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex-1 min-w-0">
-                <h3 class="text-lg font-semibold text-gray-900 truncate mb-1" [title]="group.name">
-                  {{ group.name }}
-                </h3>
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                      [ngClass]="getGroupBadgeClass(group)">
-                  {{ getGroupStatus(group) }}
-                </span>
-              </div>
-              
-              <!-- Group Color Indicator -->
-              <div class="w-4 h-4 rounded-full flex-shrink-0 ml-2"
-                   [style.background-color]="generateGroupColor(group.name)">
-              </div>
-            </div>
+            <!-- Status Badge -->
+            <span *ngIf="isMemberOfGroup(group)" 
+                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-blue-100 text-blue-700': group.isOwner,
+                    'bg-green-100 text-green-700': !group.isOwner && group.isMember
+                  }">
+              {{ getGroupStatusText(group) }}
+            </span>
+          </div>
 
-            <!-- Group Stats -->
-            <div class="space-y-2 mb-4">
-              <div class="flex items-center text-sm text-gray-600">
-                <span>👥 {{ getMemberCountDisplay(group.memberCount) }}</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600" *ngIf="group.noteCount !== undefined">
-                <span>📝 {{ group.noteCount }} note{{ group.noteCount !== 1 ? 's' : '' }}</span>
-              </div>
-            </div>
+          <!-- Actions -->
+          <div class="flex items-center gap-2">
+            
+            <!-- Delete Button (only for owners) -->
+            <button
+              *ngIf="canDeleteGroup(group)"
+              (click)="deleteGroup(group)"
+              class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors text-sm font-medium"
+              title="Delete group">
+              🗑️ Delete
+            </button>
 
-            <!-- Group Actions -->
-            <div class="flex items-center gap-2">
-              <button
-                (click)="viewGroup(group)"
-                class="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm font-medium">
-                📝 View Notes
-              </button>
-              
-              <button
-                (click)="deleteGroup(group)"
-                class="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm">
-                🗑️
-              </button>
-            </div>
+            <!-- Join/Leave Button -->
+            <button
+              (click)="handleGroupAction(group)"
+              [ngClass]="getActionButtonClass(group)">
+              {{ getActionButtonText(group) }}
+            </button>
           </div>
         </div>
-      </section>
-
-      <!-- Other Groups Section -->
-      <section *ngIf="otherGroups.length > 0">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-semibold text-gray-900">
-            🌍 All Groups ({{ otherGroups.length }})
-          </h2>
-        </div>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div *ngFor="let group of otherGroups; trackBy: trackByGroupName" 
-               class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200"
-               [class.ring-2]="isRecentlyJoined(group.name)"
-               [class.ring-green-200]="isRecentlyJoined(group.name)">
-            
-            <!-- Recently Joined Badge -->
-            <div *ngIf="isRecentlyJoined(group.name)" 
-                 class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium mb-2">
-              ✨ Recently Joined
-            </div>
-
-            <!-- Group Header -->
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex-1 min-w-0">
-                <h3 class="text-lg font-semibold text-gray-900 truncate mb-1" [title]="group.name">
-                  {{ group.name }}
-                </h3>
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-                      [ngClass]="getGroupBadgeClass(group)">
-                  {{ getGroupStatus(group) }}
-                </span>
-              </div>
-              
-              <!-- Group Color Indicator -->
-              <div class="w-4 h-4 rounded-full flex-shrink-0 ml-2"
-                   [style.background-color]="generateGroupColor(group.name)">
-              </div>
-            </div>
-
-            <!-- Group Stats -->
-            <div class="space-y-2 mb-4">
-              <div class="flex items-center text-sm text-gray-600">
-                <span>👥 {{ getMemberCountDisplay(group.memberCount) }}</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-600" *ngIf="group.noteCount !== undefined">
-                <span>📝 {{ group.noteCount }} note{{ group.noteCount !== 1 ? 's' : '' }}</span>
-              </div>
-              <div class="flex items-center text-sm text-gray-500" *ngIf="group.createdAt">
-                <span>📅 Created {{ formatDate(group.createdAt) }}</span>
-              </div>
-            </div>
-
-            <!-- Group Actions -->
-            <div class="flex items-center gap-2">
-              <button
-                *ngIf="group.isMember"
-                (click)="viewGroup(group)"
-                class="flex-1 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors text-sm font-medium">
-                📝 View Notes
-              </button>
-              
-              <button
-                (click)="handleGroupAction(group)"
-                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                [ngClass]="{
-                  'bg-red-50 hover:bg-red-100 text-red-600': group.isMember,
-                  'bg-green-50 hover:bg-green-100 text-green-700': !group.isMember,
-                  'flex-1': !group.isMember
-                }">
-                {{ getActionButtonText(group) }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </div>
   </div>
 </main>

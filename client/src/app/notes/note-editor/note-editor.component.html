@@ -26,19 +26,6 @@
 
         <!-- Main Actions -->
         <div class="flex items-center gap-3">
-          
-          <!-- Auto-save indicator -->
-          <div class="flex items-center gap-2 text-sm text-gray-500" *ngIf="autoSaveStatus">
-            <span class="w-2 h-2 rounded-full" 
-                  [ngClass]="{
-                    'bg-green-400': autoSaveStatus === 'saved',
-                    'bg-yellow-400': autoSaveStatus === 'saving',
-                    'bg-red-400': autoSaveStatus === 'error'
-                  }">
-            </span>
-            <span>{{ getAutoSaveMessage() }}</span>
-          </div>
-
           <!-- Save Note -->
           <button 
             (click)="saveNote()"
@@ -98,11 +85,11 @@
             <div class="relative">
               <select
                 id="category"
-                [(ngModel)]="noteData.categoryId"
+                [(ngModel)]="noteData.categoryName"
                 (change)="onFormChange()"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent appearance-none bg-white">
                 <option value="">Select category</option>
-                <option *ngFor="let category of categories" [value]="category.id">
+                <option *ngFor="let category of categories" [value]="category.name">
                   {{ category.name }}
                 </option>
               </select>
@@ -160,17 +147,95 @@
           </div>
         </div>
 
+        <!-- Authorized Users Section -->
         <div *ngIf="noteData.accessibility === 'authorized'" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               👥 Authorized Users <span class="text-red-500">*</span>
             </label>
-            <div class="border border-gray-300 rounded-lg p-3 min-h-[100px] bg-gray-50">
-              <p class="text-sm text-gray-500 text-center py-8">
-                User selection functionality will be implemented here
-              </p>
+            
+            <!-- User Search -->
+            <div class="space-y-3">
+              <div class="relative">
+                <input
+                  type="text"
+                  [(ngModel)]="userSearchQuery"
+                  (input)="onUserSearchInput()"
+                  placeholder="Search users by username..."
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
+                
+                <!-- Clear search button -->
+                <button 
+                  *ngIf="userSearchQuery"
+                  (click)="clearUserSearch()"
+                  class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>
+
+                <!-- Search loading indicator -->
+                <div *ngIf="isSearchingUsers" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div class="animate-spin w-4 h-4 border-2 border-[#fbd65a] border-t-transparent rounded-full"></div>
+                </div>
+              </div>
+
+              <!-- Search Error -->
+              <div *ngIf="userSearchError" class="text-sm text-red-600 bg-red-50 p-2 rounded">
+                {{ userSearchError }}
+              </div>
+
+              <!-- Search Results -->
+              <div *ngIf="hasUserSearchResults()" class="border border-gray-200 rounded-lg max-h-40 overflow-y-auto">
+                <button
+                  *ngFor="let user of userSearchResults"
+                  (click)="addUserToAuthorized(user)"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="font-medium text-gray-900">{{ getUserDisplayText(user) }}</div>
+                    </div>
+                    <span class="text-sm text-green-600">+ Add</span>
+                  </div>
+                </button>
+              </div>
+
+              <!-- No results message -->
+              <div *ngIf="userSearchQuery && !isSearchingUsers && !hasUserSearchResults() && !userSearchError" 
+                   class="text-sm text-gray-500 text-center py-2">
+                No users found for "{{ userSearchQuery }}"
+              </div>
             </div>
-            <span *ngIf="noteData.authorizedUserIds.length === 0 && showValidationErrors" class="text-sm text-red-600 mt-1">
+
+            <!-- Selected Users -->
+            <div *ngIf="hasSelectedUsers()" class="mt-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Selected Users:</span>
+                <span class="text-xs text-gray-500">{{ getSelectedUsersCountText() }}</span>
+              </div>
+              
+              <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                <div *ngFor="let user of selectedUsers" 
+                     class="flex items-center justify-between bg-blue-50 px-3 py-2 rounded">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                      {{ user.displayName.charAt(0).toUpperCase() }}
+                    </span>
+                    <div>
+                      <div class="font-medium text-gray-900">{{ user.displayName }}</div>
+                      <div *ngIf="user.email" class="text-xs text-gray-600">{{ user.email }}</div>
+                    </div>
+                  </div>
+                  <button
+                    (click)="removeUserFromAuthorized(user.id)"
+                    class="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                    title="Remove user">
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Validation error for authorized users -->
+            <span *ngIf="noteData.authorizedUserIds.length === 0 && showValidationErrors" class="text-sm text-red-600">
               At least one authorized user is required
             </span>
           </div>
@@ -244,34 +309,6 @@ You can use Markdown for formatting:
             <li *ngFor="let error of getValidationErrors()">• {{ error }}</li>
           </ul>
         </div>
-      </div>
-    </div>
-
-    <!-- Footer Actions -->
-    <div class="mt-6 flex items-center justify-between">
-      
-      <!-- Additional info -->
-      <div class="text-sm text-gray-500">
-        <span *ngIf="mode === 'edit' && originalNote">
-          Created: {{ formatDate(originalNote.createdAt) }}
-        </span>
-        <span *ngIf="mode === 'edit' && originalNote && lastSaved" class="mx-2">•</span>
-        <span *ngIf="lastSaved">
-          Last saved: {{ formatDate(lastSaved) }}
-        </span>
-        <span *ngIf="lastSaved || (mode === 'edit' && originalNote)" class="mx-2">•</span>
-      </div>
-
-      <!-- Final actions -->
-      <div class="flex items-center gap-3">        
-        <button 
-          (click)="saveNote()"
-          [disabled]="!isFormValid() || isSaving"
-          class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          <span *ngIf="!isSaving">💾</span>
-          <span class="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" *ngIf="isSaving"></span>
-          <span>{{ getSaveButtonText() }}</span>
-        </button>
       </div>
     </div>
   </div>
