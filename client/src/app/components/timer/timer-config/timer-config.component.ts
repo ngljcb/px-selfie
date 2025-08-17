@@ -1,9 +1,7 @@
-// src/app/features/timer/components/timer-config/timer-config.component.ts
-
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { TimerConfig } from '../../model/timer.interface';
+import { TimerConfig } from '../../../model/timer.interface';
 
 interface ConfigProposal {
   id: number;

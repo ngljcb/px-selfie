@@ -1,5 +1,3 @@
-// note-editor.component.ts - COMPLETE FIXED VERSION
-
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -15,11 +13,11 @@ import {
   Group,
   User,
   NOTE_CONSTANTS 
-} from '../../model/note.interface';
-import { NotesService } from '../../service/notes.service';
-import { CategoriesService } from '../../service/categories.service';
-import { GroupsService } from '../../service/groups.service';
-import { UsersService } from '../../service/users.service';
+} from '../../../model/note.interface';
+import { NotesService } from '../../../service/notes.service';
+import { CategoriesService } from '../../../service/categories.service';
+import { GroupsService } from '../../../service/groups.service';
+import { UsersService } from '../../../service/users.service';
 
 type EditorMode = 'create' | 'edit';
 
