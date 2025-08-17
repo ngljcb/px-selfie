@@ -1,8 +1,6 @@
-// note-viewer.component.ts - SIMPLIFIED VERSION
-
 import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { NoteWithDetails } from '../../model/note.interface';
+import { NoteWithDetails } from '../../../model/note.interface';
 
 @Component({
   selector: 'app-note-viewer',

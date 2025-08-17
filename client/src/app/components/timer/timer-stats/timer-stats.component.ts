@@ -1,11 +1,9 @@
-// src/app/features/timer/timer-stats/timer-stats.component.ts
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { StatisticsService } from '../../service/statistics.service';
-import { StatisticsResponse } from '../../model/statistics.interface';
+import { StatisticsService } from '../../../service/statistics.service';
+import { StatisticsResponse } from '../../../model/statistics.interface';
 
 @Component({
   selector: 'app-timer-stats',

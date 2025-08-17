@@ -1,9 +1,7 @@
-// src/app/features/timer/services/timer.service.ts
-
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
 import { AudioService } from './audio.service';
-import { StatisticsService } from './statistics.service'; // NUOVO IMPORT
+import { StatisticsService } from './statistics.service';
 import { 
   TimerConfig, 
   TimerState, 

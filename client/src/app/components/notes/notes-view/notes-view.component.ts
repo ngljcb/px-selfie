@@ -1,5 +1,3 @@
-// notes-view.component.ts - UPDATED WITH VIEWER
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,10 +15,10 @@ import {
   AccessibilityType,
   NoteSortType,
   NoteFilterParams
-} from '../../model/note.interface';
-import { NotesService } from '../../service/notes.service';
-import { CategoriesService } from '../../service/categories.service';
-import { GroupsService } from '../../service/groups.service';
+} from '../../../model/note.interface';
+import { NotesService } from '../../../service/notes.service';
+import { CategoriesService } from '../../../service/categories.service';
+import { GroupsService } from '../../../service/groups.service';
 
 // Type definitions for component
 type SortOption = {
