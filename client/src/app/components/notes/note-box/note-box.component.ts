@@ -1,5 +1,3 @@
-// note-box.component.ts - UPDATED VERSION
-
 import { 
   Component, 
   Input, 
@@ -15,8 +13,8 @@ import {
   NoteWithDetails, 
   AccessibilityType,
   NOTE_CONSTANTS
-} from '../../model/note.interface';
-import { NotesService } from '../../service/notes.service';
+} from '../../../model/note.interface';
+import { NotesService } from '../../../service/notes.service';
 
 @Component({
   selector: 'app-note-box',

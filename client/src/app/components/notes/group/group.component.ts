@@ -1,13 +1,11 @@
-// group.component.ts - FIXED LOGIC
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
-import { GroupsService, GroupWithDetails } from '../../service/groups.service';
-import { CreateGroupRequest } from '../../model/note.interface';
+import { GroupsService, GroupWithDetails } from '../../../service/groups.service';
+import { CreateGroupRequest } from '../../../model/note.interface';
 
 @Component({
   selector: 'app-group',
@@ -79,7 +77,7 @@ export class GroupComponent implements OnInit, OnDestroy {
       // Member groups (owner or member) go first
       if ((a.isOwner || a.isMember) && !(b.isOwner || b.isMember)) return -1;
       if (!(a.isOwner || a.isMember) && (b.isOwner || b.isMember)) return 1;
-      
+
       // Within same category, sort alphabetically
       return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
     });
@@ -124,7 +122,7 @@ export class GroupComponent implements OnInit, OnDestroy {
         // Add to groups and re-sort
         this.groups.push(newGroup);
         this.sortGroups(this.groups);
-        
+
         this.successMessage = `Group "${newGroup.name}" created successfully!`;
         this.hideCreateGroupForm();
         this.clearMessages();
@@ -159,15 +157,15 @@ export class GroupComponent implements OnInit, OnDestroy {
         // Update group in list
         const index = this.groups.findIndex(g => g.name === group.name);
         if (index !== -1) {
-          this.groups[index] = { 
-            ...group, 
-            isMember: true, 
-            memberCount: group.memberCount + 1 
+          this.groups[index] = {
+            ...group,
+            isMember: true,
+            memberCount: group.memberCount + 1
           };
           // Re-sort to move joined group to top
           this.sortGroups(this.groups);
         }
-        
+
         this.successMessage = `Successfully joined "${group.name}"!`;
         this.clearMessages();
       },
@@ -194,15 +192,15 @@ export class GroupComponent implements OnInit, OnDestroy {
         // Update group in list
         const index = this.groups.findIndex(g => g.name === group.name);
         if (index !== -1) {
-          this.groups[index] = { 
-            ...group, 
-            isMember: false, 
-            memberCount: Math.max(0, group.memberCount - 1) 
+          this.groups[index] = {
+            ...group,
+            isMember: false,
+            memberCount: Math.max(0, group.memberCount - 1)
           };
           // Re-sort to move left group to bottom
           this.sortGroups(this.groups);
         }
-        
+
         this.successMessage = `Left "${group.name}" successfully!`;
         this.clearMessages();
       },
@@ -223,7 +221,7 @@ export class GroupComponent implements OnInit, OnDestroy {
     }
 
     const confirmMessage = `Are you sure you want to delete "${group.name}"?\n\nThis action cannot be undone.`;
-    
+
     if (!confirm(confirmMessage)) {
       return;
     }
@@ -287,7 +285,7 @@ export class GroupComponent implements OnInit, OnDestroy {
     if (group.isOwner) {
       return; // Do nothing for owners
     }
-    
+
     if (group.isMember) {
       this.leaveGroup(group);
     } else {

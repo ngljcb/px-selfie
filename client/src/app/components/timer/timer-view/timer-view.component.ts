@@ -1,21 +1,17 @@
-// src/app/features/timer/timer-view/timer-view.component.ts
-
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TimerConfigComponent } from '../timer-config/timer-config.component';
 import { TimerStatsComponent } from '../timer-stats/timer-stats.component';
-import { 
-  TimerService 
-} from '../../service/timer.service';
+import { TimerService } from '../../../service/timer.service';
 import { 
   TimerState, 
   TimerConfig, 
   TimerStatus, 
   TimerPhase 
-} from '../../model/timer.interface';
-import { StatisticsService } from '../../service/statistics.service'; // NUOVO
+} from '../../../model/timer.interface';
+import { StatisticsService } from '../../../service/statistics.service';
 
 // Interfaccia per le notifiche
 interface TimerNotification {
