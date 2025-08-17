@@ -1,58 +1,32 @@
-<!-- notes/client/components/note-editor/note-editor.component.html -->
+<!-- note-editor.component.html -->
 
 <main class="min-h-screen bg-gray-50">
   
-  <!-- Header Editor -->
+  <!-- Editor Header -->
   <header class="bg-white shadow-sm border-b sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-4">
       <div class="flex items-center justify-between">
         
-        <!-- Navigazione e Titolo -->
+        <!-- Navigation and Title -->
         <div class="flex items-center gap-4">
           <button 
             (click)="goBack()"
             class="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
             <span class="text-lg">←</span>
-            <span class="font-medium">Indietro</span>
+            <span class="font-medium">Back</span>
           </button>
           
           <div class="h-6 w-px bg-gray-300"></div>
           
           <h1 class="text-2xl font-bold text-gray-900">
-            <span [ngSwitch]="mode">
-              <span *ngSwitchCase="'create'">✏️ Nuova Nota</span>
-              <span *ngSwitchCase="'edit'">📝 Modifica Nota</span>
-              <span *ngSwitchCase="'duplicate'">📋 Duplica Nota</span>
-              <span *ngSwitchDefault>📄 Editor Note</span>
-            </span>
+            <span *ngIf="mode === 'create'">New Note</span>
+            <span *ngIf="mode === 'edit'">Edit Note</span>
           </h1>
         </div>
 
-        <!-- Azioni Principali -->
+        <!-- Main Actions -->
         <div class="flex items-center gap-3">
-          
-          <!-- Indicatore auto-save -->
-          <div class="flex items-center gap-2 text-sm text-gray-500" *ngIf="autoSaveStatus">
-            <span class="w-2 h-2 rounded-full" 
-                  [ngClass]="{
-                    'bg-green-400': autoSaveStatus === 'saved',
-                    'bg-yellow-400': autoSaveStatus === 'saving',
-                    'bg-red-400': autoSaveStatus === 'error'
-                  }">
-            </span>
-            <span>{{ getAutoSaveMessage() }}</span>
-          </div>
-
-          <!-- Salva Bozza -->
-          <button 
-            (click)="saveDraft()"
-            [disabled]="!hasChanges || isSaving"
-            class="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <span class="text-sm">💾</span>
-            <span class="font-medium">Salva Bozza</span>
-          </button>
-
-          <!-- Salva e Pubblica -->
+          <!-- Save Note -->
           <button 
             (click)="saveNote()"
             [disabled]="!isFormValid() || isSaving"
@@ -66,243 +40,275 @@
     </div>
   </header>
 
-  <!-- Contenuto Editor -->
+  <!-- Editor Content -->
   <div class="max-w-7xl mx-auto px-4 py-6">
     
-    <!-- Form Metadati -->
+    <!-- Metadata Form -->
     <section class="bg-white rounded-lg shadow-sm p-6 mb-6">
       <div class="space-y-4">
         
-        <!-- Titolo -->
+        <!-- Title -->
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
-            📝 Titolo <span class="text-red-500">*</span>
+            Title <span class="text-red-500">*</span>
           </label>
           <input
             id="title"
             type="text"
-            [(ngModel)]="noteData.titolo"
+            [(ngModel)]="noteData.title"
             (input)="onFormChange()"
-            placeholder="Inserisci il titolo della nota..."
-            maxlength="100"
+            placeholder="Enter note title..."
+            maxlength="255"
             class="w-full px-4 py-3 text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent placeholder-gray-400"
-            [class.border-red-300]="!noteData.titolo && showValidationErrors"
+            [class.border-red-300]="!noteData.title && showValidationErrors"
             required>
           
-          <!-- Counter caratteri -->
+          <!-- Character counter -->
           <div class="flex justify-between items-center mt-1">
-            <span *ngIf="!noteData.titolo && showValidationErrors" class="text-sm text-red-600">
-              Il titolo è obbligatorio
+            <span *ngIf="!noteData.title && showValidationErrors" class="text-sm text-red-600">
+              Title is required
             </span>
             <span class="text-xs text-gray-500 ml-auto">
-              {{ noteData.titolo.length }}/100 caratteri
+              {{ noteData.title.length }}/255 characters
             </span>
           </div>
         </div>
 
-        <!-- Categoria e Tipo -->
+        <!-- Category and Accessibility Type -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           
-          <!-- Categoria -->
+          <!-- Category -->
           <div>
             <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
-              📁 Categoria
+              Category
             </label>
             <div class="relative">
               <select
                 id="category"
-                [(ngModel)]="noteData.categoria"
+                [(ngModel)]="noteData.categoryName"
                 (change)="onFormChange()"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent appearance-none bg-white">
-                <option value="">Seleziona categoria</option>
-                <option *ngFor="let category of categories" [value]="category.nome">
-                  {{ category.nome }}
+                <option value="">Select category</option>
+                <option *ngFor="let category of categories" [value]="category.name">
+                  {{ category.name }}
                 </option>
-                <option value="__new__">+ Crea nuova categoria</option>
               </select>
               <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
                 <span class="text-gray-400">▼</span>
               </div>
             </div>
-            
-            <!-- Input nuova categoria -->
-            <div *ngIf="noteData.categoria === '__new__'" class="mt-2">
-              <input
-                type="text"
-                [(ngModel)]="newCategoryName"
-                (input)="onFormChange()"
-                placeholder="Nome nuova categoria..."
-                maxlength="50"
-                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
-            </div>
           </div>
 
-          <!-- Tipo -->
+          <!-- Accessibility Type -->
           <div>
-            <label for="type" class="block text-sm font-medium text-gray-700 mb-2">
-              🏷️ Tipo di Nota <span class="text-red-500">*</span>
+            <label for="accessibility" class="block text-sm font-medium text-gray-700 mb-2">
+              Accessibility <span class="text-red-500">*</span>
             </label>
             <select
-              id="type"
-              [(ngModel)]="noteData.tipo"
-              (change)="onFormChange()"
+              id="accessibility"
+              [(ngModel)]="noteData.accessibility"
+              (change)="onAccessibilityChange()"
               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent appearance-none bg-white"
-              [class.border-red-300]="!noteData.tipo && showValidationErrors"
+              [class.border-red-300]="!noteData.accessibility && showValidationErrors"
               required>
-              <option value="">Seleziona tipo</option>
-              <option *ngFor="let type of noteTypes" [value]="type.value">
-                {{ type.icon }} {{ type.label }}
+              <option *ngFor="let type of accessibilityTypes" [value]="type.value">
+                {{ type.label }}
               </option>
             </select>
             
-            <!-- Descrizione tipo selezionato -->
-            <p *ngIf="noteData.tipo" class="mt-1 text-xs text-gray-600">
-              {{ getTypeDescription(noteData.tipo) }}
+            <!-- Accessibility description -->
+            <p *ngIf="noteData.accessibility" class="mt-1 text-xs text-gray-600">
+              {{ getAccessibilityDescription(noteData.accessibility) }}
             </p>
+          </div>
+        </div>
+
+        <!-- Conditional fields based on accessibility type -->
+        <div *ngIf="noteData.accessibility === 'group'" class="space-y-4">
+          <div>
+            <label for="group" class="block text-sm font-medium text-gray-700 mb-2">
+              Select Group <span class="text-red-500">*</span>
+            </label>
+            <select
+              id="group"
+              [(ngModel)]="noteData.groupName"
+              (change)="onFormChange()"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent appearance-none bg-white"
+              [class.border-red-300]="!noteData.groupName && showValidationErrors"
+              required>
+              <option value="">Select a group</option>
+              <option *ngFor="let group of groups" [value]="group.name">
+                {{ group.name }}
+              </option>
+            </select>
+            <span *ngIf="!noteData.groupName && showValidationErrors" class="text-sm text-red-600 mt-1">
+              Group selection is required
+            </span>
+          </div>
+        </div>
+
+        <!-- Authorized Users Section -->
+        <div *ngIf="noteData.accessibility === 'authorized'" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              👥 Authorized Users <span class="text-red-500">*</span>
+            </label>
+            
+            <!-- User Search -->
+            <div class="space-y-3">
+              <div class="relative">
+                <input
+                  type="text"
+                  [(ngModel)]="userSearchQuery"
+                  (input)="onUserSearchInput()"
+                  placeholder="Search users by username..."
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
+                
+                <!-- Clear search button -->
+                <button 
+                  *ngIf="userSearchQuery"
+                  (click)="clearUserSearch()"
+                  class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  ✕
+                </button>
+
+                <!-- Search loading indicator -->
+                <div *ngIf="isSearchingUsers" class="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div class="animate-spin w-4 h-4 border-2 border-[#fbd65a] border-t-transparent rounded-full"></div>
+                </div>
+              </div>
+
+              <!-- Search Error -->
+              <div *ngIf="userSearchError" class="text-sm text-red-600 bg-red-50 p-2 rounded">
+                {{ userSearchError }}
+              </div>
+
+              <!-- Search Results -->
+              <div *ngIf="hasUserSearchResults()" class="border border-gray-200 rounded-lg max-h-40 overflow-y-auto">
+                <button
+                  *ngFor="let user of userSearchResults"
+                  (click)="addUserToAuthorized(user)"
+                  class="w-full text-left px-3 py-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="font-medium text-gray-900">{{ getUserDisplayText(user) }}</div>
+                    </div>
+                    <span class="text-sm text-green-600">+ Add</span>
+                  </div>
+                </button>
+              </div>
+
+              <!-- No results message -->
+              <div *ngIf="userSearchQuery && !isSearchingUsers && !hasUserSearchResults() && !userSearchError" 
+                   class="text-sm text-gray-500 text-center py-2">
+                No users found for "{{ userSearchQuery }}"
+              </div>
+            </div>
+
+            <!-- Selected Users -->
+            <div *ngIf="hasSelectedUsers()" class="mt-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Selected Users:</span>
+                <span class="text-xs text-gray-500">{{ getSelectedUsersCountText() }}</span>
+              </div>
+              
+              <div class="space-y-2 max-h-32 overflow-y-auto border border-gray-200 rounded-lg p-2">
+                <div *ngFor="let user of selectedUsers" 
+                     class="flex items-center justify-between bg-blue-50 px-3 py-2 rounded">
+                  <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                      {{ user.displayName.charAt(0).toUpperCase() }}
+                    </span>
+                    <div>
+                      <div class="font-medium text-gray-900">{{ user.displayName }}</div>
+                      <div *ngIf="user.email" class="text-xs text-gray-600">{{ user.email }}</div>
+                    </div>
+                  </div>
+                  <button
+                    (click)="removeUserFromAuthorized(user.id)"
+                    class="text-red-500 hover:text-red-700 font-bold text-lg leading-none"
+                    title="Remove user">
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Validation error for authorized users -->
+            <span *ngIf="noteData.authorizedUserIds.length === 0 && showValidationErrors" class="text-sm text-red-600">
+              At least one authorized user is required
+            </span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Editor Contenuto -->
+    <!-- Content Editor - Always in Split Mode -->
     <section class="bg-white rounded-lg shadow-sm overflow-hidden">
       
-      <!-- Toolbar Editor -->
-      <div class="border-b border-gray-200 px-4 py-3">
-        <div class="flex items-center justify-between">
-          
-          <!-- Modalità Editor -->
-          <div class="flex items-center gap-2">
-            <span class="text-sm font-medium text-gray-700">Modalità:</span>
-            <div class="flex rounded-lg border border-gray-300 overflow-hidden">
-              <button
-                (click)="setEditorMode('write')"
-                [class]="editorMode === 'write' ? 'bg-[#fbd65a] text-black' : 'bg-white text-gray-700 hover:bg-gray-50'"
-                class="px-3 py-1 text-sm font-medium transition-colors">
-                ✏️ Scrivi
-              </button>
-              <button
-                (click)="setEditorMode('preview')"
-                [class]="editorMode === 'preview' ? 'bg-[#fbd65a] text-black' : 'bg-white text-gray-700 hover:bg-gray-50'"
-                class="px-3 py-1 text-sm font-medium border-l border-gray-300 transition-colors">
-                👁️ Anteprima
-              </button>
-              <button
-                (click)="setEditorMode('split')"
-                [class]="editorMode === 'split' ? 'bg-[#fbd65a] text-black' : 'bg-white text-gray-700 hover:bg-gray-50'"
-                class="px-3 py-1 text-sm font-medium border-l border-gray-300 transition-colors">
-                📱 Diviso
-              </button>
+      <!-- Split Mode Editor -->
+      <div class="h-96 flex">
+        <!-- Write panel -->
+        <div class="flex-1 border-r border-gray-200">
+          <div class="h-full flex flex-col">
+            <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
+              <span class="text-sm font-medium text-gray-700">Write here:</span>
             </div>
-          </div>
+            <textarea
+              [(ngModel)]="noteData.content"
+              (input)="onContentChange()"
+              placeholder="Start writing your note...
 
-          <!-- Statistiche contenuto -->
-          <div class="flex items-center gap-4 text-sm text-gray-500">
-            <span>{{ getWordCount() }} parole</span>
-            <span>{{ noteData.contenuto.length }} caratteri</span>
-            <span>~{{ getReadingTime() }} min lettura</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Area Editor -->
-      <div class="editor-container" [ngSwitch]="editorMode">
-        
-        <!-- Modalità Solo Scrittura -->
-        <div *ngSwitchCase="'write'" class="h-96">
-          <textarea
-            [(ngModel)]="noteData.contenuto"
-            (input)="onContentChange()"
-            placeholder="Inizia a scrivere la tua nota...
-
-Puoi usare Markdown per la formattazione:
-# Titolo
-## Sottotitolo
-**Grassetto** *Corsivo*
-- Lista puntata
-1. Lista numerata
+You can use Markdown for formatting:
+# Heading
+## Subheading
+**Bold** *Italic*
+- Bullet list
+1. Numbered list
 [Link](http://example.com)
-`codice`"
-            class="w-full h-full px-4 py-4 border-0 resize-none focus:outline-none text-base leading-relaxed"
-            spellcheck="true">
-          </textarea>
+`code`"
+              class="flex-1 w-full px-4 py-4 border-0 resize-none focus:outline-none text-base leading-relaxed"
+              [class.border-red-300]="!noteData.content && showValidationErrors"
+              spellcheck="true">
+            </textarea>
+          </div>
         </div>
-
-        <!-- Modalità Solo Anteprima -->
-        <div *ngSwitchCase="'preview'" class="h-96 overflow-y-auto">
+        
+        <!-- Preview panel -->
+        <div class="flex-1 overflow-y-auto bg-gray-50">
+          <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
+            <span class="text-sm font-medium text-gray-700">Preview</span>
+          </div>
           <div class="px-4 py-4">
-            <div *ngIf="!noteData.contenuto" class="text-center text-gray-400 py-16">
-              <span class="text-4xl block mb-2">📝</span>
-              <p>Nessun contenuto da visualizzare</p>
-              <p class="text-sm">Inizia a scrivere per vedere l'anteprima</p>
+            <div *ngIf="!noteData.content" class="text-center text-gray-400 py-8">
+              <span class="text-2xl block mb-1">📄</span>
+              <p class="text-sm">Start writing to see the preview</p>
             </div>
-            <div *ngIf="noteData.contenuto" 
+            <div *ngIf="noteData.content" 
                  class="prose prose-sm max-w-none"
                  [innerHTML]="getMarkdownPreview()">
             </div>
           </div>
         </div>
-
-        <!-- Modalità Divisa -->
-        <div *ngSwitchCase="'split'" class="h-96 flex">
-          <!-- Pannello scrittura -->
-          <div class="flex-1 border-r border-gray-200">
-            <textarea
-              [(ngModel)]="noteData.contenuto"
-              (input)="onContentChange()"
-              placeholder="Scrivi qui il contenuto..."
-              class="w-full h-full px-4 py-4 border-0 resize-none focus:outline-none text-sm leading-relaxed"
-              spellcheck="true">
-            </textarea>
-          </div>
-          
-          <!-- Pannello anteprima -->
-          <div class="flex-1 overflow-y-auto bg-gray-50">
-            <div class="px-4 py-4">
-              <div *ngIf="!noteData.contenuto" class="text-center text-gray-400 py-8">
-                <span class="text-2xl block mb-1">👁️</span>
-                <p class="text-sm">Anteprima</p>
-              </div>
-              <div *ngIf="noteData.contenuto" 
-                   class="prose prose-sm max-w-none"
-                   [innerHTML]="getMarkdownPreview()">
-              </div>
-            </div>
-          </div>
-        </div>
+      </div>
+      
+      <!-- Content validation error -->
+      <div *ngIf="!noteData.content && showValidationErrors" class="px-4 py-2 bg-red-50 border-t border-red-200">
+        <span class="text-sm text-red-600">Content is required</span>
       </div>
     </section>
 
-    <!-- Azioni Footer -->
-    <div class="mt-6 flex items-center justify-between">
-      
-      <!-- Info aggiuntive -->
-      <div class="text-sm text-gray-500">
-        <span *ngIf="mode === 'edit' && originalNote">
-          Creata: {{ formatDate(originalNote.data_creazione) }}
-        </span>
-        <span *ngIf="mode === 'edit' && originalNote" class="mx-2">•</span>
-        <span *ngIf="lastSaved">
-          Ultimo salvataggio: {{ formatDate(lastSaved) }}
-        </span>
-      </div>
-
-      <!-- Azioni finali -->
-      <div class="flex items-center gap-3">
-        <button 
-          (click)="discardChanges()"
-          class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-          Annulla
-        </button>
-        
-        <button 
-          (click)="saveNote()"
-          [disabled]="!isFormValid() || isSaving"
-          class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-          <span *ngIf="!isSaving">💾</span>
-          <span class="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" *ngIf="isSaving"></span>
-          <span>{{ getSaveButtonText() }}</span>
-        </button>
+    <!-- Validation Errors -->
+    <div *ngIf="showValidationErrors && getValidationErrors().length > 0" 
+         class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+      <div class="flex items-start">
+        <span class="text-red-500 text-lg mr-2">⚠️</span>
+        <div class="flex-1">
+          <h4 class="text-red-800 font-medium mb-2">Please fix the following errors:</h4>
+          <ul class="text-red-700 text-sm space-y-1">
+            <li *ngFor="let error of getValidationErrors()">• {{ error }}</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>

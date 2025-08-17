@@ -1,8 +1,3 @@
-// ==================== BASE STYLES ==================== 
-body {
-   background-color: #f6ecc8; 
-}
-
 // ==================== TIMER APP CONTAINER ==================== 
 .timer-app-container {
   min-height: 100vh;
@@ -10,6 +5,7 @@ body {
   color: #000;
   display: flex;
   flex-direction: column;
+  background-color: #f6ecc8; 
 }
 
 .timer-view {
