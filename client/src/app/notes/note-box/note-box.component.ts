@@ -1,4 +1,4 @@
-// note-box.component.ts
+// note-box.component.ts - UPDATED VERSION
 
 import { 
   Component, 
@@ -44,7 +44,7 @@ export class NoteBoxComponent {
   // Accessibility type definitions
   accessibilityTypes = [
     { value: AccessibilityType.PRIVATE, label: 'Private', icon: '🔒' },
-    { value: AccessibilityType.PUBLIC, label: 'Public', icon: '🌍' },
+    { value: AccessibilityType.PUBLIC, label: 'Public', icon: '🌐' },
     { value: AccessibilityType.AUTHORIZED, label: 'Authorized', icon: '👥' },
     { value: AccessibilityType.GROUP, label: 'Group', icon: '👨‍👩‍👧‍👦' }
   ];
@@ -78,7 +78,7 @@ export class NoteBoxComponent {
   // ========== MAIN ACTIONS ==========
 
   /**
-   * Handle card click to open note for viewing
+   * Handle card click to open note viewer
    */
   onCardClick(event?: Event): void {
     if (event) {
@@ -88,28 +88,35 @@ export class NoteBoxComponent {
         return;
       }
     }
-    this.router.navigate(['/notes', this.note.id]);
+    this.onView.emit(this.note.id);
+  }
+
+  // ========== MENU ACTIONS ==========
+
+  /**
+   * Copy content to clipboard from menu
+   */
+  async onCopyClick(event: Event): Promise<void> {
+    event.stopPropagation();
+    this.showMenu = false;
+    
+    try {
+      const contentToCopy = this.note.text || this.note.preview || '';
+      await this.copyToClipboard(contentToCopy);
+      this.showFeedback('Content copied to clipboard!', 'success');
+      
+    } catch (error) {
+      console.error('Error copying content:', error);
+      this.showFeedback('Error copying content', 'error');
+    }
   }
 
   /**
-   * Edit note
+   * Duplicate note from menu
    */
-  onEditClick(event: Event): void {
+  duplicateFromMenu(event: Event): void {
     event.stopPropagation();
-    
-    if (!this.note.canEdit) {
-      this.showFeedback('Only the owner can edit this note', 'error');
-      return;
-    }
-    
-    this.router.navigate(['/notes', this.note.id, 'edit']);
-  }
-
-/**
-   * Duplicate note - creates a copy with "Copy of" prefix
-   */
-  async onDuplicateClick(event: Event): Promise<void> {
-    event.stopPropagation();
+    this.showMenu = false;
     
     try {
       // Navigate to create new note with duplicated data as query parameters
@@ -130,37 +137,12 @@ export class NoteBoxComponent {
     }
   }
 
-/**
-   * Duplicate note from menu - same as main duplicate button
-   */
-  duplicateFromMenu(event: Event): void {
-    event.stopPropagation();
-    this.showMenu = false;
-    this.onDuplicateClick(event);
-  }
-
   /**
-   * Copy content to clipboard
-   */
-  async onCopyClick(event: Event): Promise<void> {
-    event.stopPropagation();
-    
-    try {
-      const contentToCopy = this.note.text || this.note.preview || '';
-      await this.copyToClipboard(contentToCopy);
-      this.showFeedback('Content copied to clipboard!', 'success');
-      
-    } catch (error) {
-      console.error('Error copying content:', error);
-      this.showFeedback('Error copying content', 'error');
-    }
-  }
-
-  /**
-   * Delete note with confirmation
+   * Delete note with confirmation from menu
    */
   onDeleteClick(event: Event): void {
     event.stopPropagation();
+    this.showMenu = false;
     
     if (!this.note.canDelete) {
       this.showFeedback('Only the owner can delete this note', 'error');
@@ -172,53 +154,6 @@ export class NoteBoxComponent {
     if (confirm(confirmMessage)) {
       this.onDelete.emit(this.note.id);
       this.showFeedback('Note deleted', 'success');
-    }
-  }
-
-  // ========== MENU ACTIONS ==========
-
-  /**
-   * View note details (same as card click)
-   */
-  viewDetails(event: Event): void {
-    event.stopPropagation();
-    this.showMenu = false;
-    this.router.navigate(['/notes', this.note.id]);
-  }
-
-  /**
-   * Copy note title and content with markdown formatting
-   */
-  async copyNoteWithTitle(event: Event): Promise<void> {
-    event.stopPropagation();
-    this.showMenu = false;
-    
-    try {
-      const noteContent = `# ${this.note.title || 'Untitled'}\n\n${this.note.text || this.note.preview || ''}`;
-      await this.copyToClipboard(noteContent);
-      this.showFeedback('Note with title copied to clipboard!', 'success');
-      
-    } catch (error) {
-      console.error('Error copying:', error);
-      this.showFeedback('Error copying note', 'error');
-    }
-  }
-
-  /**
-   * Copy only note content (without title)
-   */
-  async copyContentOnly(event: Event): Promise<void> {
-    event.stopPropagation();
-    this.showMenu = false;
-    
-    try {
-      const content = this.note.text || this.note.preview || '';
-      await this.copyToClipboard(content);
-      this.showFeedback('Content copied to clipboard!', 'success');
-      
-    } catch (error) {
-      console.error('Error copying:', error);
-      this.showFeedback('Error copying content', 'error');
     }
   }
 
@@ -352,16 +287,6 @@ export class NoteBoxComponent {
   }
 
   /**
-   * Calculate estimated reading time
-   */
-  getReadingTime(): number {
-    const wordsPerMinute = 200;
-    const contentLength = this.note.contentLength || 0;
-    const words = contentLength / 5; // Rough estimate: 5 characters per word
-    return Math.max(1, Math.ceil(words / wordsPerMinute));
-  }
-
-  /**
    * Get preview text (ensuring it exists)
    */
   getPreviewText(): string {
@@ -430,12 +355,11 @@ export class NoteBoxComponent {
   }
 
   /**
-   * Get accessibility display text
+   * Get accessibility display text (without icon)
    */
   getAccessibilityDisplay(): string {
-    const icon = this.getAccessibilityIcon(this.note.accessibility);
     const label = this.getAccessibilityLabel(this.note.accessibility);
-    return `${icon} ${label}`;
+    return `${label}`;
   }
 
   /**
@@ -444,14 +368,6 @@ export class NoteBoxComponent {
   getContentLengthDisplay(): string {
     const length = this.note.contentLength || 0;
     return `${length} character${length !== 1 ? 's' : ''}`;
-  }
-
-  /**
-   * Get reading time display
-   */
-  getReadingTimeDisplay(): string {
-    const time = this.getReadingTime();
-    return `~${time} min read`;
   }
 
   /**
@@ -482,7 +398,8 @@ export class NoteBoxComponent {
    * Get note card CSS classes based on state
    */
   getNoteCardClasses(): string {
-    const baseClasses = 'relative note-box bg-[#fbd65a] rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-[#fcf3b5] group cursor-pointer';
+    // UPDATED: Changed to lighter yellow background
+    const baseClasses = 'relative note-box bg-yellow-100 rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-yellow-200 group cursor-pointer';
     
     if (this.isRecentlyModified(this.note.lastModify)) {
       return `${baseClasses} ring-2 ring-blue-200`;

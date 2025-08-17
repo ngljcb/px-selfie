@@ -1,4 +1,4 @@
-// notes-view.component.ts - FIXED VERSION
+// notes-view.component.ts - UPDATED WITH VIEWER
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -6,10 +6,11 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
 
-// Import del componente NoteBoxComponent
+// Import components
 import { NoteBoxComponent } from '../note-box/note-box.component';
+import { NoteViewerComponent } from '../note-viewer/note-viewer.component';
 
-// Import modelli e servizi
+// Import models and services
 import { 
   NoteWithDetails, 
   Category, 
@@ -35,7 +36,8 @@ type SortOption = {
   imports: [
     CommonModule, 
     FormsModule,
-    NoteBoxComponent
+    NoteBoxComponent,
+    NoteViewerComponent
   ],
   templateUrl: './notes-view.component.html'
 })
@@ -46,6 +48,10 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   filteredNotes: NoteWithDetails[] = [];
   categories: Category[] = [];
   totalNotes = 0;
+
+  // Note viewer state
+  selectedNote: NoteWithDetails | null = null;
+  isViewerOpen = false;
 
   // UI states
   isLoading = false;
@@ -128,7 +134,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadInitialData();
     
-    // FIXED: Subscribe to reactive state changes
+    // Subscribe to reactive state changes
     this.notesService.notes$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(notes => {
@@ -136,7 +142,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       this.applyFilters();
     });
 
-    // FIXED: Subscribe to total notes count changes
+    // Subscribe to total notes count changes
     this.notesService.totalNotes$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(total => {
@@ -166,9 +172,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: ([notesResponse, categories]) => {
-        // FIXED: The service handles note state, but we still need to update totalNotes explicitly
         this.categories = categories;
-        // Don't set totalNotes manually here, let the service handle it via subscription
         this.isLoading = false;
       },
       error: (error) => {
@@ -184,6 +188,35 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    */
   retryLoadNotes(): void {
     this.loadInitialData();
+  }
+
+  // ========== NOTE VIEWER MANAGEMENT ==========
+
+  /**
+   * View note in modal
+   */
+  viewNote(noteId: string): void {
+    this.notesService.getNoteById(noteId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (note) => {
+        this.selectedNote = note;
+        this.isViewerOpen = true;
+      },
+      error: (error) => {
+        console.error('Error loading note:', error);
+        this.errorMessage = 'Error loading note details';
+        this.clearMessages();
+      }
+    });
+  }
+
+  /**
+   * Close note viewer
+   */
+  closeNoteViewer(): void {
+    this.isViewerOpen = false;
+    this.selectedNote = null;
   }
 
   // ========== FILTER MANAGEMENT ==========
@@ -316,20 +349,9 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * View a note - handled by note-box component
-   */
-  viewNote(noteId: string): void {
-    // This is now handled directly by note-box component
-    // Kept for compatibility if needed
-    this.router.navigate(['/notes', noteId]);
-  }
-
-  /**
-   * Edit an existing note - handled by note-box component
+   * Edit an existing note
    */
   editNote(noteId: string): void {
-    // This is now handled directly by note-box component
-    // Kept for compatibility if needed
     this.router.navigate(['/notes', noteId, 'edit']);
   }
 
@@ -349,7 +371,10 @@ export class NotesViewComponent implements OnInit, OnDestroy {
         this.showSuccessMessage = 'Note deleted successfully!';
         this.isLoading = false;
         this.clearMessages();
-        // FIXED: No need to manually reload, service updates state automatically
+        // Close viewer if the deleted note was being viewed
+        if (this.selectedNote?.id === noteId) {
+          this.closeNoteViewer();
+        }
       },
       error: (error) => {
         console.error('Error deleting note:', error);
@@ -462,7 +487,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * FIXED: Force refresh with debug info
+   * Force refresh with debug info
    */
   forceRefresh(): void {
     console.log('Current component state:', {
@@ -483,7 +508,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    */
   debugUpdateTotal(): void {
     console.log('Forcing total notes update...');
-    // Manually trigger a refresh to see what happens
     this.notesService.refreshNotes().subscribe();
   }
 
@@ -520,21 +544,21 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * FIXED: Check if there are no notes at all
+   * Check if there are no notes at all
    */
   hasNoNotes(): boolean {
     return !this.isLoading && !this.errorMessage && this.totalNotes === 0;
   }
 
   /**
-   * FIXED: Check if filters are active but no results
+   * Check if filters are active but no results
    */
   hasNoFilterResults(): boolean {
     return !this.isLoading && !this.errorMessage && this.filteredNotes.length === 0 && this.totalNotes > 0;
   }
 
   /**
-   * FIXED: Check if there are results to display
+   * Check if there are results to display
    */
   hasResults(): boolean {
     return !this.isLoading && !this.errorMessage && this.filteredNotes.length > 0;

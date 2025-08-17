@@ -1,4 +1,4 @@
-// group.component.ts
+// group.component.ts - FIXED LOGIC
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -258,7 +258,10 @@ export class GroupComponent implements OnInit, OnDestroy {
    * Get button text for group action
    */
   getActionButtonText(group: GroupWithDetails): string {
-    if (group.isOwner || group.isMember) {
+    // FIXED: If user is owner, no join/leave button should be shown
+    if (group.isOwner) {
+      return ''; // No action button for owners
+    } else if (group.isMember) {
       return 'Leave';
     } else {
       return 'Join';
@@ -269,7 +272,7 @@ export class GroupComponent implements OnInit, OnDestroy {
    * Get button class for group action
    */
   getActionButtonClass(group: GroupWithDetails): string {
-    if (group.isOwner || group.isMember) {
+    if (group.isMember && !group.isOwner) {
       return 'px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm font-medium';
     } else {
       return 'px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors text-sm font-medium';
@@ -280,7 +283,12 @@ export class GroupComponent implements OnInit, OnDestroy {
    * Handle group action click
    */
   handleGroupAction(group: GroupWithDetails): void {
-    if (group.isOwner || group.isMember) {
+    // FIXED: Owners cannot join/leave their own group
+    if (group.isOwner) {
+      return; // Do nothing for owners
+    }
+    
+    if (group.isMember) {
       this.leaveGroup(group);
     } else {
       this.joinGroup(group);
@@ -292,6 +300,13 @@ export class GroupComponent implements OnInit, OnDestroy {
    */
   canDeleteGroup(group: GroupWithDetails): boolean {
     return group.isOwner;
+  }
+
+  /**
+   * FIXED: Check if user should see join/leave button
+   */
+  shouldShowActionButton(group: GroupWithDetails): boolean {
+    return !group.isOwner; // Hide join/leave button for owners
   }
 
   /**

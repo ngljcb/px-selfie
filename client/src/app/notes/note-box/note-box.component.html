@@ -1,4 +1,4 @@
-<!-- note-box.component.html -->
+<!-- note-box.component.html - UPDATED VERSION -->
 
 <article 
   (click)="onCardClick()"
@@ -55,13 +55,40 @@
       </span>
     </div>
 
-    <!-- Additional info -->
-    <div class="flex items-center justify-between text-xs text-gray-500">
-      <span>{{ getContentLengthDisplay() }}</span>
-      <div class="flex items-center gap-2">
-        <span>{{ getReadingTimeDisplay() }}</span>
-        <span *ngIf="isOwner()" class="font-medium text-blue-600" title="You own this note">👤</span>
-        <span *ngIf="!isOwner()" class="font-medium text-orange-600" title="Shared note">👥</span>
+    <!-- Actions - moved here -->
+    <div class="flex items-center justify-end">
+      <!-- Only dropdown menu -->
+      <div class="relative" #menuContainer>
+        <button
+          (click)="toggleMenu($event)"
+          title="Options"
+          class="p-2 rounded-lg text-gray-700 hover:bg-gray-200 hover:text-gray-800 transition-colors duration-200 flex items-center justify-center border border-gray-300 hover:border-gray-400">
+          <span class="text-base font-bold">⋮</span>
+        </button>
+
+        <!-- Dropdown menu -->
+        <div *ngIf="showMenu" 
+             class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-in slide-in-from-bottom-2 duration-200">
+          
+          <button
+            (click)="onCopyClick($event)"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
+            <span>Copy content</span>
+          </button>
+
+          <button
+            (click)="duplicateFromMenu($event)"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
+            <span>Duplicate</span>
+          </button>
+          
+          <button
+            *ngIf="canDelete()" class="my-1 border-gray-200"
+            (click)="onDeleteClick($event)"
+            class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2">
+            <span>Delete</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -71,105 +98,8 @@
     </div>
   </div>
 
-  <!-- Actions -->
-  <footer class="border-t border-gray-300 pt-3 mt-auto">
-    <div class="flex items-center justify-between">
-      
-      <!-- Main actions -->
-      <div class="flex items-center gap-2">
-        
-        <!-- Edit -->
-        <button
-          (click)="onEditClick($event)"
-          [disabled]="!canEdit()"
-          [title]="canEdit() ? 'Edit note' : 'Only the owner can edit'"
-          class="p-2 rounded-lg transition-colors duration-200 flex items-center justify-center"
-          [ngClass]="canEdit() ? 
-            'text-blue-600 hover:bg-blue-50 hover:text-blue-700' : 
-            'text-gray-400 cursor-not-allowed'">
-          <span class="text-sm">✏️</span>
-        </button>
-
-          <!-- Duplicate (Copy to editor) --> 
-          <button
-            (click)="onDuplicateClick($event)"
-            title="Duplicate note (copy to new note)"
-            class="p-2 rounded-lg text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors duration-200 flex items-center justify-center">
-            <span class="text-sm">📋</span>
-          </button>
-
-        <!-- Copy content only -->
-        <button
-          (click)="onCopyClick($event)"
-          title="Copy content to clipboard"
-          class="p-2 rounded-lg text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-colors duration-200 flex items-center justify-center">
-          <span class="text-sm">📄</span>
-        </button>
-      </div>
-
-      <!-- Secondary actions -->
-      <div class="flex items-center gap-1">
-        
-        <!-- Delete (only if can delete) -->
-        <button
-          *ngIf="canDelete()"
-          (click)="onDeleteClick($event)"
-          title="Delete note"
-          class="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 opacity-0 group-hover:opacity-100 flex items-center justify-center">
-          <span class="text-sm">🗑️</span>
-        </button>
-
-        <!-- More options menu -->
-        <div class="relative" #menuContainer>
-          <button
-            (click)="toggleMenu($event)"
-            title="More options"
-            class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors duration-200 opacity-0 group-hover:opacity-100 flex items-center justify-center">
-            <span class="text-sm">⋮</span>
-          </button>
-
-          <!-- Dropdown menu -->
-          <div *ngIf="showMenu" 
-               class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-in slide-in-from-bottom-2 duration-200">
-            
-            <button
-              (click)="viewDetails($event)"
-              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
-              <span>👁️</span>
-              <span>View details</span>
-            </button>
-            
-            <hr class="my-1 border-gray-200">
-            
-            <button
-              (click)="copyNoteWithTitle($event)"
-              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
-              <span>📝</span>
-              <span>Copy with title</span>
-            </button>
-
-            <button
-              (click)="copyContentOnly($event)"
-              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
-              <span>📄</span>
-              <span>Copy content only</span>
-            </button>
-
-            <button
-              (click)="duplicateFromMenu($event)"
-              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
-              <span>📋</span>
-              <span>Duplicate note</span>
-            </button>
-            
-            <hr class="my-1 border-gray-200">
-            
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Action feedback -->
+  <!-- Action feedback -->
+  <footer class="mt-auto">
     <div *ngIf="feedbackMessage" 
          class="mt-2 text-xs text-center p-2 rounded animate-in fade-in duration-300"
          [ngClass]="feedbackType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">

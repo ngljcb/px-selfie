@@ -1,4 +1,4 @@
-<!-- group.component.html -->
+<!-- group.component.html - FIXED VERSION -->
 
 <main class="min-h-screen bg-gray-50">
   <!-- Header Section -->
@@ -113,6 +113,12 @@
     <div *ngIf="hasNoGroups()" class="text-center py-16">
       <div class="text-6xl mb-4">👥</div>
       <h3 class="text-xl font-semibold text-gray-700 mb-2">No groups found!</h3>
+      <p class="text-gray-500 mb-6">Create your first group to get started</p>
+      <button 
+        (click)="showCreateGroupForm()"
+        class="px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors">
+        Create Group
+      </button>
     </div>
 
     <!-- Groups List -->
@@ -149,11 +155,12 @@
               (click)="deleteGroup(group)"
               class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg transition-colors text-sm font-medium"
               title="Delete group">
-              🗑️ Delete
+              Delete
             </button>
 
-            <!-- Join/Leave Button -->
+            <!-- Join/Leave Button (FIXED: only show if not owner) -->
             <button
+              *ngIf="shouldShowActionButton(group)"
               (click)="handleGroupAction(group)"
               [ngClass]="getActionButtonClass(group)">
               {{ getActionButtonText(group) }}
