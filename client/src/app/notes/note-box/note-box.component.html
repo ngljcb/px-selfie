@@ -1,170 +1,162 @@
-<!-- notes/client/components/note-box/note-box.component.html -->
+<!-- note-box.component.html - UPDATED VERSION -->
 
-<article class="note-box bg-[#fbd65a] rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-[#fcf3b5] group">
+<article 
+  (click)="onCardClick()"
+  [class]="getNoteCardClasses()">
   
-  <!-- Header con titolo e tipo -->
+  <!-- Header with title and type -->
   <header class="flex items-start justify-between mb-3">
     <div class="flex-1 min-w-0">
       <h3 class="font-bold text-gray-800 text-lg leading-tight truncate" 
-          [title]="note.titolo">
-        {{ note.titolo }}
+          [title]="getDisplayTitle()">
+        {{ getDisplayTitle() }}
       </h3>
     </div>
     
-    <!-- Badge tipo nota -->
+    <!-- Accessibility type badge -->
     <div class="ml-2 flex-shrink-0">
       <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
-            [ngClass]="getTypeBadgeClass(note.tipo)">
-        {{ getTypeIcon(note.tipo) }} {{ getTypeLabel(note.tipo) }}
+            [ngClass]="getAccessibilityBadgeClass(note.accessibility)">
+        {{ getAccessibilityDisplay() }}
       </span>
     </div>
   </header>
 
-  <!-- Preview contenuto -->
+  <!-- Content preview -->
   <div class="flex-1 mb-4">
     <div class="text-gray-700 text-sm leading-relaxed">
-      <p class="mb-2">{{ note.preview }}</p>
+      <p class="mb-2">{{ getPreviewText() }}</p>
       
-      <!-- Indicatore "leggi tutto" se il contenuto è troncato -->
-      <span *ngIf="note.contentLength > previewLength" 
+      <!-- "read more" indicator if content is truncated -->
+      <span *ngIf="isContentTruncated()" 
             class="text-xs text-gray-600 italic font-medium">
-        ... leggi tutto ({{ note.contentLength - previewLength }}+ caratteri)
+        ... read more ({{ getTruncatedLength() }}+ more characters)
       </span>
     </div>
   </div>
 
-  <!-- Metadati -->
+  <!-- Metadata -->
   <div class="space-y-2 mb-4">
-    <!-- Categoria -->
+    <!-- Category -->
     <div class="flex items-center text-xs text-gray-600">
-      <span class="mr-1">📁</span>
-      <span class="font-medium truncate" [title]="note.categoria">
-        {{ note.categoria || 'Senza categoria' }}
+      <span class="font-medium truncate" [title]="getCategoryName()">
+        📁 {{ getCategoryName() }}
       </span>
     </div>
     
-    <!-- Data ultima modifica -->
+    <!-- Last modified date -->
     <div class="flex items-center text-xs text-gray-600">
-      <span class="mr-1">📅</span>
-      <span>{{ formatDate(note.data_ultima_modifica) }}</span>
+      <span>{{ formatDate(note.lastModify) }}</span>
       
-      <!-- Indicatore se modificata di recente -->
-      <span *ngIf="isRecentlyModified(note.data_ultima_modifica)" 
-            class="ml-2 inline-block w-2 h-2 bg-green-400 rounded-full" 
-            title="Modificata di recente">
+      <!-- Recently modified indicator -->
+      <span *ngIf="isRecentlyModified(note.lastModify)" 
+            class="ml-2 inline-block w-2 h-2 bg-green-400 rounded-full pulse" 
+            title="Recently modified">
       </span>
     </div>
 
-    <!-- Info aggiuntive -->
-    <div class="flex items-center justify-between text-xs text-gray-500">
-      <span>{{ note.contentLength }} caratteri</span>
-      <span *ngIf="note.isOwner" class="font-medium text-blue-600">👤 Proprietario</span>
-    </div>
-  </div>
-
-  <!-- Azioni -->
-  <footer class="border-t border-gray-300 pt-3 mt-auto">
-    <div class="flex items-center justify-between">
-      
-      <!-- Azioni principali -->
-      <div class="flex items-center gap-2">
-        
-        <!-- Modifica (sempre visibile, ma disabilitato se non owner) -->
+    <!-- Actions - moved here -->
+    <div class="flex items-center justify-end">
+      <!-- Only dropdown menu -->
+      <div class="relative" #menuContainer>
         <button
-          (click)="onEditClick($event)"
-          [disabled]="!note.isOwner"
-          [title]="note.isOwner ? 'Modifica nota' : 'Solo il proprietario può modificare'"
-          class="p-2 rounded-lg transition-colors duration-200"
-          [ngClass]="note.isOwner ? 
-            'text-blue-600 hover:bg-blue-50 hover:text-blue-700' : 
-            'text-gray-400 cursor-not-allowed'">
-          <span class="text-sm">✏️</span>
+          (click)="toggleMenu($event)"
+          title="Options"
+          class="p-2 rounded-lg text-gray-700 hover:bg-gray-200 hover:text-gray-800 transition-colors duration-200 flex items-center justify-center border border-gray-300 hover:border-gray-400">
+          <span class="text-base font-bold">⋮</span>
         </button>
 
-        <!-- Duplica -->
-        <button
-          (click)="onDuplicateClick($event)"
-          title="Duplica nota"
-          class="p-2 rounded-lg text-green-600 hover:bg-green-50 hover:text-green-700 transition-colors duration-200">
-          <span class="text-sm">📋</span>
-        </button>
-
-        <!-- Copia contenuto -->
-        <button
-          (click)="onCopyClick($event)"
-          title="Copia contenuto negli appunti"
-          class="p-2 rounded-lg text-purple-600 hover:bg-purple-50 hover:text-purple-700 transition-colors duration-200">
-          <span class="text-sm">📄</span>
-        </button>
-      </div>
-
-      <!-- Azioni secondarie -->
-      <div class="flex items-center gap-1">
-        
-        <!-- Elimina (solo se owner) -->
-        <button
-          *ngIf="note.isOwner"
-          (click)="onDeleteClick($event)"
-          title="Elimina nota"
-          class="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 opacity-0 group-hover:opacity-100">
-          <span class="text-sm">🗑️</span>
-        </button>
-
-        <!-- Menu opzioni aggiuntive -->
-        <div class="relative" #menuContainer>
+        <!-- Dropdown menu -->
+        <div *ngIf="showMenu" 
+             class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-in slide-in-from-bottom-2 duration-200">
+          
           <button
-            (click)="toggleMenu($event)"
-            title="Altre opzioni"
-            class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-600 transition-colors duration-200 opacity-0 group-hover:opacity-100">
-            <span class="text-sm">⋮</span>
+            (click)="onCopyClick($event)"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
+            <span>Copy content</span>
           </button>
 
-          <!-- Dropdown menu -->
-          <div *ngIf="showMenu" 
-               class="absolute right-0 bottom-full mb-2 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-            
-            <button
-              (click)="viewDetails($event)"
-              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-              📖 Visualizza dettagli
-            </button>
-            
-            <button
-              *ngIf="note.tipo !== 'privato'"
-              (click)="shareNote($event)"
-              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-              🔗 Condividi
-            </button>
-            
-            <button
-              (click)="exportNote($event)"
-              class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-              💾 Esporta
-            </button>
-            
-            <hr class="my-1">
-            
-            <button
-              (click)="reportNote($event)"
-              class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-              🚩 Segnala
-            </button>
-          </div>
+          <button
+            (click)="duplicateFromMenu($event)"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
+            <span>Duplicate</span>
+          </button>
+          
+          <button
+            *ngIf="canDelete()" class="my-1 border-gray-200"
+            (click)="onDeleteClick($event)"
+            class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2">
+            <span>Delete</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Feedback azioni -->
+    <!-- Group/sharing info if applicable -->
+    <div *ngIf="getAdditionalInfo()" class="text-xs text-gray-500">
+      {{ getAdditionalInfo() }}
+    </div>
+  </div>
+
+  <!-- Action feedback -->
+  <footer class="mt-auto">
     <div *ngIf="feedbackMessage" 
-         class="mt-2 text-xs text-center p-2 rounded"
+         class="mt-2 text-xs text-center p-2 rounded animate-in fade-in duration-300"
          [ngClass]="feedbackType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'">
       {{ feedbackMessage }}
     </div>
   </footer>
 </article>
 
-<!-- Click overlay per apertura nota (click su tutta la card eccetto azioni) -->
-<div (click)="onCardClick()" 
-     class="absolute inset-0 cursor-pointer rounded-2xl -z-10"
-     title="Clicca per aprire la nota">
-</div>
+<!-- CSS for animations and effects -->
+<style>
+  .pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+  
+  .animate-in {
+    animation-fill-mode: both;
+  }
+  
+  .slide-in-from-bottom-2 {
+    animation-name: slideInFromBottom2;
+  }
+  
+  .fade-in {
+    animation-name: fadeIn;
+  }
+  
+  @keyframes slideInFromBottom2 {
+    from {
+      opacity: 0;
+      transform: translateY(0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Hover effect for note priority */
+  .ring-2 {
+    box-shadow: 0 0 0 2px var(--tw-ring-color);
+  }
+</style>
