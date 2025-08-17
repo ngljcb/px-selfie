@@ -20,17 +20,17 @@ export class CalendarCreateComponent implements OnChanges {
   @Output() activityCreated = new EventEmitter<void>();
 
   type: '' | 'event' | 'activity' = '';
-  tipoRipetizione: '' | 'numeroFisso' | 'scadenza' = '';
+  tipoRipetizione: '' | 'numeroFisso' | 'scadenza' | 'indeterminato' = 'indeterminato';
 
   title: string = '';
-  location: string = '';
-
   scadenza: string = '';
-
-  dataOraInizio: string = '';
-  dataOraFine: string = '';
+  
+  location: string = '';
+  dataInizio: string = '';
+  dataFine: string = '';
+  oraInizio: string = '';
+  oraFine: string = '';
   duration: number = 1;
-
   isRecurring: boolean = false;
   ripetizioni: number | null = null;
   fineRicorrenza: string = '';
@@ -60,8 +60,8 @@ export class CalendarCreateComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedDate'] && this.selectedDate) {
       const base = this.selectedDate.slice(0, 10); // YYYY-MM-DD
-      this.dataOraInizio = `${base}T09:00`;
-      this.dataOraFine = `${base}T10:00`;
+      this.dataInizio = base;
+      this.dataFine = base;
       this.scadenza = base;
     }
   }
@@ -69,10 +69,10 @@ export class CalendarCreateComponent implements OnChanges {
   onSubmit(): void {
     this.erroreData = false;
 
-    if (this.dataOraInizio && this.dataOraFine) {
-      const inizio = new Date(this.dataOraInizio);
-      const fine = new Date(this.dataOraFine);
-      if (inizio >= fine) {
+    if (this.dataInizio && this.dataFine) {
+      const inizio = new Date(this.dataInizio);
+      const fine = new Date(this.dataFine);
+      if (inizio > fine) {
         this.erroreData = true;
         return;
       }
@@ -86,8 +86,10 @@ export class CalendarCreateComponent implements OnChanges {
       type: this.type,
       title: this.title,
       location: this.location,
-      dataOraInizio: this.dataOraInizio,
-      dataOraFine: this.dataOraFine,
+      dataInizio: this.dataInizio,
+      dataFine: this.dataFine,
+      oraInizio: this.oraInizio,
+      oraFine: this.oraFine,
       tipoRipetizione: this.tipoRipetizione,
       ripetizioni: this.ripetizioni,
       fineRicorrenza: this.fineRicorrenza,
