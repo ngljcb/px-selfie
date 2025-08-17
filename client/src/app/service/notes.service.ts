@@ -1,4 +1,4 @@
-// notes.service.ts
+// notes.service.ts - FIXED VERSION
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -34,6 +34,10 @@ export class NotesService {
   private selectedNoteSubject = new BehaviorSubject<NoteWithDetails | null>(null);
   public selectedNote$ = this.selectedNoteSubject.asObservable();
 
+  // FIXED: Add totalNotes state management
+  private totalNotesSubject = new BehaviorSubject<number>(0);
+  public totalNotes$ = this.totalNotesSubject.asObservable();
+
   constructor(private http: HttpClient) {}
 
   // ==================== CORE CRUD OPERATIONS ====================
@@ -62,10 +66,12 @@ export class NotesService {
           notes: response.notes.map(note => this.enrichNoteWithMetadata(note))
         })),
         tap(response => {
-          // Update local state if this is the first page
+          // FIXED: Update both notes and total count
           if (!filters?.offset || filters.offset === 0) {
             this.notesSubject.next(response.notes);
           }
+          // ALWAYS update total count regardless of pagination
+          this.totalNotesSubject.next(response.total);
         }),
         catchError(this.handleError)
       );
@@ -110,9 +116,12 @@ export class NotesService {
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(newNote => {
-          // Add to local state
+          // FIXED: Update local state correctly
           const currentNotes = this.notesSubject.value;
+          const currentTotal = this.totalNotesSubject.value;
+          
           this.notesSubject.next([newNote, ...currentNotes]);
+          this.totalNotesSubject.next(currentTotal + 1);
         }),
         catchError(this.handleError)
       );
@@ -149,10 +158,14 @@ export class NotesService {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
       .pipe(
         tap(() => {
-          // Remove from local state
+          // FIXED: Update both notes and total count
           const currentNotes = this.notesSubject.value;
+          const currentTotal = this.totalNotesSubject.value;
+          
           const filteredNotes = currentNotes.filter(n => n.id !== id);
           this.notesSubject.next(filteredNotes);
+          this.totalNotesSubject.next(Math.max(0, currentTotal - 1)); // Decrement total count
+          
           // Clear selected note if it's the deleted one
           if (this.selectedNoteSubject.value?.id === id) {
             this.selectedNoteSubject.next(null);
@@ -172,9 +185,12 @@ export class NotesService {
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(duplicatedNote => {
-          // Add to local state
+          // FIXED: Update local state correctly
           const currentNotes = this.notesSubject.value;
+          const currentTotal = this.totalNotesSubject.value;
+          
           this.notesSubject.next([duplicatedNote, ...currentNotes]);
+          this.totalNotesSubject.next(currentTotal + 1); // Increment total count
         }),
         catchError(this.handleError)
       );
@@ -318,6 +334,23 @@ export class NotesService {
    */
   getCurrentNotes(): NoteWithDetails[] {
     return this.notesSubject.value;
+  }
+
+  /**
+   * FIXED: Get current total notes count
+   */
+  getCurrentTotalNotes(): number {
+    return this.totalNotesSubject.value;
+  }
+
+  /**
+   * DEBUG: Get all current state for debugging
+   */
+  getDebugState(): { notes: number; total: number } {
+    return {
+      notes: this.notesSubject.value.length,
+      total: this.totalNotesSubject.value
+    };
   }
 
   /**
@@ -620,6 +653,7 @@ export class NotesService {
   resetState(): void {
     this.notesSubject.next([]);
     this.selectedNoteSubject.next(null);
+    this.totalNotesSubject.next(0); // FIXED: Reset total count
   }
 
   /**

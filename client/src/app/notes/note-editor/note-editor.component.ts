@@ -1,4 +1,4 @@
-// note-editor.component.ts
+// note-editor.component.ts - COMPLETE FIXED VERSION
 
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -472,7 +472,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   // ========== EDITOR ACTIONS ==========
 
   /**
-   * Save and finish note
+   * FIXED: Save and finish note with proper navigation
    */
   async saveNote(): Promise<void> {
     if (!this.isFormValid()) {
@@ -495,8 +495,14 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
         };
 
         const createdNote = await this.notesService.createNote(createRequest).toPromise();
+        
         if (createdNote) {
-          this.noteId = createdNote.id;
+          console.log('Note created successfully:', createdNote.id);
+          // Clear form state to prevent unsaved changes warning
+          this.setInitialFormState();
+          // Navigate back to notes list
+          this.router.navigate(['/notes']);
+          return; // Exit early for create mode
         }
       } else if (this.noteId) {
         const updateRequest: UpdateNoteRequest = {
@@ -508,14 +514,21 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
           authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
         };
 
-        await this.notesService.updateNote(this.noteId, updateRequest).toPromise();
+        const updatedNote = await this.notesService.updateNote(this.noteId, updateRequest).toPromise();
+        
+        if (updatedNote) {
+          console.log('Note updated successfully:', updatedNote.id);
+          // Clear form state to prevent unsaved changes warning
+          this.setInitialFormState();
+          // Navigate back to notes list
+          this.router.navigate(['/notes']);
+          return; // Exit early for edit mode
+        }
       }
-
-      this.setInitialFormState();
-      this.router.navigate(['/notes']);
 
     } catch (error) {
       console.error('Error saving note:', error);
+      // Don't navigate on error, let user try again
     } finally {
       this.isSaving = false;
     }

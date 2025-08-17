@@ -1,4 +1,4 @@
-// notes-view.component.ts
+// notes-view.component.ts - FIXED VERSION
 
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -127,6 +127,21 @@ export class NotesViewComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadInitialData();
+    
+    // FIXED: Subscribe to reactive state changes
+    this.notesService.notes$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(notes => {
+      this.allNotes = notes;
+      this.applyFilters();
+    });
+
+    // FIXED: Subscribe to total notes count changes
+    this.notesService.totalNotes$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(total => {
+      this.totalNotes = total;
+    });
   }
 
   ngOnDestroy(): void {
@@ -151,10 +166,9 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: ([notesResponse, categories]) => {
-        this.allNotes = notesResponse.notes;
-        this.totalNotes = notesResponse.total;
+        // FIXED: The service handles note state, but we still need to update totalNotes explicitly
         this.categories = categories;
-        this.applyFilters();
+        // Don't set totalNotes manually here, let the service handle it via subscription
         this.isLoading = false;
       },
       error: (error) => {
@@ -333,8 +347,9 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: () => {
         this.showSuccessMessage = 'Note deleted successfully!';
-        this.loadInitialData(); // Reload notes
+        this.isLoading = false;
         this.clearMessages();
+        // FIXED: No need to manually reload, service updates state automatically
       },
       error: (error) => {
         console.error('Error deleting note:', error);
@@ -442,7 +457,34 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    * Refresh data from server
    */
   refreshData(): void {
+    console.log('Refreshing data...');
     this.loadInitialData();
+  }
+
+  /**
+   * FIXED: Force refresh with debug info
+   */
+  forceRefresh(): void {
+    console.log('Current component state:', {
+      allNotes: this.allNotes.length,
+      filteredNotes: this.filteredNotes.length,
+      totalNotes: this.totalNotes,
+      isLoading: this.isLoading,
+      errorMessage: this.errorMessage
+    });
+    console.log('Service debug state:', this.notesService.getDebugState());
+    this.notesService.refreshNotes().subscribe(response => {
+      console.log('Force refresh response:', response);
+    });
+  }
+
+  /**
+   * Debug: Force update totals
+   */
+  debugUpdateTotal(): void {
+    console.log('Forcing total notes update...');
+    // Manually trigger a refresh to see what happens
+    this.notesService.refreshNotes().subscribe();
   }
 
   // ========== FILTER UTILITIES ==========
@@ -478,21 +520,21 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if there are no notes at all
+   * FIXED: Check if there are no notes at all
    */
   hasNoNotes(): boolean {
     return !this.isLoading && !this.errorMessage && this.totalNotes === 0;
   }
 
   /**
-   * Check if filters are active but no results
+   * FIXED: Check if filters are active but no results
    */
   hasNoFilterResults(): boolean {
     return !this.isLoading && !this.errorMessage && this.filteredNotes.length === 0 && this.totalNotes > 0;
   }
 
   /**
-   * Check if there are results to display
+   * FIXED: Check if there are results to display
    */
   hasResults(): boolean {
     return !this.isLoading && !this.errorMessage && this.filteredNotes.length > 0;
