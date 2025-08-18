@@ -1,18 +1,28 @@
 const eventsModel = require('../model/eventsModel');
 
+function toNullIfEmpty(v) {
+  return v === '' ? null : v;
+}
+
+function normTime(t) {
+  if (!t) return null;
+  if (/^\d{2}:\d{2}$/.test(t)) return t + ':00'; // HH:mm → HH:mm:00
+  return t;
+}
+
 function toRow(userId, p = {}) {
   return {
     user_id: userId,
-    title: p.title ?? null,
-    place: p.place ?? null,
-    start_date: p.start_date ?? null,
-    end_date: p.end_date ?? null,
-    start_time: p.start_time ?? null,
-    end_time: p.end_time ?? null,
-    days_recurrence: p.days_recurrence ?? null,
-    recurrence_type: p.recurrence_type ?? null,
+    title: toNullIfEmpty(p.title),
+    place: toNullIfEmpty(p.place),
+    start_date: toNullIfEmpty(p.start_date),
+    end_date: toNullIfEmpty(p.end_date),
+    start_time: normTime(p.start_time),
+    end_time: normTime(p.end_time),
+    days_recurrence: toNullIfEmpty(p.days_recurrence),
+    recurrence_type: toNullIfEmpty(p.recurrence_type),
     number_recurrence: p.number_recurrence ?? null,
-    due_date: p.due_date ?? null
+    due_date: toNullIfEmpty(p.due_date)
   };
 }
 
