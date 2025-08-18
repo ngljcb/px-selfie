@@ -1,8 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { Subject, combineLatest } from 'rxjs';
+import { takeUntil, distinctUntilChanged } from 'rxjs/operators';
 import { StatisticsService } from '../../../service/statistics.service';
+import { TimeMachineService } from '../../../service/time-machine.service';
 import { StatisticsResponse } from '../../../model/statistics.interface';
 
 @Component({
@@ -19,15 +20,35 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
   statistics: StatisticsResponse | null = null;
   isLoading = false;
   error: string | null = null;
+  isTimeMachineActive = false;
 
-  constructor(private statisticsService: StatisticsService) {}
+  constructor(
+    private statisticsService: StatisticsService,
+    private timeMachineService: TimeMachineService
+  ) {}
 
   ngOnInit(): void {
-    // Subscribe alle statistiche dal service
-    this.statisticsService.statistics$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(stats => {
+    // Combina gli observable delle statistiche e della Time Machine
+    combineLatest([
+      this.statisticsService.statistics$,
+      this.timeMachineService.virtualNow$()
+    ])
+      .pipe(
+        takeUntil(this.destroy$),
+        distinctUntilChanged(([prevStats, prevVirtual], [currStats, currVirtual]) => {
+          // Evita reload non necessari confrontando i valori
+          return prevStats === currStats && 
+                 (prevVirtual?.getTime() === currVirtual?.getTime());
+        })
+      )
+      .subscribe(([stats, virtualTime]) => {
         this.statistics = stats;
+        this.isTimeMachineActive = virtualTime !== null;
+        
+        // Se la Time Machine cambia stato, ricarica le statistiche
+        if (this.hasTimeMachineStateChanged(virtualTime)) {
+          this.loadStatistics();
+        }
       });
 
     // Carica le statistiche all'inizializzazione
@@ -51,6 +72,7 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
         next: (stats) => {
           this.statistics = stats;
           this.isLoading = false;
+          this.isTimeMachineActive = this.statisticsService.isTimeMachineActive();
         },
         error: (error) => {
           console.error('Errore nel caricamento statistiche:', error);
@@ -58,6 +80,21 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
           this.isLoading = false;
         }
       });
+  }
+
+  // ==================== GESTIONE TIME MACHINE ====================
+
+  private hasTimeMachineStateChanged(currentVirtualTime: Date | null): boolean {
+    const wasActive = this.isTimeMachineActive;
+    const isActive = currentVirtualTime !== null;
+    return wasActive !== isActive;
+  }
+
+  /**
+   * Forza il refresh delle statistiche (utile quando si cambia il tempo virtuale)
+   */
+  refreshStats(): void {
+    this.loadStatistics();
   }
 
   // ==================== GETTERS PER TEMPLATE ====================
@@ -70,8 +107,16 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
     return this.statistics?.totalStudyTimeMinutes || 0;
   }
 
+  get totalStudyTimeFormatted(): string {
+    return this.statistics?.totalStudyTimeFormatted || '0m';
+  }
+
   get consecutiveDays(): number {
     return this.statistics?.consecutiveStudyDays || 0;
+  }
+
+  get currentTime(): Date {
+    return this.statisticsService.getCurrentTime();
   }
 
   // ==================== SAFE GETTERS ====================
@@ -83,5 +128,32 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
       totalStudyTimeFormatted: '0m',
       consecutiveStudyDays: 0
     };
+  }
+
+  // ==================== METODI DI DEBUG (OPZIONALI) ====================
+
+  /**
+   * Metodo per debug - mostra info sulla Time Machine
+   */
+  logTimeMachineInfo(): void {
+    console.log('Time Machine attiva:', this.isTimeMachineActive);
+    console.log('Tempo corrente:', this.currentTime);
+    console.log('Tempo virtuale:', this.timeMachineService.getVirtualNow());
+  }
+
+  /**
+   * Recupera cronologia per debug (se necessario)
+   */
+  loadStatisticsHistory(): void {
+    this.statisticsService.getStatisticsHistory()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (history) => {
+          console.log('Cronologia statistiche:', history);
+        },
+        error: (error) => {
+          console.error('Errore nel recupero cronologia:', error);
+        }
+      });
   }
 }

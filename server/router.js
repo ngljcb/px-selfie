@@ -25,6 +25,7 @@ router.get('/features', checkAuth, featureController.getFeatures);
 router.get('/statistics', checkAuth, statisticsController.getStatistics);
 router.post('/statistics/session-completed', checkAuth, statisticsController.updateSessionStats);
 router.post('/statistics/login-check', checkAuth, statisticsController.checkLoginStreak);
+router.get('/statistics/history', checkAuth, statisticsController.getStatisticsHistory);
 
 /* ---- ACTIVITIES ---- */
 router.get('/activities', checkAuth, activitiesController.listActivities);
