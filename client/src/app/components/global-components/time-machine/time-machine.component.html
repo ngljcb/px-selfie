@@ -2,7 +2,7 @@
 
 <div class="time-machine-floating">
   <div class="form-container" *ngIf="showForm">
-    <input type="datetime-local" [(ngModel)]="selectedDateTime" [class.error]="dateError" />
+    <input type="datetime-local" [(ngModel)]="selectedDateTime" [class.error]="dateError" step="1" />
     <button class="btn-set" (click)="setDate()">Set</button>
     <button class="btn-reset" (click)="resetDate()" [disabled]="!isVirtualActive" [attr.aria-disabled]="!isVirtualActive">Reset</button>
   </div>

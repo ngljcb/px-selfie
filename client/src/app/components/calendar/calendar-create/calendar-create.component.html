@@ -31,16 +31,27 @@
 
           <div class="row-group" *ngIf="type == 'event'">
             <div>
-              <label>Start date-time *</label>
-              <input type="datetime-local" [(ngModel)]="dataOraInizio" name="dataOraInizio" required />
+              <label>Start date *</label>
+              <input type="date" [(ngModel)]="dataInizio" name="dataInizio" required />
             </div>
             <div>
-              <label>End date-time</label>
-              <input type="datetime-local" [(ngModel)]="dataOraFine" name="dataOraFine" />
+              <label>End date</label>
+              <input type="date" [(ngModel)]="dataFine" name="dataFine" />
             </div>
           </div>
           <div *ngIf="type == 'event' && erroreData" class="error-msg">
             La data di inizio deve essere precedente a quella di fine.
+          </div>
+
+          <div class="row-group" *ngIf="type == 'event'">
+            <div>
+              <label>Start time *</label>
+              <input type="time" [(ngModel)]="oraInizio" name="oraInizio" required />
+            </div>
+            <div>
+              <label>End time</label>
+              <input type="time" [(ngModel)]="oraFine" name="oraFine" />
+            </div>
           </div>
 
           <div class="checkbox-row" *ngIf="type == 'event'">
@@ -65,6 +76,7 @@
                 <option disabled selected value=""> -- Select a type -- </option>
                 <option value="numeroFisso">Fixed number of recurrence</option>
                 <option value="scadenza">Due date</option>
+                <option value="indeterminato">Indefinite recurrence</option>
               </select>
             </div>
             <div *ngIf="type == 'event' && tipoRipetizione == 'numeroFisso'">

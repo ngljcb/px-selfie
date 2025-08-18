@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TimeMachineService } from '../../../service/time-machine.service';
@@ -10,7 +10,7 @@ import { TimeMachineService } from '../../../service/time-machine.service';
   templateUrl: './time-machine.component.html',
   styleUrls: ['./time-machine.component.scss']
 })
-export class TimeMachineComponent implements OnInit {
+export class TimeMachineComponent implements OnInit, OnDestroy {
   showForm = false;
   selectedDateTime: string = '';
   imgSrc = 'assets/hourglass.svg';
@@ -18,11 +18,20 @@ export class TimeMachineComponent implements OnInit {
   dateError = false;
   isVirtualActive = false;
 
+  private tickTimer: any = null;
+  private realAnchorMs = 0;
+  private virtualAnchorMs = 0;
+
   constructor(private timeMachineService: TimeMachineService) { }
 
   ngOnInit(): void {
     const now = this.timeMachineService.getNow();
     this.selectedDateTime = this.toDatetimeLocalString(now);
+    this.startTick();
+  }
+
+  ngOnDestroy(): void {
+    this.clearTick();
   }
 
   toggleForm(): void {
@@ -43,6 +52,7 @@ export class TimeMachineComponent implements OnInit {
     }
 
     const nowStr = this.toDatetimeLocalString(this.timeMachineService.getNow());
+
     if (this.selectedDateTime === nowStr) {
       this.showAlert('Date/time matches current. Choose another.');
       this.dateError = true;
@@ -53,6 +63,8 @@ export class TimeMachineComponent implements OnInit {
     this.setColor();
     this.showForm = true;
     this.isVirtualActive = true;
+    this.realAnchorMs = Date.now();
+    this.virtualAnchorMs = selected.getTime();
   }
 
   resetDate(): void {
@@ -61,11 +73,13 @@ export class TimeMachineComponent implements OnInit {
     this.dateError = false;
 
     this.timeMachineService.reset();
-    const now = this.timeMachineService.getNow();
+    const now = new Date();
     this.selectedDateTime = this.toDatetimeLocalString(now);
     this.resetColor();
     this.showForm = true;
     this.isVirtualActive = false;
+    this.realAnchorMs = 0;
+    this.virtualAnchorMs = 0;
   }
 
   showAlert(message: string) {
@@ -80,7 +94,8 @@ export class TimeMachineComponent implements OnInit {
     const day = pad(date.getDate());
     const hour = pad(date.getHours());
     const minute = pad(date.getMinutes());
-    return `${year}-${month}-${day}T${hour}:${minute}`;
+    const second = pad(date.getSeconds());
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
   }
 
   private setColor(): void {
@@ -101,5 +116,27 @@ export class TimeMachineComponent implements OnInit {
     document.documentElement.style.setProperty('--time-machine-bg', '#83CBEB');
     document.documentElement.style.setProperty('--today-bg', '#fff6cc');
     document.documentElement.style.setProperty('--select-bg', '#e6f7ff');
+  }
+
+  private startTick(): void {
+    this.clearTick();
+    this.tickTimer = setInterval(() => {
+      if (this.isVirtualActive) {
+        const elapsed = Date.now() - this.realAnchorMs;
+        const virtualNow = new Date(this.virtualAnchorMs + elapsed);
+        this.selectedDateTime = this.toDatetimeLocalString(virtualNow);
+        this.timeMachineService.setVirtualNow(virtualNow);
+      } else {
+        const realNow = new Date();
+        this.selectedDateTime = this.toDatetimeLocalString(realNow);
+      }
+    }, 1000);
+  }
+
+  private clearTick(): void {
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
   }
 }
