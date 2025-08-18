@@ -1,7 +1,7 @@
 const supabase = require('../persistence/supabase');
 
 /**
- * Service per la gestione delle note
+ * Service per la gestione delle note - FIXED ACCESS CONTROL
  */
 
 // Costanti
@@ -14,16 +14,17 @@ const ACCESSIBILITY_TYPES = {
 };
 
 /**
- * Ottiene lista note con filtri e paginazione
+ * FIXED: Ottiene lista note con accesso corretto per authorized e group
  */
 async function getNotes(userId, filters) {
-  // FIXED: Simplified approach - get notes and count them directly
+  // FIXED: Instead of filtering in the main query, get more notes and filter afterwards
+  // This approach is needed because complex OR conditions with joins are difficult in Supabase
+  
   let query = supabase
     .from('notes')
-    .select('*')
-    .or(`creator.eq.${userId},accessibility.eq.public`);
+    .select('*');
 
-  // Filtri aggiuntivi
+  // Apply basic filters first (search, category, etc.)
   if (filters.search) {
     query = query.or(`title.ilike.%${filters.search}%,text.ilike.%${filters.search}%`);
   }
@@ -44,16 +45,16 @@ async function getNotes(userId, filters) {
   const orderColumn = getOrderColumn(filters.sortBy);
   query = query.order(orderColumn, { ascending: filters.sortOrder === 'asc' });
 
-  const { data: notes, error } = await query;
+  const { data: allNotes, error } = await query;
 
   if (error) {
     throw new Error(`Error fetching notes: ${error.message}`);
   }
 
-  // Post-elaborazione per filtrare note di gruppo e autorizzate
-  const accessibleNotes = await filterAccessibleNotes(notes || [], userId);
+  // FIXED: Filter accessible notes using comprehensive access control
+  const accessibleNotes = await filterAccessibleNotes(allNotes || [], userId);
 
-  // Load categories for each note separately
+  // Load categories for each accessible note
   const enrichedNotes = await Promise.all(
     accessibleNotes.map(async (note) => {
       let categoryDetails = null;
@@ -95,10 +96,9 @@ async function getNotePreviews(userId, sortBy, limit) {
   
   let query = supabase
     .from('notes')
-    .select('id, title, text, created_at, last_modify, category, accessibility, group_name')
-    .or(`creator.eq.${userId},accessibility.eq.public`)
+    .select('id, title, text, created_at, last_modify, category, accessibility, group_name, creator')
     .order(orderColumn, { ascending: false })
-    .limit(limit);
+    .limit(limit * 3); // Get more notes to account for filtering
 
   const { data: notes, error } = await query;
 
@@ -106,11 +106,14 @@ async function getNotePreviews(userId, sortBy, limit) {
     throw new Error(`Error fetching note previews: ${error.message}`);
   }
 
-  // Filtra note accessibili
+  // FIXED: Filter accessible notes properly
   const accessibleNotes = await filterAccessibleNotes(notes || [], userId);
 
-  // Genera preview
-  return accessibleNotes.map(note => ({
+  // Take only the requested limit after filtering
+  const limitedNotes = accessibleNotes.slice(0, limit);
+
+  // Generate preview
+  return limitedNotes.map(note => ({
     id: note.id,
     title: note.title,
     preview: generatePreview(note.text || ''),
@@ -128,7 +131,6 @@ async function getNotePreviews(userId, sortBy, limit) {
  * Ottiene una singola nota per ID
  */
 async function getNoteById(userId, noteId) {
-  // FIXED: Simplified query without complex relations
   const { data: note, error } = await supabase
     .from('notes')
     .select('*')
@@ -142,13 +144,13 @@ async function getNoteById(userId, noteId) {
     throw new Error(`Error fetching note: ${error.message}`);
   }
 
-  // Verifica permessi di accesso
+  // FIXED: Verify access using the comprehensive access control
   const hasAccess = await checkNoteAccess(note, userId);
   if (!hasAccess) {
     throw new Error('Access denied');
   }
 
-  // FIXED: Load related data separately to avoid relation issues
+  // Load related data separately
   let categoryDetails = null;
   if (note.category) {
     const { data: category } = await supabase
@@ -233,7 +235,7 @@ async function createNote(userId, noteData) {
     await addAuthorizedUsers(note.id, noteData.authorizedUserIds);
   }
 
-  // FIXED: Load category details separately
+  // Load category details separately
   let categoryDetails = null;
   if (note.category) {
     const { data: category } = await supabase
@@ -279,11 +281,7 @@ async function updateNote(userId, noteId, updateData) {
     .from('notes')
     .update(updateFields)
     .eq('id', noteId)
-    .select(`
-      *,
-      category_details:category(*),
-      group_details:groups(*)
-    `)
+    .select('*')
     .single();
 
   if (error) {
@@ -304,7 +302,23 @@ async function updateNote(userId, noteId, updateData) {
     await removeAllAuthorizedUsers(noteId);
   }
 
-  return enrichNoteWithMetadata(note, userId);
+  // Load category details
+  let categoryDetails = null;
+  if (note.category) {
+    const { data: category } = await supabase
+      .from('category')
+      .select('name')
+      .eq('name', note.category)
+      .single();
+    categoryDetails = category;
+  }
+
+  const enrichedNote = {
+    ...note,
+    category_details: categoryDetails
+  };
+
+  return enrichNoteWithMetadata(enrichedNote, userId);
 }
 
 /**
@@ -357,7 +371,7 @@ async function shareNote(userId, noteId, userIds) {
     throw new Error('Access denied');
   }
 
-  // Aggiorna la nota come "authorized" se non lo è già
+  // Aggiorna la nota come "authorized" se non lo è già 
   if (note.accessibility !== ACCESSIBILITY_TYPES.AUTHORIZED) {
     await supabase
       .from('notes')
@@ -449,24 +463,23 @@ async function bulkOperation(userId, operationData) {
  * Ottiene statistiche delle note dell'utente
  */
 async function getNotesStats(userId) {
-  const { data: notes, error } = await supabase
-    .from('notes')
-    .select('accessibility, text, category')
-    .eq('creator', userId);
-
-  if (error) {
-    throw new Error(`Error fetching notes stats: ${error.message}`);
-  }
+  // Get all accessible notes for stats
+  const accessibleNotes = await filterAccessibleNotes(
+    (await supabase.from('notes').select('accessibility, text, category, creator')).data || [],
+    userId
+  );
 
   const stats = {
-    totalNotes: notes.length,
-    privateNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PRIVATE).length,
-    publicNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PUBLIC).length,
-    groupNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.GROUP).length,
-    authorizedNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED).length,
-    categoriesCount: new Set(notes.map(n => n.category).filter(Boolean)).size,
-    averageNoteLength: notes.length > 0 ? 
-      Math.round(notes.reduce((sum, n) => sum + (n.text?.length || 0), 0) / notes.length) : 0
+    totalNotes: accessibleNotes.length,
+    privateNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PRIVATE && n.creator === userId).length,
+    publicNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PUBLIC).length,
+    groupNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.GROUP).length,
+    authorizedNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED).length,
+    ownedNotes: accessibleNotes.filter(n => n.creator === userId).length,
+    sharedNotes: accessibleNotes.filter(n => n.creator !== userId).length,
+    categoriesCount: new Set(accessibleNotes.map(n => n.category).filter(Boolean)).size,
+    averageNoteLength: accessibleNotes.length > 0 ? 
+      Math.round(accessibleNotes.reduce((sum, n) => sum + (n.text?.length || 0), 0) / accessibleNotes.length) : 0
   };
 
   return stats;
@@ -532,14 +545,11 @@ async function exportNoteAsHTML(userId, noteId) {
  * Conta note per tipo di accessibilità
  */
 async function getNotesCountByAccessibility(userId) {
-  const { data: counts, error } = await supabase
-    .from('notes')
-    .select('accessibility')
-    .eq('creator', userId);
-
-  if (error) {
-    throw new Error(`Error counting notes: ${error.message}`);
-  }
+  // Get all accessible notes
+  const accessibleNotes = await filterAccessibleNotes(
+    (await supabase.from('notes').select('accessibility, creator')).data || [],
+    userId
+  );
 
   const result = {
     [ACCESSIBILITY_TYPES.PRIVATE]: 0,
@@ -548,7 +558,7 @@ async function getNotesCountByAccessibility(userId) {
     [ACCESSIBILITY_TYPES.GROUP]: 0
   };
 
-  counts.forEach(note => {
+  accessibleNotes.forEach(note => {
     result[note.accessibility] = (result[note.accessibility] || 0) + 1;
   });
 
@@ -558,7 +568,7 @@ async function getNotesCountByAccessibility(userId) {
 // ==================== FUNZIONI HELPER ====================
 
 /**
- * Filtra le note accessibili all'utente
+ * FIXED: Comprehensive access control for notes
  */
 async function filterAccessibleNotes(notes, userId) {
   const accessibleNotes = [];
@@ -574,20 +584,25 @@ async function filterAccessibleNotes(notes, userId) {
 }
 
 /**
- * Verifica se l'utente ha accesso alla nota
+ * FIXED: Comprehensive note access check
  */
 async function checkNoteAccess(note, userId) {
-  // Il creatore può sempre accedere
+  // Creator can always access their own notes
   if (note.creator === userId) {
     return true;
   }
 
-  // Note pubbliche sono accessibili a tutti
+  // Public notes are accessible to everyone
   if (note.accessibility === ACCESSIBILITY_TYPES.PUBLIC) {
     return true;
   }
 
-  // Note di gruppo: verifica se l'utente è membro del gruppo
+  // Private notes are only accessible to creator (already checked above)
+  if (note.accessibility === ACCESSIBILITY_TYPES.PRIVATE) {
+    return false;
+  }
+
+  // Group notes: check if user is member of the group
   if (note.accessibility === ACCESSIBILITY_TYPES.GROUP && note.group_name) {
     const { data: membership } = await supabase
       .from('group_users')
@@ -599,7 +614,7 @@ async function checkNoteAccess(note, userId) {
     return !!membership;
   }
 
-  // Note autorizzate: verifica se l'utente è nella lista degli autorizzati
+  // Authorized notes: check if user is in authorized users list
   if (note.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED) {
     const { data: authorization } = await supabase
       .from('note_authorized_users')
@@ -611,6 +626,7 @@ async function checkNoteAccess(note, userId) {
     return !!authorization;
   }
 
+  // Default: no access
   return false;
 }
 

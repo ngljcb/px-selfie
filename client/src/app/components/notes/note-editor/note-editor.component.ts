@@ -1,3 +1,5 @@
+// note-editor.component.ts - CREATE ONLY VERSION
+
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -5,9 +7,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
 
 import { 
-  NoteWithDetails, 
   CreateNoteRequest, 
-  UpdateNoteRequest, 
   Category, 
   AccessibilityType, 
   Group,
@@ -18,8 +18,7 @@ import { NotesService } from '../../../service/notes.service';
 import { CategoriesService } from '../../../service/categories.service';
 import { GroupsService } from '../../../service/groups.service';
 import { UsersService } from '../../../service/users.service';
-
-type EditorMode = 'create' | 'edit';
+import { AuthService } from '../../../service/auth.service';
 
 interface NoteFormData {
   title: string;
@@ -44,8 +43,8 @@ interface SelectedUser {
 })
 export class NoteEditorComponent implements OnInit, OnDestroy {
 
-  // Editor modes (only create and edit)
-  mode: EditorMode = 'create';
+  // Current user ID to filter from search
+  currentUserId: string | null = null;
 
   // Note data
   noteData: NoteFormData = {
@@ -56,9 +55,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     groupName: '',
     authorizedUserIds: []
   };
-
-  originalNote: NoteWithDetails | null = null;
-  noteId: string | null = null;
   
   // Form state
   hasChanges = false;
@@ -92,7 +88,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     { 
       value: AccessibilityType.AUTHORIZED, 
       label: 'Authorized', 
-      description: 'Visible to specific people you choose',
+      description: 'Visible to specific people you choose (you are automatically included)',
     },
     { 
       value: AccessibilityType.GROUP, 
@@ -112,11 +108,12 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     private notesService: NotesService,
     private categoriesService: CategoriesService,
     private groupsService: GroupsService,
-    private usersService: UsersService
+    private usersService: UsersService,
+    private authService: AuthService
   ) {
     // Setup user search with debouncing
     this.userSearchSubject.pipe(
-      debounceTime(500), // 500ms delay for user search
+      debounceTime(500),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(query => {
@@ -125,8 +122,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.initializeEditor();
-    this.loadSupportingData();
+    // Get current user ID from auth service
+    this.getCurrentUserId();
   }
 
   ngOnDestroy(): void {
@@ -147,26 +144,39 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   // ========== INITIALIZATION ==========
 
   /**
-   * Initialize editor based on route
+   * Get current user ID from auth service
+   */
+  private getCurrentUserId(): void {
+    this.authService.me().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (user) => {
+        this.currentUserId = user.id;
+        // Now that we have the user ID, initialize the editor
+        this.initializeEditor();
+        this.loadSupportingData();
+      },
+      error: (error) => {
+        console.error('Error getting current user:', error);
+        // Redirect to login if auth fails
+        this.router.navigate(['/login']);
+      }
+    });
+  }
+
+  /**
+   * Initialize editor for creating new note
    */
   private initializeEditor(): void {
     this.isLoading = true;
 
-    // Get note ID from route
-    this.noteId = this.route.snapshot.params['id'] || null;
-    
     // Check for duplicate parameters
     const queryParams = this.route.snapshot.queryParams;
     const isDuplicate = queryParams['duplicate'] === 'true';
 
-    if (this.noteId) {
-      this.mode = 'edit';
-      this.loadNoteForEdit();
-    } else if (isDuplicate) {
-      this.mode = 'create';
+    if (isDuplicate) {
       this.initializeNoteFromDuplicate(queryParams);
     } else {
-      this.mode = 'create';
       this.initializeNewNote();
     }
   }
@@ -219,68 +229,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Load existing note for editing
-   */
-  private loadNoteForEdit(): void {
-    if (!this.noteId) {
-      this.router.navigate(['/notes']);
-      return;
-    }
-
-    this.notesService.getNoteById(this.noteId).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (note) => {
-        this.originalNote = note;
-        this.noteData = {
-          title: note.title || '',
-          content: note.text || '',
-          categoryName: note.category || '',
-          accessibility: note.accessibility,
-          groupName: note.groupName || '',
-          authorizedUserIds: note.authorizedUsers?.map(u => u.userId) || []
-        };
-        
-        // Load authorized users details if any
-        if (this.noteData.authorizedUserIds.length > 0) {
-          this.loadAuthorizedUsers();
-        }
-        
-        this.setInitialFormState();
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading note:', error);
-        this.router.navigate(['/notes']);
-      }
-    });
-  }
-
-  /**
-   * Load authorized users details
-   */
-  private loadAuthorizedUsers(): void {
-    if (this.noteData.authorizedUserIds.length === 0) {
-      return;
-    }
-
-    this.usersService.getUsersByIds(this.noteData.authorizedUserIds).pipe(
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (users) => {
-        this.selectedUsers = users.map(user => ({
-          id: user.id,
-          displayName: user.displayName || user.email || user.id,
-          email: user.email
-        }));
-      },
-      error: (error) => {
-        console.error('Error loading authorized users:', error);
-      }
-    });
-  }
-
-  /**
    * Load supporting data (categories and groups)
    */
   private loadSupportingData(): void {
@@ -310,11 +258,17 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Perform user search
+   * Perform user search excluding current user
    */
   private performUserSearch(query: string): void {
     if (!query.trim()) {
       this.userSearchResults = [];
+      return;
+    }
+
+    // Don't search if we don't have current user ID yet
+    if (!this.currentUserId) {
+      this.userSearchError = 'Please wait while we load your profile...';
       return;
     }
 
@@ -325,9 +279,10 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (users) => {
-        // Filter out already selected users
+        // Filter out current user and already selected users
         this.userSearchResults = users.filter(user => 
-          !this.selectedUsers.some(selected => selected.id === user.id)
+          user.id !== this.currentUserId && // Exclude current user
+          !this.selectedUsers.some(selected => selected.id === user.id) // Exclude already selected
         );
         this.isSearchingUsers = false;
       },
@@ -344,6 +299,13 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
    * Add user to authorized list
    */
   addUserToAuthorized(user: User): void {
+    // Double-check that we're not adding current user
+    if (user.id === this.currentUserId) {
+      this.userSearchError = 'You cannot add yourself as an authorized user. You automatically have access to your own notes.';
+      setTimeout(() => this.userSearchError = '', 4000);
+      return;
+    }
+
     const selectedUser: SelectedUser = {
       id: user.id,
       displayName: user.displayName || user.email || user.id,
@@ -470,9 +432,9 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   // ========== EDITOR ACTIONS ==========
 
   /**
-   * FIXED: Save and finish note with proper navigation
+   * Create note
    */
-  async saveNote(): Promise<void> {
+  async createNote(): Promise<void> {
     if (!this.isFormValid()) {
       this.showValidationErrors = true;
       this.scrollToFirstError();
@@ -482,50 +444,27 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.isSaving = true;
 
     try {
-      if (this.mode === 'create') {
-        const createRequest: CreateNoteRequest = {
-          title: this.noteData.title,
-          text: this.noteData.content,
-          category: this.getFinalCategoryName(),
-          accessibility: this.noteData.accessibility,
-          groupName: this.noteData.groupName || undefined,
-          authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
-        };
+      const createRequest: CreateNoteRequest = {
+        title: this.noteData.title,
+        text: this.noteData.content,
+        category: this.getFinalCategoryName(),
+        accessibility: this.noteData.accessibility,
+        groupName: this.noteData.groupName || undefined,
+        authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
+      };
 
-        const createdNote = await this.notesService.createNote(createRequest).toPromise();
-        
-        if (createdNote) {
-          console.log('Note created successfully:', createdNote.id);
-          // Clear form state to prevent unsaved changes warning
-          this.setInitialFormState();
-          // Navigate back to notes list
-          this.router.navigate(['/notes']);
-          return; // Exit early for create mode
-        }
-      } else if (this.noteId) {
-        const updateRequest: UpdateNoteRequest = {
-          title: this.noteData.title,
-          text: this.noteData.content,
-          category: this.getFinalCategoryName(),
-          accessibility: this.noteData.accessibility,
-          groupName: this.noteData.groupName || undefined,
-          authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
-        };
-
-        const updatedNote = await this.notesService.updateNote(this.noteId, updateRequest).toPromise();
-        
-        if (updatedNote) {
-          console.log('Note updated successfully:', updatedNote.id);
-          // Clear form state to prevent unsaved changes warning
-          this.setInitialFormState();
-          // Navigate back to notes list
-          this.router.navigate(['/notes']);
-          return; // Exit early for edit mode
-        }
+      const createdNote = await this.notesService.createNote(createRequest).toPromise();
+      
+      if (createdNote) {
+        console.log('Note created successfully:', createdNote.id);
+        // Clear form state to prevent unsaved changes warning
+        this.setInitialFormState();
+        // Navigate back to notes list
+        this.router.navigate(['/notes']);
       }
 
     } catch (error) {
-      console.error('Error saving note:', error);
+      console.error('Error creating note:', error);
       // Don't navigate on error, let user try again
     } finally {
       this.isSaving = false;
@@ -559,18 +498,14 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
    * Get save button text
    */
   getSaveButtonText(): string {
-    if (this.isSaving) {
-      return this.mode === 'create' ? 'Creating...' : 'Saving...';
-    }
-    
-    return this.mode === 'create' ? 'Create Note' : 'Save Changes';
+    return this.isSaving ? 'Creating...' : 'Create Note';
   }
 
   /**
    * Get loading message
    */
   getLoadingMessage(): string {
-    return this.mode === 'edit' ? 'Loading note...' : 'Loading...';
+    return 'Loading...';
   }
 
   /**
@@ -619,19 +554,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }
 
     return html;
-  }
-
-  /**
-   * Format date
-   */
-  formatDate(date: Date): string {
-    return new Date(date).toLocaleString('en-US', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
   }
 
   // ========== VALIDATION HELPERS ==========
@@ -724,5 +646,12 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   getSelectedUsersCountText(): string {
     const count = this.selectedUsers.length;
     return `${count} user${count !== 1 ? 's' : ''} selected`;
+  }
+
+  /**
+   * Get helper text for authorized users section
+   */
+  getAuthorizedUsersHelperText(): string {
+    return 'Search and select users who should have access to this note. You are automatically included and do not need to add yourself.';
   }
 }
