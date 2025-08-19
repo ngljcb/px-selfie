@@ -1,3 +1,4 @@
+// src/app/components/time-machine/time-machine.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -5,29 +6,34 @@ import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({
   selector: 'app-time-machine',
-  imports: [FormsModule, CommonModule],
   standalone: true,
+  imports: [CommonModule, FormsModule],
   templateUrl: './time-machine.component.html',
   styleUrls: ['./time-machine.component.scss']
 })
 export class TimeMachineComponent implements OnInit, OnDestroy {
   showForm = false;
-  selectedDateTime: string = '';
+  selectedDateTime = '';          // bound to <input type="datetime-local">
   imgSrc = 'assets/hourglass.svg';
   alertMessage: string | null = null;
   dateError = false;
   isVirtualActive = false;
 
+  displayNowText = '';            // pretty clock text dd-MM-yyyy HH:mm:ss
   private tickTimer: any = null;
-  private realAnchorMs = 0;
-  private virtualAnchorMs = 0;
 
-  constructor(private timeMachineService: TimeMachineService) { }
+  constructor(private timeMachineService: TimeMachineService) {}
 
   ngOnInit(): void {
     const now = this.timeMachineService.getNow();
-    this.selectedDateTime = this.toDatetimeLocalString(now);
+    this.isVirtualActive = !!this.timeMachineService.getVirtualNow();
+
+    this.selectedDateTime = this.toInputString(now); // YYYY-MM-DDTHH:mm
+    this.displayNowText = this.toTickString(now);    // dd-MM-yyyy HH:mm:ss
+
     this.startTick();
+
+    if (this.isVirtualActive) this.setColor();
   }
 
   ngOnDestroy(): void {
@@ -44,27 +50,25 @@ export class TimeMachineComponent implements OnInit, OnDestroy {
     this.dateError = false;
     this.alertMessage = null;
 
-    const selected = new Date(this.selectedDateTime);
-    if (isNaN(selected.getTime())) {
-      this.showAlert('Data non valida');
+    const picked = this.parseInputString(this.selectedDateTime);
+    if (!picked) {
+      this.showAlert('Formato non valido.');
       this.dateError = true;
       return;
     }
 
-    const nowStr = this.toDatetimeLocalString(this.timeMachineService.getNow());
-
+    // Se coincide con l’orario corrente simulato/reale, avvisa
+    const nowStr = this.toInputString(this.timeMachineService.getNow());
     if (this.selectedDateTime === nowStr) {
-      this.showAlert('Date/time matches current. Choose another.');
+      this.showAlert('La data/ora coincide con l’attuale. Scegline un’altra.');
       this.dateError = true;
       return;
     }
 
-    this.timeMachineService.setVirtualNow(selected);
+    this.timeMachineService.setVirtualNow(picked);
+    this.isVirtualActive = true;
     this.setColor();
     this.showForm = true;
-    this.isVirtualActive = true;
-    this.realAnchorMs = Date.now();
-    this.virtualAnchorMs = selected.getTime();
   }
 
   resetDate(): void {
@@ -74,28 +78,67 @@ export class TimeMachineComponent implements OnInit, OnDestroy {
 
     this.timeMachineService.reset();
     const now = new Date();
-    this.selectedDateTime = this.toDatetimeLocalString(now);
+    this.selectedDateTime = this.toInputString(now);
+    this.displayNowText = this.toTickString(now);
+
+    this.isVirtualActive = false;
     this.resetColor();
     this.showForm = true;
-    this.isVirtualActive = false;
-    this.realAnchorMs = 0;
-    this.virtualAnchorMs = 0;
   }
 
-  showAlert(message: string) {
+  // ---------- Tick / formatting ----------
+  private startTick(): void {
+    this.clearTick();
+    this.tickTimer = setInterval(() => {
+      const now = this.timeMachineService.getNow(); // segue virtuale se attivo
+      this.displayNowText = this.toTickString(now);
+      // NON tocchiamo selectedDateTime per non interferire con l’input
+    }, 1000);
+  }
+
+  private clearTick(): void {
+    if (this.tickTimer) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
+  }
+
+  private pad(n: number): string {
+    return n.toString().padStart(2, '0');
+  }
+
+  // Per l’orologio (con secondi) -> dd-MM-yyyy HH:mm:ss
+  private toTickString(d: Date): string {
+    const dd = this.pad(d.getDate());
+    const MM = this.pad(d.getMonth() + 1);
+    const yyyy = d.getFullYear();
+    const hh = this.pad(d.getHours());
+    const mm = this.pad(d.getMinutes());
+    const ss = this.pad(d.getSeconds());
+    return `${dd}-${MM}-${yyyy} ${hh}:${mm}:${ss}`;
+  }
+
+  // Per l’input datetime-local (senza secondi) -> YYYY-MM-DDTHH:mm
+  private toInputString(d: Date): string {
+    const yyyy = d.getFullYear();
+    const MM = this.pad(d.getMonth() + 1);
+    const dd = this.pad(d.getDate());
+    const hh = this.pad(d.getHours());
+    const mm = this.pad(d.getMinutes());
+    return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+  }
+
+  // Parse da input "YYYY-MM-DDTHH:mm" -> Date | null
+  private parseInputString(s: string): Date | null {
+    // Affidiamoci al costruttore nativo che interpreta come ora locale
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // ---------- UI helpers ----------
+  private showAlert(message: string) {
     this.alertMessage = message;
-    setTimeout(() => this.alertMessage = null, 3000);
-  }
-
-  private toDatetimeLocalString(date: Date): string {
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const year = date.getFullYear();
-    const month = pad(date.getMonth() + 1);
-    const day = pad(date.getDate());
-    const hour = pad(date.getHours());
-    const minute = pad(date.getMinutes());
-    const second = pad(date.getSeconds());
-    return `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+    setTimeout(() => (this.alertMessage = null), 3000);
   }
 
   private setColor(): void {
@@ -116,27 +159,5 @@ export class TimeMachineComponent implements OnInit, OnDestroy {
     document.documentElement.style.setProperty('--time-machine-bg', '#83CBEB');
     document.documentElement.style.setProperty('--today-bg', '#fff6cc');
     document.documentElement.style.setProperty('--select-bg', '#e6f7ff');
-  }
-
-  private startTick(): void {
-    this.clearTick();
-    this.tickTimer = setInterval(() => {
-      if (this.isVirtualActive) {
-        const elapsed = Date.now() - this.realAnchorMs;
-        const virtualNow = new Date(this.virtualAnchorMs + elapsed);
-        this.selectedDateTime = this.toDatetimeLocalString(virtualNow);
-        this.timeMachineService.setVirtualNow(virtualNow);
-      } else {
-        const realNow = new Date();
-        this.selectedDateTime = this.toDatetimeLocalString(realNow);
-      }
-    }, 1000);
-  }
-
-  private clearTick(): void {
-    if (this.tickTimer) {
-      clearInterval(this.tickTimer);
-      this.tickTimer = null;
-    }
   }
 }
