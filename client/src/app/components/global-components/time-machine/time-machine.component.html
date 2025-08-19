@@ -1,13 +1,23 @@
+<!-- src/app/components/time-machine/time-machine.component.html -->
 <div class="custom-alert" *ngIf="alertMessage">{{ alertMessage }}</div>
 
 <div class="time-machine-floating">
   <div class="form-container" *ngIf="showForm">
-    <input type="datetime-local" [(ngModel)]="selectedDateTime" [class.error]="dateError" step="1" />
+    <!-- Orologio (dd-MM-yyyy HH:mm:ss) -->
+    <div class="tm-clock">
+      <span>{{ displayNowText }}</span>
+    </div>
+
+    <!-- Native picker: datetime-local (senza secondi) -->
+    <input type="datetime-local" [(ngModel)]="selectedDateTime" [class.error]="dateError" [step]="60" />
+
     <button class="btn-set" (click)="setDate()">Set</button>
-    <button class="btn-reset" (click)="resetDate()" [disabled]="!isVirtualActive" [attr.aria-disabled]="!isVirtualActive">Reset</button>
+    <button class="btn-reset" (click)="resetDate()" [disabled]="!isVirtualActive" [attr.aria-disabled]="!isVirtualActive">
+      Reset
+    </button>
   </div>
 
   <button class="icon-button" (click)="toggleForm()">
-    <img [src]='imgSrc' alt="Time Machine" />
+    <img [src]="imgSrc" alt="Time Machine" />
   </button>
 </div>

@@ -1,7 +1,6 @@
 const supabase = require('../persistence/supabase');
-
 /**
- * table name: activities
+ * table name: events
  * columns:
  *  - id int8 PK
  *  - user_id uuid (fk -> auth.users.id)
@@ -11,9 +10,9 @@ const supabase = require('../persistence/supabase');
  *  - end_date date
  *  - start_time time
  *  - end_time time
- *  - days_recurrence text        (stringa dei giorni p.es. "Monday,Tuesday")
- *  - recurrence_type text        (es. "none" | "weekly" | "monthly")
- *  - number_recurrence int8      (n° di ricorrenze)
+ *  - days_recurrence text
+ *  - recurrence_type text
+ *  - number_recurrence int8
  *  - due_date date
  *  - created_at timestamptz default now()
  */
@@ -66,19 +65,21 @@ async function update(userId, id, patch) {
     .select('*')
     .single();
 
+  if (error && error.code === 'PGRST116') return null; // not found
   if (error) throw error;
   return data;
 }
 
 // delete (solo dell'utente proprietario)
 async function remove(userId, id) {
-  const { error } = await supabase
+  const { error, count } = await supabase
     .from('events')
-    .delete()
+    .delete({ count: 'exact' })
     .eq('user_id', userId)
     .eq('id', id);
 
   if (error) throw error;
+  return count > 0;
 }
 
 module.exports = { listByUser, getById, insert, update, remove };

@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivitiesService } from '../../../service/activities.service';
 import { Activity } from '../../../model/activity.model';
 import { CalendarResponseComponent } from '../calendar-response/calendar-response.component';
+import { EventsService } from '../../../service/events.service';
+import { Event as CalendarEvent } from '../../../model/event.model';
 
 type Variant = 'success' | 'error' | 'info' | 'warning';
 
@@ -18,6 +20,7 @@ export class CalendarCreateComponent implements OnChanges {
   @Input() selectedDate: string = '';
   @Output() chiudi = new EventEmitter<void>();
   @Output() activityCreated = new EventEmitter<void>();
+  @Output() eventCreated = new EventEmitter<void>(); // facoltativo per chi ascolta
 
   type: '' | 'event' | 'activity' = '';
   tipoRipetizione: '' | 'numeroFisso' | 'scadenza' | 'indeterminato' = 'indeterminato';
@@ -55,7 +58,10 @@ export class CalendarCreateComponent implements OnChanges {
   responseVariant: Variant = 'info';
   private createdOk = false;
 
-  constructor(private activitiesService: ActivitiesService) {}
+  constructor(
+    private activitiesService: ActivitiesService,
+    private eventsService: EventsService
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['selectedDate'] && this.selectedDate) {
@@ -82,7 +88,7 @@ export class CalendarCreateComponent implements OnChanges {
       .filter(([_, value]) => value)
       .map(([key]) => key);
 
-    const evento = {
+    const eventoPreview = {
       type: this.type,
       title: this.title,
       location: this.location,
@@ -106,7 +112,6 @@ export class CalendarCreateComponent implements OnChanges {
 
       this.activitiesService.create(newActivity).subscribe({
         next: () => {
-          // mostra modal di risposta → al close emetti activityCreated + chiudi
           this.createdOk = true;
           this.responseTitle = 'Saved';
           this.responseMessage = 'Activity created successfully.';
@@ -121,9 +126,43 @@ export class CalendarCreateComponent implements OnChanges {
           this.showResponse = true;
         }
       });
+    } else if (this.type === 'event') {
+      // normalizza orari a HH:mm:ss se forniti
+      const normTime = (t?: string) =>
+        t ? (t.length === 5 ? `${t}:00` : t) : '';
+
+      const payload: Partial<CalendarEvent> = {
+        title: this.title,
+        place: this.location || '',
+        start_date: this.dataInizio || '',
+        end_date: this.dataFine || '',
+        start_time: normTime(this.oraInizio),
+        end_time: normTime(this.oraFine),
+        days_recurrence: this.isRecurring && giorniAttivi.length ? giorniAttivi.join(',') : '',
+        recurrence_type: this.isRecurring ? (this.tipoRipetizione || 'indeterminato') : 'indeterminato',
+        number_recurrence: this.isRecurring && this.tipoRipetizione === 'numeroFisso' ? (this.ripetizioni ?? 0) : 0,
+        due_date: this.isRecurring && this.tipoRipetizione === 'scadenza' ? (this.fineRicorrenza || '') : ''
+      };
+
+      this.eventsService.create(payload).subscribe({
+        next: () => {
+          this.createdOk = true;
+          this.responseTitle = 'Saved';
+          this.responseMessage = 'Event created successfully.';
+          this.responseVariant = 'success';
+          this.showResponse = true;
+        },
+        error: () => {
+          this.createdOk = false;
+          this.responseTitle = 'Creation failed';
+          this.responseMessage = 'Unable to create the event. Please try again.';
+          this.responseVariant = 'error';
+          this.showResponse = true;
+        }
+      });
     } else {
-      // Manteniamo il comportamento attuale per gli eventi
-      console.log('Nuovo elemento:', evento);
+      // Manteniamo il comportamento attuale se nessun tipo
+      console.log('Nuovo elemento:', eventoPreview);
       this.chiudi.emit();
     }
   }
@@ -132,6 +171,7 @@ export class CalendarCreateComponent implements OnChanges {
     this.showResponse = false;
     if (this.createdOk) {
       this.activityCreated.emit();
+      this.eventCreated.emit();
       this.chiudi.emit();
     }
   }

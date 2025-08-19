@@ -1,3 +1,4 @@
+// src/app/components/calendar/calendar-view/calendar-view.component.ts
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
@@ -38,12 +39,14 @@ export class CalendarViewComponent implements OnInit, OnDestroy {
   }
 
   private baseOptions(): CalendarOptions {
-    const now = this.timeMachine.getNow();
+    // Make "now" dynamic so the Today button always follows the current TimeMachine value.
     return {
       plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
       initialView: 'dayGridMonth',
-      initialDate: now,
-      now: () => now,
+      // use a fresh value each time we rebuild options
+      initialDate: this.timeMachine.getNow(),
+      // and let FullCalendar call into TimeMachine whenever it needs "now"
+      now: () => this.timeMachine.getNow(),
       nowIndicator: true,
       headerToolbar: {
         left: 'prev,next today',

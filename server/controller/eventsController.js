@@ -12,11 +12,11 @@ function requireUser(req, res) {
 async function listEvents(req, res) {
   const userId = requireUser(req, res);
   if (!userId) return;
-
   try {
     const events = await eventsService.list(userId);
     res.status(200).json(events);
   } catch (err) {
+    console.error('listEvents error:', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -24,13 +24,13 @@ async function listEvents(req, res) {
 async function getEvent(req, res) {
   const userId = requireUser(req, res);
   if (!userId) return;
-
   try {
     const { id } = req.params;
     const event = await eventsService.getById(userId, id);
     if (!event) return res.status(404).json({ error: 'Event not found' });
     res.status(200).json(event);
   } catch (err) {
+    console.error('getEvent error:', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -71,6 +71,7 @@ async function createEvent(req, res) {
     });
     res.status(201).json(created);
   } catch (err) {
+    console.error('createEvent error:', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -78,7 +79,6 @@ async function createEvent(req, res) {
 async function updateEvent(req, res) {
   const userId = requireUser(req, res);
   if (!userId) return;
-
   try {
     const { id } = req.params;
     const patch = req.body || {};
@@ -86,6 +86,7 @@ async function updateEvent(req, res) {
     if (!updated) return res.status(404).json({ error: 'Event not found' });
     res.status(200).json(updated);
   } catch (err) {
+    console.error('updateEvent error:', err);
     res.status(500).json({ error: err.message });
   }
 }
@@ -93,21 +94,15 @@ async function updateEvent(req, res) {
 async function deleteEvent(req, res) {
   const userId = requireUser(req, res);
   if (!userId) return;
-
   try {
     const { id } = req.params;
     const ok = await eventsService.remove(userId, id);
     if (!ok) return res.status(404).json({ error: 'Event not found' });
     res.status(204).send();
   } catch (err) {
+    console.error('deleteEvent error:', err);
     res.status(500).json({ error: err.message });
   }
 }
 
-module.exports = {
-  listEvents,
-  getEvent,
-  createEvent,
-  updateEvent,
-  deleteEvent
-};
+module.exports = { listEvents, getEvent, createEvent, updateEvent, deleteEvent };
