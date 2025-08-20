@@ -648,7 +648,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     return `${count} user${count !== 1 ? 's' : ''} selected`;
   }
 
-  /**
+    /**
    * Get helper text for authorized users section
    */
   getAuthorizedUsersHelperText(): string {

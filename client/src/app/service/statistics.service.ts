@@ -192,14 +192,14 @@ export class StatisticsService {
     this.statisticsSubject.next(null);
   }
 
-  /**
+   /**
    * Controlla se la Time Machine è attiva
    */
   isTimeMachineActive(): boolean {
     return this.timeMachineService.getVirtualNow() !== null;
   }
 
-  /**
+    /**
    * Ottiene il tempo corrente (virtuale o reale)
    */
   getCurrentTime(): Date {
