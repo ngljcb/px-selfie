@@ -64,9 +64,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
         // Controlla se c'è stata una transizione di fase o fine timer
         this.checkForPhaseTransition(previousState, state);
       });
-
-    // Richiedi permessi notifiche all'avvio
-    this.timerService.requestNotificationPermission();
     
     // Inizializza AudioContext con la prima interazione utente
     this.initializeAudioOnFirstInteraction();

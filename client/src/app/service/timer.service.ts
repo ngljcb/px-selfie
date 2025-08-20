@@ -39,6 +39,12 @@ export class TimerService {
   ) {
     // Carica configurazione salvata (localStorage)
     this.loadSavedConfig();
+    
+    // NUOVO: Sottoscrivi ai cambiamenti della Time Machine per aggiornare le statistiche
+    this.statisticsService.refreshStatistics().subscribe({
+      next: () => console.log('Statistiche iniziali caricate'),
+      error: (error) => console.error('Errore caricamento statistiche iniziali:', error)
+    });
   }
 
   // ==================== CONTROLLI TIMER ====================
@@ -53,6 +59,9 @@ export class TimerService {
 
     // Resume AudioContext se necessario (per policy browser)
     this.audioService.resumeAudioContext();
+
+    // RIMOSSO: Non richiediamo più automaticamente i permessi di notifica
+    // this.requestNotificationPermission();
 
     this.updateTimerState({ 
       status: 'running',
@@ -272,11 +281,13 @@ export class TimerService {
 
   private completeSession(): void {
     this.stopCountdown();
+    
+    // IMPORTANTE: Aggiorna le statistiche PRIMA di terminare la sessione
+    // per garantire che currentSession sia disponibile
+    this.updateStatisticsOnCompletion();
+    
     this.endCurrentSession(true); // Completata con successo
     this.updateTimerState({ status: 'completed' });
-    
-    // Aggiorna statistiche
-    this.updateStatisticsOnCompletion();
   }
 
   private resetToInitialState(config?: TimerConfig): void {
@@ -302,9 +313,17 @@ export class TimerService {
 
   /**
    * Aggiorna le statistiche quando una sessione viene completata
-   * CORREZIONE: Gestisce meglio il caso della sessione mancante
+   * CORREZIONE: Evita chiamate multiple e gestisce meglio la sessione
    */
   private updateStatisticsOnCompletion(): void {
+    // Flag per evitare chiamate multiple
+    if (this.statisticsUpdateInProgress) {
+      console.log('Aggiornamento statistiche già in corso, skipping...');
+      return;
+    }
+    
+    this.statisticsUpdateInProgress = true;
+
     // CONTROLLO MIGLIORATO: Se non c'è sessione corrente, prova a calcolarne i dati
     if (!this.currentSession) {
       console.warn('Nessuna sessione corrente trovata, calcolo manuale dei minuti di studio');
@@ -318,6 +337,7 @@ export class TimerService {
         this.updateStatsWithMinutes(studyTimeMinutes);
       } else {
         console.warn('Nessun tempo di studio valido da registrare');
+        this.statisticsUpdateInProgress = false;
       }
       return;
     }
@@ -328,12 +348,22 @@ export class TimerService {
     // Calcola i minuti di studio della sessione completata
     const studyTimeMinutes = Math.floor(this.currentSession.totalStudyTime / 60);
     
+    console.log('Sessione completata:', {
+      id: this.currentSession.id,
+      totalStudySeconds: this.currentSession.totalStudyTime,
+      studyTimeMinutes
+    });
+    
     if (studyTimeMinutes > 0) {
       this.updateStatsWithMinutes(studyTimeMinutes);
     } else {
       console.warn('Sessione completata ma nessun tempo di studio valido');
+      this.statisticsUpdateInProgress = false;
     }
   }
+
+  // NUOVO: Flag per evitare chiamate multiple
+  private statisticsUpdateInProgress = false;
 
   /**
    * Metodo helper per aggiornare le statistiche con i minuti di studio
@@ -343,9 +373,11 @@ export class TimerService {
       .subscribe({
         next: (updatedStats) => {
           console.log('Statistiche aggiornate con successo:', updatedStats);
+          this.statisticsUpdateInProgress = false; // Reset flag
         },
         error: (error) => {
           console.error('Errore nell\'aggiornamento delle statistiche:', error);
+          this.statisticsUpdateInProgress = false; // Reset flag anche in caso di errore
           // Non bloccare l'esperienza utente se le statistiche falliscono
         }
       });
@@ -479,6 +511,8 @@ export class TimerService {
     
     this.audioService.playStudyCompleteSound();
     
+    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
+    // Non richiede più automaticamente i permessi
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
@@ -492,6 +526,7 @@ export class TimerService {
     
     this.audioService.playBreakCompleteSound();
     
+    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
@@ -507,6 +542,7 @@ export class TimerService {
     
     this.audioService.playPhaseSkippedSound();
     
+    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
@@ -517,10 +553,18 @@ export class TimerService {
 
   // ==================== UTILITY PUBBLICHE ====================
 
-  requestNotificationPermission(): void {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
+  /**
+   * NUOVO: Controlla se le notifiche sono supportate e autorizzate
+   */
+  areNotificationsEnabled(): boolean {
+    return 'Notification' in window && Notification.permission === 'granted';
+  }
+
+  /**
+   * NUOVO: Controlla se le notifiche sono supportate ma non autorizzate
+   */
+  canRequestNotifications(): boolean {
+    return 'Notification' in window && Notification.permission === 'default';
   }
 
   formatTime(seconds: number): string {

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject, combineLatest } from 'rxjs';
+import { Subject } from 'rxjs';
 import { takeUntil, distinctUntilChanged } from 'rxjs/operators';
 import { StatisticsService } from '../../../service/statistics.service';
 import { TimeMachineService } from '../../../service/time-machine.service';
@@ -28,27 +28,36 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Combina gli observable delle statistiche e della Time Machine
-    combineLatest([
-      this.statisticsService.statistics$,
-      this.timeMachineService.virtualNow$()
-    ])
+    // MIGLIORAMENTO: Sottoscrivi separatamente ai cambiamenti della Time Machine
+    this.timeMachineService.virtualNow$()
       .pipe(
         takeUntil(this.destroy$),
-        distinctUntilChanged(([prevStats, prevVirtual], [currStats, currVirtual]) => {
-          // Evita reload non necessari confrontando i valori
-          return prevStats === currStats && 
-                 (prevVirtual?.getTime() === currVirtual?.getTime());
+        distinctUntilChanged((prev, curr) => {
+          return prev?.getTime() === curr?.getTime();
         })
       )
-      .subscribe(([stats, virtualTime]) => {
-        this.statistics = stats;
+      .subscribe((virtualTime) => {
+        const wasActive = this.isTimeMachineActive;
         this.isTimeMachineActive = virtualTime !== null;
         
-        // Se la Time Machine cambia stato, ricarica le statistiche
-        if (this.hasTimeMachineStateChanged(virtualTime)) {
-          this.loadStatistics();
-        }
+        console.log('Time Machine stato cambiato:', {
+          wasActive,
+          isActive: this.isTimeMachineActive,
+          virtualTime: virtualTime?.toISOString(),
+          currentStats: this.statistics
+        });
+        
+        // SEMPRE ricarica le statistiche quando la Time Machine cambia
+        console.log('Ricaricando statistiche per cambio Time Machine...');
+        this.loadStatistics();
+      });
+
+    // Sottoscrivi alle statistiche dal service
+    this.statisticsService.statistics$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((stats) => {
+        console.log('Statistiche ricevute dal service:', stats);
+        this.statistics = stats;
       });
 
     // Carica le statistiche all'inizializzazione
@@ -66,10 +75,12 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
     this.isLoading = true;
     this.error = null;
 
-    this.statisticsService.getUserStatistics()
+    // NUOVO: Usa refreshStatistics invece di getUserStatistics per forzare il refresh
+    this.statisticsService.refreshStatistics()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (stats) => {
+          console.log('Statistiche caricate con refresh forzato:', stats);
           this.statistics = stats;
           this.isLoading = false;
           this.isTimeMachineActive = this.statisticsService.isTimeMachineActive();
@@ -82,12 +93,12 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ==================== GESTIONE TIME MACHINE ====================
-
-  private hasTimeMachineStateChanged(currentVirtualTime: Date | null): boolean {
-    const wasActive = this.isTimeMachineActive;
-    const isActive = currentVirtualTime !== null;
-    return wasActive !== isActive;
+  /**
+   * NUOVO: Metodo per refresh automatico tramite direttiva
+   */
+  onTimeMachineChange = (): void => {
+    console.log('TimeMachine change detected, refreshing stats...');
+    this.loadStatistics();
   }
 
   /**

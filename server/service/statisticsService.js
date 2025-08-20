@@ -11,6 +11,12 @@ async function getUserStatistics(userId, virtualTime = null) {
     // Usa il tempo virtuale se fornito, altrimenti usa il tempo reale
     const currentTime = virtualTime ? new Date(virtualTime) : new Date();
     
+    console.log('getUserStatistics chiamata con:', {
+      userId,
+      virtualTime,
+      currentTime: currentTime.toISOString()
+    });
+    
     // Recupera tutti i record fino al tempo corrente (reale o virtuale)
     const { data: historyRecords, error } = await supabase
       .from('stats_history')
@@ -24,8 +30,11 @@ async function getUserStatistics(userId, virtualTime = null) {
       throw error;
     }
 
+    console.log('Record trovati:', historyRecords?.length || 0, 'fino a', currentTime.toISOString());
+
     // Se non ci sono record, ritorna statistiche vuote
     if (!historyRecords || historyRecords.length === 0) {
+      console.log('Nessun record trovato, ritornando statistiche vuote');
       return {
         totalCompletedSessions: 0,
         totalStudyTimeMinutes: 0,
@@ -44,12 +53,15 @@ async function getUserStatistics(userId, virtualTime = null) {
     // Calcola lo streak consecutivo con la nuova logica semplificata
     const consecutiveDays = calculateConsecutiveStreak(historyRecords, currentTime);
 
-    return {
+    const result = {
       totalCompletedSessions: totalSessions,
       totalStudyTimeMinutes: totalMinutes,
       totalStudyTimeFormatted: formatStudyTime(totalMinutes),
       consecutiveStudyDays: consecutiveDays
     };
+
+    console.log('Statistiche calcolate:', result);
+    return result;
 
   } catch (error) {
     console.error('Errore completo in getUserStatistics:', error);
@@ -59,24 +71,30 @@ async function getUserStatistics(userId, virtualTime = null) {
 
 async function updateSessionCompleted(userId, studyTimeMinutes, virtualTime = null) {
   try {
-    // Usa il tempo virtuale se fornito, altrimenti usa il tempo reale
-    const sessionTime = virtualTime ? new Date(virtualTime) : new Date();
-    
     console.log('Aggiornamento sessione per userId:', userId, 
                 'studyTimeMinutes:', studyTimeMinutes, 
-                'sessionTime:', sessionTime.toISOString());
+                'virtualTime ricevuto:', virtualTime);
 
-    // RIMUOVIAMO il calcolo del newStreakDays poiché non serviamo più la colonna
+    // CORREZIONE DEFINITIVA TIMEZONE: Usa direttamente la stringa ISO senza conversioni
+    let timestampToUse;
+    if (virtualTime) {
+      // Se virtualTime è fornito, usalo direttamente senza conversioni Date
+      timestampToUse = virtualTime; // Mantieni la stringa ISO esatta
+      console.log('Usando timestamp virtuale diretto:', timestampToUse);
+    } else {
+      // Solo se non c'è virtual time, usa il tempo reale
+      timestampToUse = new Date().toISOString();
+      console.log('Usando timestamp reale:', timestampToUse);
+    }
 
-    // Inserisce un nuovo record nella cronologia SENZA consecutive_study_days
+    // Inserisce un nuovo record nella cronologia
     const { data, error } = await supabase
       .from('stats_history')
       .insert([{
         user_id: userId,
-        total_completed_sessions: 1, // Ogni record rappresenta UNA sessione
+        total_completed_sessions: 1,
         total_study_time_minutes: studyTimeMinutes,
-        updated_at: sessionTime.toISOString()
-        // RIMOSSO: consecutive_study_days
+        updated_at: timestampToUse
       }])
       .select()
       .single();
@@ -88,8 +106,9 @@ async function updateSessionCompleted(userId, studyTimeMinutes, virtualTime = nu
 
     console.log('Nuovo record inserito:', data);
 
-    // Ritorna le statistiche aggiornate
-    return await getUserStatistics(userId, virtualTime);
+    // Per il calcolo delle statistiche aggiornate, usa il timestamp che è stato effettivamente salvato
+    const timeForStats = virtualTime || new Date().toISOString();
+    return await getUserStatistics(userId, timeForStats);
 
   } catch (error) {
     console.error('Errore completo in updateSessionCompleted:', error);
