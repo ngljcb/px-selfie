@@ -30,11 +30,8 @@ async function getUserStatistics(userId, virtualTime = null) {
       throw error;
     }
 
-    console.log('Record trovati:', historyRecords?.length || 0, 'fino a', currentTime.toISOString());
-
     // Se non ci sono record, ritorna statistiche vuote
     if (!historyRecords || historyRecords.length === 0) {
-      console.log('Nessun record trovato, ritornando statistiche vuote');
       return {
         totalCompletedSessions: 0,
         totalStudyTimeMinutes: 0,
@@ -60,7 +57,6 @@ async function getUserStatistics(userId, virtualTime = null) {
       consecutiveStudyDays: consecutiveDays
     };
 
-    console.log('Statistiche calcolate:', result);
     return result;
 
   } catch (error) {

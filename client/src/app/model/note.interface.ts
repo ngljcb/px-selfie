@@ -159,6 +159,7 @@ export interface NotePreview {
 export interface CreateGroupRequest {
   name: string;
   userIds?: string[];
+  createdAt?: Date;
 }
 
 /**

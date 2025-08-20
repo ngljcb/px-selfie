@@ -241,18 +241,16 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Apply all filters and sorting locally
+   * Apply all filters and sorting locally - UPDATED to search only in title
    */
   private applyFilters(): void {
     let filtered = [...this.allNotes];
 
-    // Apply search filter
+    // Apply search filter - UPDATED: search only in title
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       filtered = filtered.filter(note => 
-        (note.title?.toLowerCase().includes(query)) ||
-        (note.text?.toLowerCase().includes(query)) ||
-        (note.categoryDetails?.name?.toLowerCase().includes(query))
+        (note.title?.toLowerCase().includes(query))
       );
     }
 
@@ -535,10 +533,10 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Get placeholder text for search input
+   * Get placeholder text for search input - UPDATED to reflect title-only search
    */
   getSearchPlaceholder(): string {
-    return '🔍 Search in notes, titles, and categories...';
+    return 'Search in note titles...';
   }
 
   /**

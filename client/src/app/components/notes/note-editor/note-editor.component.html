@@ -1,4 +1,4 @@
-<!-- note-editor.component.html - CREATE ONLY VERSION -->
+<!-- note-editor.component.html - UPDATED WITH CSS VARIABLES -->
 
 <main class="min-h-screen bg-gray-50">
   
@@ -27,7 +27,7 @@
           <button 
             (click)="createNote()"
             [disabled]="!isFormValid() || isSaving"
-            class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+            class="flex items-center gap-2 px-6 py-2 bg-[var(--primary-bg)] hover:bg-[var(--primary-hover-bg)] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             <span class="text-sm" *ngIf="!isSaving">🚀</span>
             <span class="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" *ngIf="isSaving"></span>
             <span>{{ getSaveButtonText() }}</span>
@@ -56,7 +56,7 @@
             (input)="onFormChange()"
             placeholder="Enter note title..."
             maxlength="255"
-            class="w-full px-4 py-3 text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent placeholder-gray-400"
+            class="w-full px-4 py-3 text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent placeholder-gray-400"
             [class.border-red-300]="!noteData.title && showValidationErrors"
             required>
           
@@ -84,7 +84,7 @@
                 id="category"
                 [(ngModel)]="noteData.categoryName"
                 (change)="onFormChange()"
-                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent appearance-none bg-white">
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent appearance-none bg-white">
                 <option value="">Select category</option>
                 <option *ngFor="let category of categories" [value]="category.name">
                   {{ category.name }}
@@ -105,7 +105,7 @@
               id="accessibility"
               [(ngModel)]="noteData.accessibility"
               (change)="onAccessibilityChange()"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent appearance-none bg-white"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent appearance-none bg-white"
               [class.border-red-300]="!noteData.accessibility && showValidationErrors"
               required>
               <option *ngFor="let type of accessibilityTypes" [value]="type.value">
@@ -130,7 +130,7 @@
               id="group"
               [(ngModel)]="noteData.groupName"
               (change)="onFormChange()"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent appearance-none bg-white"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent appearance-none bg-white"
               [class.border-red-300]="!noteData.groupName && showValidationErrors"
               required>
               <option value="">Select a group</option>
@@ -159,7 +159,7 @@
                   [(ngModel)]="userSearchQuery"
                   (input)="onUserSearchInput()"
                   placeholder="Search users by username..."
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent">
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent">
                 
                 <!-- Clear search button -->
                 <button 
@@ -171,7 +171,7 @@
 
                 <!-- Search loading indicator -->
                 <div *ngIf="isSearchingUsers" class="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <div class="animate-spin w-4 h-4 border-2 border-[#fbd65a] border-t-transparent rounded-full"></div>
+                  <div class="animate-spin w-4 h-4 border-2 border-[var(--primary-bg)] border-t-transparent rounded-full"></div>
                 </div>
               </div>
 
@@ -314,7 +314,7 @@ You can use Markdown for formatting:
   <div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg p-6 shadow-xl">
       <div class="flex items-center gap-3">
-        <div class="animate-spin w-6 h-6 border-2 border-[#fbd65a] border-t-transparent rounded-full"></div>
+        <div class="animate-spin w-6 h-6 border-2 border-[var(--primary-bg)] border-t-transparent rounded-full"></div>
         <span class="text-gray-700">{{ getLoadingMessage() }}</span>
       </div>
     </div>
