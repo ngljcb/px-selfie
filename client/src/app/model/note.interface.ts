@@ -14,7 +14,6 @@ export enum AccessibilityType {
 export enum NoteSortType {
   ALPHABETICAL = 'alphabetical',
   CREATION_DATE = 'creation_date',
-  LAST_MODIFY = 'last_modify',
   CONTENT_LENGTH = 'content_length'
 }
 
@@ -31,6 +30,7 @@ export interface Category {
 export interface Group {
   name: string;
   creator: string | null;
+  createdAt?: Date; // Added created_at field
 }
 
 /**
@@ -44,7 +44,7 @@ export interface NoteAuthorizedUser {
 }
 
 /**
- * Main Note interface
+ * Main Note interface - UPDATED: removed lastModify
  */
 export interface Note {
   id: string;
@@ -52,7 +52,6 @@ export interface Note {
   title: string | null;
   text: string | null;
   createdAt: Date;
-  lastModify: Date;
   category: string | null; // References category.name
   accessibility: AccessibilityType;
   groupName: string | null;
@@ -72,7 +71,7 @@ export interface NoteWithDetails extends Note {
 }
 
 /**
- * DTO for creating a new note
+ * DTO for creating a new note - UPDATED: added createdAt
  */
 export interface CreateNoteRequest {
   title?: string;
@@ -81,26 +80,28 @@ export interface CreateNoteRequest {
   accessibility: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
+  createdAt?: Date; // Added for Time Machine support
 }
 
 /**
- * DTO for updating an existing note
+ * DTO for updating an existing note - REMOVED: notes are no longer updatable
+ * Keeping interface for backward compatibility but it won't be used
  */
 export interface UpdateNoteRequest {
   title?: string;
   text?: string;
-  category?: string; // Category name (must exist in DB)
+  category?: string;
   accessibility?: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
 }
 
 /**
- * DTO for note filtering and search
+ * DTO for note filtering and search - UPDATED: removed lastModify sorting
  */
 export interface NoteFilterParams {
   searchQuery?: string;
-  categoryName?: string; // Changed from categoryId to categoryName
+  categoryName?: string;
   accessibility?: AccessibilityType;
   groupName?: string;
   sortBy?: NoteSortType;
@@ -127,17 +128,17 @@ export interface DuplicateNoteRequest {
   accessibility?: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
+  createdAt?: Date; // Added for Time Machine support
 }
 
 /**
- * Interface for note preview display
+ * Interface for note preview display - UPDATED: removed lastModify
  */
 export interface NotePreview {
   id: string;
   title: string | null;
   preview: string;
   createdAt: Date;
-  lastModify: Date;
   categoryName?: string;
   accessibility: AccessibilityType;
   contentLength: number;
@@ -146,12 +147,12 @@ export interface NotePreview {
 }
 
 /**
- * Interface for creating a new group
+ * Interface for creating a new group - UPDATED: added createdAt
  */
 export interface CreateGroupRequest {
   name: string;
   userIds?: string[];
-  createdAt?: Date;
+  createdAt?: Date; // Added for Time Machine support
 }
 
 /**
@@ -182,9 +183,9 @@ export interface NotePermissions {
 }
 
 /**
- * Utility type for note operations
+ * Utility type for note operations - UPDATED: removed update
  */
-export type NoteOperation = 'create' | 'read' | 'update' | 'delete' | 'duplicate' | 'share';
+export type NoteOperation = 'create' | 'read' | 'delete' | 'duplicate' | 'share';
 
 /**
  * Interface for note statistics (optional, for dashboard)
@@ -209,14 +210,11 @@ export interface NoteValidation {
 }
 
 /**
- * Interface for bulk operations on notes
+ * Interface for bulk operations on notes - UPDATED: removed changeCategory and changeAccessibility
  */
 export interface BulkNoteOperation {
-  operation: 'delete' | 'changeCategory' | 'changeAccessibility';
+  operation: 'delete';
   noteIds: string[];
-  newCategoryName?: string; // Changed from newCategoryId to newCategoryName
-  newAccessibility?: AccessibilityType;
-  newGroupName?: string;
 }
 
 /**

@@ -399,11 +399,6 @@ export class NoteBoxComponent {
   getNoteCardClasses(): string {
     // UPDATED: Use CSS variable for background color that changes with time-machine
     const baseClasses = 'relative note-box bg-[var(--today-bg)] rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-[var(--select-bg)] group cursor-pointer';
-    
-    if (this.isRecentlyModified(this.note.lastModify)) {
-      return `${baseClasses} ring-2 ring-blue-200`;
-    }
-    
     return baseClasses;
   }
 }

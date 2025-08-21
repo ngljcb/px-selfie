@@ -9,7 +9,6 @@ import { StatisticsResponse } from '../../../model/statistics.interface';
 @Component({
   selector: 'app-timer-stats',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './timer-stats.component.html',
   styleUrls: ['./timer-stats.component.scss']
 })

@@ -78,7 +78,7 @@ export class NotesService {
   /**
    * Get note previews for home page display
    */
-  getNotePreviews(sortBy: NoteSortType = NoteSortType.LAST_MODIFY): Observable<NotePreview[]> {
+  getNotePreviews(sortBy: NoteSortType.CREATION_DATE): Observable<NotePreview[]> {
     const params = new HttpParams()
       .set('preview', 'true')
       .set('sortBy', sortBy)
@@ -399,7 +399,6 @@ export class NotesService {
       preview,
       contentLength,
       createdAt: new Date(note.createdAt),
-      lastModify: new Date(note.lastModify)
     };
   }
 
@@ -481,47 +480,6 @@ export class NotesService {
       );
   }
 
-  /**
-   * Export note as markdown
-   */
-  exportNoteAsMarkdown(noteId: string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/${noteId}/export/markdown`, { 
-      responseType: 'blob' 
-    }).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Export note as HTML
-   */
-  exportNoteAsHTML(noteId: string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/${noteId}/export/html`, { 
-      responseType: 'blob' 
-    }).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Import notes from file
-   */
-  importNotes(file: File): Observable<{ imported: number; skipped: number; errors: string[] }> {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    return this.http.post<{ imported: number; skipped: number; errors: string[] }>(
-      `${this.apiUrl}/import`, 
-      formData
-    ).pipe(
-      tap(() => {
-        // Refresh notes after import
-        this.refreshNotes().subscribe();
-      }),
-      catchError(this.handleError)
-    );
-  }
-
   // ==================== SORTING UTILITIES ====================
 
   /**
@@ -540,10 +498,6 @@ export class NotesService {
           
         case NoteSortType.CREATION_DATE:
           comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          break;
-          
-        case NoteSortType.LAST_MODIFY:
-          comparison = new Date(a.lastModify).getTime() - new Date(b.lastModify).getTime();
           break;
           
         case NoteSortType.CONTENT_LENGTH:
@@ -567,9 +521,7 @@ export class NotesService {
     const lowercaseQuery = query.toLowerCase();
     
     return notes.filter(note => 
-      (note.title?.toLowerCase().includes(lowercaseQuery)) ||
-      (note.text?.toLowerCase().includes(lowercaseQuery)) ||
-      (note.categoryDetails?.name?.toLowerCase().includes(lowercaseQuery))
+      (note.title?.toLowerCase().includes(lowercaseQuery))
     );
   }
 
@@ -636,13 +588,6 @@ export class NotesService {
     };
   }
 
-  /**
-   * Check if note content is too long for efficient processing
-   */
-  isNoteLong(text: string): boolean {
-    return text.length > 10000; // 10KB threshold
-  }
-
   // ==================== STATE MANAGEMENT ====================
 
   /**
@@ -663,7 +608,7 @@ export class NotesService {
     switch (viewType) {
       case 'home':
         filters = { 
-          sortBy: NoteSortType.LAST_MODIFY, 
+          sortBy: NoteSortType.CREATION_DATE,
           limit: 20 
         };
         break;
@@ -676,7 +621,7 @@ export class NotesService {
       case 'list':
       default:
         filters = { 
-          sortBy: NoteSortType.LAST_MODIFY,
+          sortBy: NoteSortType.CREATION_DATE,
           limit: NOTE_CONSTANTS.DEFAULT_PAGE_SIZE
         };
     }

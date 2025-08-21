@@ -109,27 +109,6 @@ async function getUserGroups(userId) {
 }
 
 /**
- * Ottiene dettagli di un gruppo specifico
- */
-async function getGroupByName(userId, groupName) {
-  // FIXED: Simplified query without complex joins
-  const { data: group, error } = await supabase
-    .from('groups')
-    .select('name, creator')
-    .eq('name', groupName)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      return null;
-    }
-    throw new Error(`Error fetching group: ${error.message}`);
-  }
-
-  return await enrichGroupWithDetails(group, userId);
-}
-
-/**
  * Crea un nuovo gruppo
  */
 async function createGroup(userId, groupData) {
@@ -248,110 +227,6 @@ async function leaveGroup(userId, groupName) {
 }
 
 /**
- * Gestisce membri del gruppo (solo per proprietari)
- */
-async function manageGroupMembers(userId, request) {
-  const { groupName, addUserIds, removeUserIds } = request;
-
-  // Verifica che il gruppo esista e che l'utente sia il creatore
-  const group = await getGroupByName(userId, groupName);
-  if (!group) {
-    throw new Error('Group not found');
-  }
-
-  if (group.creator !== userId) {
-    throw new Error('Access denied');
-  }
-
-  const results = {
-    added: [],
-    removed: [],
-    errors: []
-  };
-
-  // Aggiungi membri
-  if (addUserIds && addUserIds.length > 0) {
-    for (const userIdToAdd of addUserIds) {
-      try {
-        const isAlreadyMember = await isGroupMember(userIdToAdd, groupName);
-        if (!isAlreadyMember) {
-          await addGroupMember(groupName, userIdToAdd);
-          results.added.push(userIdToAdd);
-        }
-      } catch (error) {
-        results.errors.push(`Failed to add user ${userIdToAdd}: ${error.message}`);
-      }
-    }
-  }
-
-  // Rimuovi membri
-  if (removeUserIds && removeUserIds.length > 0) {
-    for (const userIdToRemove of removeUserIds) {
-      try {
-        // Il creatore non può essere rimosso
-        if (userIdToRemove === userId) {
-          results.errors.push('Cannot remove group owner');
-          continue;
-        }
-
-        const isMember = await isGroupMember(userIdToRemove, groupName);
-        if (isMember) {
-          await removeGroupMember(groupName, userIdToRemove);
-          results.removed.push(userIdToRemove);
-        }
-      } catch (error) {
-        results.errors.push(`Failed to remove user ${userIdToRemove}: ${error.message}`);
-      }
-    }
-  }
-
-  return results;
-}
-
-/**
- * Ottiene membri del gruppo
- */
-async function getGroupMembers(userId, groupName) {
-  // Verifica che il gruppo esista
-  const group = await getGroupByName(userId, groupName);
-  if (!group) {
-    throw new Error('Group not found');
-  }
-
-  // FIXED: Get members without complex joins
-  const { data: memberships, error: membershipError } = await supabase
-    .from('group_users')
-    .select('user_id')
-    .eq('group_name', groupName);
-
-  if (membershipError) {
-    throw new Error(`Error fetching group memberships: ${membershipError.message}`);
-  }
-
-  if (!memberships || memberships.length === 0) {
-    return [];
-  }
-
-  // Get user details separately
-  const userIds = memberships.map(m => m.user_id);
-  const { data: users, error: usersError } = await supabase
-    .from('profiles')
-    .select('id, username, email')
-    .in('id', userIds);
-
-  if (usersError) {
-    throw new Error(`Error fetching user details: ${usersError.message}`);
-  }
-
-  return (users || []).map(user => ({
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    displayName: user.username || user.email
-  }));
-}
-
-/**
  * Verifica se un utente è membro di un gruppo
  */
 async function isGroupMember(userId, groupName) {
@@ -367,74 +242,6 @@ async function isGroupMember(userId, groupName) {
   }
 
   return !!membership;
-}
-
-/**
- * Cerca gruppi per nome
- */
-async function searchGroups(userId, searchQuery) {
-  const { data: groups, error } = await supabase
-    .from('groups')
-    .select('name, creator')
-    .ilike('name', `%${searchQuery}%`)
-    .order('name')
-    .limit(20);
-
-  if (error) {
-    throw new Error(`Error searching groups: ${error.message}`);
-  }
-
-  // Arricchimento dati
-  const enrichedGroups = await Promise.all(
-    (groups || []).map(group => enrichGroupWithDetails(group, userId))
-  );
-
-  return enrichedGroups;
-}
-
-/**
- * Ottiene gruppi più popolari
- */
-async function getPopularGroups(userId, limit) {
-  const { data: groups, error } = await supabase
-    .from('groups')
-    .select('name, creator')
-    .order('name')
-    .limit(limit);
-
-  if (error) {
-    throw new Error(`Error fetching popular groups: ${error.message}`);
-  }
-
-  // Arricchimento dati e ordinamento per numero membri
-  const enrichedGroups = await Promise.all(
-    (groups || []).map(group => enrichGroupWithDetails(group, userId))
-  );
-
-  // Ordina per numero di membri (decrescente)
-  return enrichedGroups.sort((a, b) => b.memberCount - a.memberCount);
-}
-
-/**
- * Ottiene gruppi creati di recente
- */
-async function getRecentGroups(userId, limit) {
-  const { data: groups, error } = await supabase
-    .from('groups')
-    .select('name, creator, created_at')
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    throw new Error(`Error fetching recent groups: ${error.message}`);
-  }
-
-  // Arricchimento dati
-  const enrichedGroups = await Promise.all(
-    (groups || []).map(group => enrichGroupWithDetails(group, userId))
-  );
-
-  return enrichedGroups;
 }
 
 /**
@@ -512,16 +319,10 @@ async function validateGroupName(name) {
 module.exports = {
   getAllGroups,
   getUserGroups,
-  getGroupByName,
   createGroup,
   deleteGroup,
   joinGroup,
   leaveGroup,
-  manageGroupMembers,
-  getGroupMembers,
   isGroupMember,
-  searchGroups,
-  getPopularGroups,
-  getRecentGroups,
   checkGroupNameExists,
 };

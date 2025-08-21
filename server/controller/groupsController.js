@@ -37,24 +37,6 @@ async function getUserGroups(req, res) {
   }
 }
 
-// GET /api/groups/:name - Dettagli specifici di un gruppo
-async function getGroupByName(req, res) {
-  try {
-    const userId = req.user.id;
-    const groupName = decodeURIComponent(req.params.name);
-
-    const group = await groupsService.getGroupByName(userId, groupName);
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-
-    res.status(200).json(group);
-  } catch (error) {
-    console.error('Error getting group by name:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
 // POST /api/groups - Crea nuovo gruppo
 async function createGroup(req, res) {
   try {
@@ -142,20 +124,6 @@ async function leaveGroup(req, res) {
   }
 }
 
-// GET /api/groups/:name/membership - Verifica appartenenza al gruppo
-async function checkGroupMembership(req, res) {
-  try {
-    const userId = req.user.id;
-    const groupName = decodeURIComponent(req.params.name);
-
-    const isMember = await groupsService.isGroupMember(userId, groupName);
-    res.status(200).json({ isMember });
-  } catch (error) {
-    console.error('Error checking group membership:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
 // GET /api/groups/check-name - Verifica disponibilità nome gruppo
 async function checkGroupNameExists(req, res) {
   try {
@@ -176,11 +144,9 @@ async function checkGroupNameExists(req, res) {
 module.exports = {
   getAllGroups,
   getUserGroups,
-  getGroupByName,
   createGroup,
   deleteGroup,
   joinGroup,
   leaveGroup,
-  checkGroupMembership,
   checkGroupNameExists,
 };

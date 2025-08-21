@@ -243,52 +243,6 @@ async function getNotesStats(req, res) {
   }
 }
 
-// GET /api/notes/:id/export/markdown - Esporta nota come Markdown
-async function exportNoteAsMarkdown(req, res) {
-  try {
-    const userId = req.user.id;
-    const noteId = req.params.id;
-
-    const markdownContent = await notesService.exportNoteAsMarkdown(userId, noteId);
-    
-    res.setHeader('Content-Type', 'text/markdown');
-    res.setHeader('Content-Disposition', `attachment; filename="note-${noteId}.md"`);
-    res.status(200).send(markdownContent);
-  } catch (error) {
-    console.error('Error exporting note as markdown:', error);
-    if (error.message === 'Note not found') {
-      return res.status(404).json({ error: 'Note not found' });
-    }
-    if (error.message === 'Access denied') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/notes/:id/export/html - Esporta nota come HTML
-async function exportNoteAsHTML(req, res) {
-  try {
-    const userId = req.user.id;
-    const noteId = req.params.id;
-
-    const htmlContent = await notesService.exportNoteAsHTML(userId, noteId);
-    
-    res.setHeader('Content-Type', 'text/html');
-    res.setHeader('Content-Disposition', `attachment; filename="note-${noteId}.html"`);
-    res.status(200).send(htmlContent);
-  } catch (error) {
-    console.error('Error exporting note as HTML:', error);
-    if (error.message === 'Note not found') {
-      return res.status(404).json({ error: 'Note not found' });
-    }
-    if (error.message === 'Access denied') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
 // GET /api/notes/count-by-accessibility - Conta note per tipo di accessibilità
 async function getNotesCountByAccessibility(req, res) {
   try {
@@ -314,7 +268,5 @@ module.exports = {
   getNotePermissions,
   bulkOperation,
   getNotesStats,
-  exportNoteAsMarkdown,
-  exportNoteAsHTML,
   getNotesCountByAccessibility
 };

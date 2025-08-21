@@ -43,17 +43,6 @@
         📁 {{ getCategoryName() }}
       </span>
     </div>
-    
-    <!-- Last modified date -->
-    <div class="flex items-center text-xs text-gray-600">
-      <span>{{ formatDate(note.lastModify) }}</span>
-      
-      <!-- Recently modified indicator -->
-      <span *ngIf="isRecentlyModified(note.lastModify)" 
-            class="ml-2 inline-block w-2 h-2 bg-green-400 rounded-full pulse" 
-            title="Recently modified">
-      </span>
-    </div>
 
     <!-- Actions - moved here -->
     <div class="flex items-center justify-end">

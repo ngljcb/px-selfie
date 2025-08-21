@@ -57,31 +57,17 @@ router.post('/notes/:id/duplicate', checkAuth, notesController.duplicateNote);
 router.post('/notes/:id/share', checkAuth, notesController.shareNote);
 router.get('/notes/:id/permissions', checkAuth, notesController.getNotePermissions);
 
-// Export operations
-router.get('/notes/:id/export/markdown', checkAuth, notesController.exportNoteAsMarkdown);
-router.get('/notes/:id/export/html', checkAuth, notesController.exportNoteAsHTML);
-
 // ==================== GROUPS ROUTES ====================
 // Main group operations
 router.get('/groups', checkAuth, groupsController.getAllGroups);
 router.get('/groups/my-groups', checkAuth, groupsController.getUserGroups);
-router.get('/groups/search', checkAuth, groupsController.searchGroups);
-router.get('/groups/popular', checkAuth, groupsController.getPopularGroups);
-router.get('/groups/recent', checkAuth, groupsController.getRecentGroups);
 router.get('/groups/check-name', checkAuth, groupsController.checkGroupNameExists);
-router.get('/groups/overall-stats', checkAuth, groupsController.getOverallGroupsStats);
 router.post('/groups', checkAuth, groupsController.createGroup);
 
-// Bulk operations
-router.post('/groups/bulk-join', checkAuth, groupsController.joinMultipleGroups);
-router.post('/groups/bulk-leave', checkAuth, groupsController.leaveMultipleGroups);
-
 // Individual group operations
-router.get('/groups/:name', checkAuth, groupsController.getGroupByName);
 router.delete('/groups/:name', checkAuth, groupsController.deleteGroup);
 router.post('/groups/:name/join', checkAuth, groupsController.joinGroup);
 router.post('/groups/:name/leave', checkAuth, groupsController.leaveGroup);
-router.get('/groups/:name/membership', checkAuth, groupsController.checkGroupMembership);
 
 // ==================== USERS ROUTES ====================
 router.get('/users/search', checkAuth, usersController.searchUsersByUsername);
