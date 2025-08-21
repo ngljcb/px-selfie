@@ -25,12 +25,12 @@ export interface Category {
 }
 
 /**
- * Interface for Group entity
+ * Interface for Group entity - UPDATED with Time Machine integration
  */
 export interface Group {
   name: string;
   creator: string | null;
-  createdAt?: Date; // Added created_at field
+  createdAt?: Date; // Added created_at field for Time Machine filtering
 }
 
 /**
@@ -147,7 +147,7 @@ export interface NotePreview {
 }
 
 /**
- * Interface for creating a new group - UPDATED: added createdAt
+ * Interface for creating a new group - UPDATED: added createdAt for Time Machine
  */
 export interface CreateGroupRequest {
   name: string;

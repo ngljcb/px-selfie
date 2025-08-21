@@ -1,7 +1,7 @@
 const supabase = require('../persistence/supabase');
 
 /**
- * Service per la gestione dei gruppi - FIXED VERSION
+ * Service per la gestione dei gruppi - UPDATED WITH TIME MACHINE INTEGRATION
  */
 
 // Nomi riservati che non possono essere usati per i gruppi
@@ -14,7 +14,7 @@ async function getAllGroups(userId, filters) {
   // FIXED: Simplified query without complex relations that cause issues
   let query = supabase
     .from('groups')
-    .select('name, creator');
+    .select('name, creator, created_at');
 
   // Se onlyJoined è true, filtra solo i gruppi di cui l'utente è membro
   if (filters.onlyJoined) {
@@ -89,10 +89,10 @@ async function getUserGroups(userId) {
 
   const groupNames = memberships.map(m => m.group_name);
 
-  // Get group details
+  // Get group details with created_at
   const { data: groups, error } = await supabase
     .from('groups')
-    .select('name, creator')
+    .select('name, creator, created_at')
     .in('name', groupNames)
     .order('name');
 
@@ -109,10 +109,10 @@ async function getUserGroups(userId) {
 }
 
 /**
- * Crea un nuovo gruppo
+ * Crea un nuovo gruppo - UPDATED WITH TIME MACHINE INTEGRATION
  */
 async function createGroup(userId, groupData) {
-  const { name } = groupData;
+  const { name, createdAt } = groupData;
 
   // Validazione nome gruppo
   await validateGroupName(name);
@@ -123,12 +123,16 @@ async function createGroup(userId, groupData) {
     throw new Error('A group with this name already exists');
   }
 
+  // UPDATED: Use provided createdAt from Time Machine or current time as fallback
+  const creationDate = createdAt || new Date().toISOString();
+
   // Crea il gruppo
   const { data: group, error } = await supabase
     .from('groups')
     .insert({
       name: name.trim(),
-      creator: userId
+      creator: userId,
+      created_at: creationDate // UPDATED: Explicitly set created_at
     })
     .select()
     .single();
@@ -296,9 +300,60 @@ async function enrichGroupWithDetails(group, userId) {
     isOwner,
     isMember,
     noteCount,
-    createdAt: group.created_at,
+    createdAt: group.created_at, // Include created_at for Time Machine filtering
     members: []
   };
+}
+
+/**
+ * Ottiene un gruppo per nome
+ */
+async function getGroupByName(userId, groupName) {
+  const { data: group, error } = await supabase
+    .from('groups')
+    .select('name, creator, created_at')
+    .eq('name', groupName)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+    throw new Error(`Error fetching group: ${error.message}`);
+  }
+
+  return group;
+}
+
+/**
+ * Aggiunge un membro al gruppo
+ */
+async function addGroupMember(groupName, userId) {
+  const { error } = await supabase
+    .from('group_users')
+    .insert({
+      group_name: groupName,
+      user_id: userId
+    });
+
+  if (error) {
+    throw new Error(`Error adding group member: ${error.message}`);
+  }
+}
+
+/**
+ * Rimuove un membro dal gruppo
+ */
+async function removeGroupMember(groupName, userId) {
+  const { error } = await supabase
+    .from('group_users')
+    .delete()
+    .eq('group_name', groupName)
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(`Error removing group member: ${error.message}`);
+  }
 }
 
 /**

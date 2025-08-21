@@ -1,4 +1,4 @@
-// note-editor.component.ts - CREATE ONLY VERSION
+// note-editor.component.ts - CREATE ONLY VERSION WITH TIME MACHINE INTEGRATION
 
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -19,6 +19,7 @@ import { CategoriesService } from '../../../service/categories.service';
 import { GroupsService } from '../../../service/groups.service';
 import { UsersService } from '../../../service/users.service';
 import { AuthService } from '../../../service/auth.service';
+import { TimeMachineService } from '../../../service/time-machine.service'; // UPDATED: Added TimeMachineService
 
 interface NoteFormData {
   title: string;
@@ -45,6 +46,9 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
 
   // Current user ID to filter from search
   currentUserId: string | null = null;
+
+  // UPDATED: Time Machine date for note creation
+  timeMachineDate: Date | null = null;
 
   // Note data
   noteData: NoteFormData = {
@@ -109,7 +113,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     private categoriesService: CategoriesService,
     private groupsService: GroupsService,
     private usersService: UsersService,
-    private authService: AuthService
+    private authService: AuthService,
+    private timeMachineService: TimeMachineService // UPDATED: Added TimeMachineService
   ) {
     // Setup user search with debouncing
     this.userSearchSubject.pipe(
@@ -122,6 +127,15 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // UPDATED: Get time machine date from query params if available
+    const queryParams = this.route.snapshot.queryParams;
+    if (queryParams['timeMachineDate']) {
+      this.timeMachineDate = new Date(queryParams['timeMachineDate']);
+    } else {
+      // Fallback to current time machine date
+      this.timeMachineDate = this.timeMachineService.getNow();
+    }
+
     // Get current user ID from auth service
     this.getCurrentUserId();
   }
@@ -432,7 +446,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   // ========== EDITOR ACTIONS ==========
 
   /**
-   * Create note
+   * Create note - UPDATED WITH TIME MACHINE INTEGRATION
    */
   async createNote(): Promise<void> {
     if (!this.isFormValid()) {
@@ -450,7 +464,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
         category: this.getFinalCategoryName(),
         accessibility: this.noteData.accessibility,
         groupName: this.noteData.groupName || undefined,
-        authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined
+        authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined,
+        createdAt: this.timeMachineDate || undefined // UPDATED: Pass Time Machine date
       };
 
       const createdNote = await this.notesService.createNote(createRequest).toPromise();
@@ -506,6 +521,33 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
    */
   getLoadingMessage(): string {
     return 'Loading...';
+  }
+
+  /**
+   * UPDATED: Get creation date display with Time Machine info
+   */
+  getCreationDateDisplay(): string {
+    if (!this.timeMachineDate) {
+      return 'Now';
+    }
+
+    const isTimeMachineActive = this.timeMachineService.isActive();
+    const dateStr = this.timeMachineDate.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    return isTimeMachineActive ? `${dateStr} (Time Machine)` : dateStr;
+  }
+
+  /**
+   * UPDATED: Check if Time Machine is active
+   */
+  isTimeMachineActive(): boolean {
+    return this.timeMachineService.isActive();
   }
 
   /**
@@ -648,7 +690,7 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     return `${count} user${count !== 1 ? 's' : ''} selected`;
   }
 
-    /**
+  /**
    * Get helper text for authorized users section
    */
   getAuthorizedUsersHelperText(): string {

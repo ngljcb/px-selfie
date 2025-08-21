@@ -1,7 +1,7 @@
 const groupsService = require('../service/groupsService');
 
 /**
- * Controller per la gestione dei gruppi
+ * Controller per la gestione dei gruppi - UPDATED WITH TIME MACHINE INTEGRATION
  */
 
 // GET /api/groups - Lista tutti i gruppi con filtri
@@ -37,17 +37,24 @@ async function getUserGroups(req, res) {
   }
 }
 
-// POST /api/groups - Crea nuovo gruppo
+// POST /api/groups - Crea nuovo gruppo - UPDATED WITH TIME MACHINE INTEGRATION
 async function createGroup(req, res) {
   try {
     const userId = req.user.id;
-    const { name, userIds } = req.body;
+    const { name, userIds, createdAt } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Group name is required' });
     }
 
-    const group = await groupsService.createGroup(userId, { name: name.trim(), userIds });
+    // UPDATED: Pass createdAt from Time Machine if provided
+    const groupData = { 
+      name: name.trim(), 
+      userIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined
+    };
+
+    const group = await groupsService.createGroup(userId, groupData);
     res.status(201).json(group);
   } catch (error) {
     console.error('Error creating group:', error);

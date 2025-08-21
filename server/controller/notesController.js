@@ -1,7 +1,7 @@
 const notesService = require('../service/notesService');
 
 /**
- * Controller per la gestione delle note
+ * Controller per la gestione delle note - UPDATED WITH TIME MACHINE INTEGRATION
  */
 
 // GET /api/notes - Lista note con filtri e paginazione
@@ -63,17 +63,28 @@ async function getNoteById(req, res) {
   }
 }
 
-// POST /api/notes - Crea nuova nota
+// POST /api/notes - Crea nuova nota - UPDATED WITH TIME MACHINE INTEGRATION
 async function createNote(req, res) {
   try {
     const userId = req.user.id;
+    const { 
+      title, 
+      text, 
+      category, 
+      accessibility, 
+      groupName, 
+      authorizedUserIds,
+      createdAt // UPDATED: Extract createdAt from Time Machine
+    } = req.body;
+
     const noteData = {
-      title: req.body.title,
-      text: req.body.text,
-      category: req.body.category,
-      accessibility: req.body.accessibility,
-      groupName: req.body.groupName,
-      authorizedUserIds: req.body.authorizedUserIds
+      title,
+      text,
+      category,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined // UPDATED: Pass createdAt from Time Machine if provided
     };
 
     // Validazione base
@@ -137,16 +148,25 @@ async function deleteNote(req, res) {
   }
 }
 
-// POST /api/notes/:id/duplicate - Duplica nota
+// POST /api/notes/:id/duplicate - Duplica nota - UPDATED WITH TIME MACHINE INTEGRATION
 async function duplicateNote(req, res) {
   try {
     const userId = req.user.id;
     const sourceNoteId = req.params.id;
+    const { 
+      newTitle, 
+      accessibility, 
+      groupName, 
+      authorizedUserIds,
+      createdAt // UPDATED: Extract createdAt from Time Machine
+    } = req.body;
+
     const duplicateData = {
-      newTitle: req.body.newTitle,
-      accessibility: req.body.accessibility,
-      groupName: req.body.groupName,
-      authorizedUserIds: req.body.authorizedUserIds
+      newTitle,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined // UPDATED: Pass createdAt from Time Machine if provided
     };
 
     const duplicatedNote = await notesService.duplicateNote(userId, sourceNoteId, duplicateData);

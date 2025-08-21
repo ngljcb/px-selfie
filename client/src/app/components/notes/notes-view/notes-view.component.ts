@@ -19,6 +19,7 @@ import {
 import { NotesService } from '../../../service/notes.service';
 import { CategoriesService } from '../../../service/categories.service';
 import { GroupsService } from '../../../service/groups.service';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 // Type definitions for component
 type SortOption = {
@@ -43,6 +44,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   
   // Notes data
   allNotes: NoteWithDetails[] = [];
+  allNotesFromServer: NoteWithDetails[] = []; // Store all notes from server for time machine filtering
   filteredNotes: NoteWithDetails[] = [];
   categories: Category[] = [];
   totalNotes = 0;
@@ -117,6 +119,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     private notesService: NotesService,
     private categoriesService: CategoriesService,
     private groupsService: GroupsService,
+    private timeMachineService: TimeMachineService, // UPDATED: Added TimeMachineService
     private router: Router
   ) {
     // Setup search debouncing
@@ -136,8 +139,8 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.notesService.notes$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(notes => {
-      this.allNotes = notes;
-      this.applyFilters();
+      this.allNotesFromServer = notes; // Store all notes from server
+      this.filterNotesByTimeMachine(); // Apply time machine filtering
     });
 
     // Subscribe to total notes count changes
@@ -145,6 +148,13 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe(total => {
       this.totalNotes = total;
+    });
+
+    // UPDATED: Subscribe to time machine changes to filter notes by creation date
+    this.timeMachineService.virtualNow$().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.filterNotesByTimeMachine();
     });
   }
 
@@ -179,6 +189,34 @@ export class NotesViewComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+  }
+
+  /**
+   * UPDATED: Filter notes based on time machine date
+   */
+  private filterNotesByTimeMachine(): void {
+    if (!this.allNotesFromServer.length) {
+      this.allNotes = [];
+      this.applyFilters();
+      return;
+    }
+
+    // Get current time from time machine (could be virtual)
+    const currentTime = this.timeMachineService.getNow();
+    
+    // Filter notes: only show notes created before or at the current time machine date
+    const filteredNotes = this.allNotesFromServer.filter(note => {
+      if (!note.createdAt) {
+        // If no creation date, assume it was created "now" for safety
+        return true;
+      }
+      
+      const noteCreationDate = new Date(note.createdAt);
+      return noteCreationDate <= currentTime;
+    });
+
+    this.allNotes = filteredNotes;
+    this.applyFilters();
   }
 
   /**
@@ -244,7 +282,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    * Apply all filters and sorting locally - UPDATED to search only in title
    */
   private applyFilters(): void {
-    let filtered = [...this.allNotes];
+    let filtered = [...this.allNotes]; // Use time machine filtered notes
 
     // Apply search filter - UPDATED: search only in title
     if (this.searchQuery.trim()) {
@@ -331,10 +369,17 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   // ========== NOTE ACTIONS ==========
 
   /**
-   * Navigate to create new note
+   * Navigate to create new note - UPDATED with Time Machine integration
    */
   createNewNote(): void {
-    this.router.navigate(['/notes/create']);
+    // Get current time from time machine for the new note
+    const currentTime = this.timeMachineService.getNow();
+    
+    this.router.navigate(['/notes/create'], {
+      queryParams: {
+        timeMachineDate: currentTime.toISOString() // Pass time machine date as query param
+      }
+    });
   }
 
   /**
@@ -407,16 +452,25 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Format notes count for display
+   * Format notes count for display - UPDATED to show time machine filtering info
    */
   getNotesCountText(): string {
     const count = this.filteredNotes.length;
+    const timeFilteredCount = this.allNotes.length;
     const total = this.totalNotes;
     
-    if (count === total) {
-      return `${total} note${total !== 1 ? 's' : ''}`;
+    if (this.isTimeMachineActive() && timeFilteredCount < total) {
+      if (count === timeFilteredCount) {
+        return `${timeFilteredCount} of ${total} note${total !== 1 ? 's' : ''} (filtered by time machine date)`;
+      } else {
+        return `${count} of ${timeFilteredCount} note${timeFilteredCount !== 1 ? 's' : ''} (${total} total, filtered by time machine)`;
+      }
     } else {
-      return `${count} of ${total} note${total !== 1 ? 's' : ''}`;
+      if (count === total) {
+        return `${total} note${total !== 1 ? 's' : ''}`;
+      } else {
+        return `${count} of ${total} note${total !== 1 ? 's' : ''}`;
+      }
     }
   }
 
@@ -487,11 +541,13 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    */
   forceRefresh(): void {
     console.log('Current component state:', {
+      allNotesFromServer: this.allNotesFromServer.length,
       allNotes: this.allNotes.length,
       filteredNotes: this.filteredNotes.length,
       totalNotes: this.totalNotes,
       isLoading: this.isLoading,
-      errorMessage: this.errorMessage
+      errorMessage: this.errorMessage,
+      isTimeMachineActive: this.isTimeMachineActive()
     });
     console.log('Service debug state:', this.notesService.getDebugState());
     this.notesService.refreshNotes().subscribe(response => {
@@ -505,6 +561,42 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   debugUpdateTotal(): void {
     console.log('Forcing total notes update...');
     this.notesService.refreshNotes().subscribe();
+  }
+
+  // ========== TIME MACHINE HELPERS ==========
+
+  /**
+   * UPDATED: Check if time machine is active (for debugging/display)
+   */
+  isTimeMachineActive(): boolean {
+    return this.timeMachineService.isActive();
+  }
+
+  /**
+   * UPDATED: Get current time from time machine for display purposes
+   */
+  getCurrentTimeMachineDate(): string {
+    const currentTime = this.timeMachineService.getNow();
+    return currentTime.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  /**
+   * UPDATED: Get filtered notes count message with time machine info
+   */
+  getNotesCountMessage(): string {
+    const visibleCount = this.filteredNotes.length;
+    const timeFilteredCount = this.allNotes.length;
+    const totalCount = this.totalNotes;
+    
+    if (this.isTimeMachineActive() && timeFilteredCount < totalCount) {
+      return `Showing ${visibleCount} of ${timeFilteredCount} notes (${totalCount} total, filtered by time machine date)`;
+    } else {
+      return `${visibleCount} note${visibleCount !== 1 ? 's' : ''} available`;
+    }
   }
 
   // ========== FILTER UTILITIES ==========
@@ -528,6 +620,11 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       const typeName = this.getAccessibilityTypeLabel(this.selectedAccessibilityType);
       filters.push(`Type: ${typeName}`);
     }
+
+    // UPDATED: Add time machine filter info
+    if (this.isTimeMachineActive()) {
+      filters.push(`Time: Before ${this.getCurrentTimeMachineDate()}`);
+    }
     
     return filters.join(', ');
   }
@@ -550,7 +647,14 @@ export class NotesViewComponent implements OnInit, OnDestroy {
    * Check if filters are active but no results
    */
   hasNoFilterResults(): boolean {
-    return !this.isLoading && !this.errorMessage && this.filteredNotes.length === 0 && this.totalNotes > 0;
+    return !this.isLoading && !this.errorMessage && this.filteredNotes.length === 0 && this.allNotes.length > 0;
+  }
+
+  /**
+   * UPDATED: Check if time machine filtering is hiding notes
+   */
+  hasNoTimeMachineResults(): boolean {
+    return !this.isLoading && !this.errorMessage && this.allNotes.length === 0 && this.totalNotes > 0;
   }
 
   /**
