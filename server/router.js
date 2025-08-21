@@ -81,10 +81,7 @@ router.get('/groups/:name', checkAuth, groupsController.getGroupByName);
 router.delete('/groups/:name', checkAuth, groupsController.deleteGroup);
 router.post('/groups/:name/join', checkAuth, groupsController.joinGroup);
 router.post('/groups/:name/leave', checkAuth, groupsController.leaveGroup);
-router.get('/groups/:name/members', checkAuth, groupsController.getGroupMembers);
-router.post('/groups/:name/members', checkAuth, groupsController.manageGroupMembers);
 router.get('/groups/:name/membership', checkAuth, groupsController.checkGroupMembership);
-router.get('/groups/:name/stats', checkAuth, groupsController.getGroupStats);
 
 // ==================== USERS ROUTES ====================
 router.get('/users/search', checkAuth, usersController.searchUsersByUsername);

@@ -6,9 +6,7 @@ import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { 
   Group, 
-  GroupUser,
   CreateGroupRequest, 
-  ManageGroupMembersRequest,
   User,
   NOTE_CONSTANTS
 } from '../model/note.interface';
@@ -106,17 +104,6 @@ export class GroupsService {
   }
 
   /**
-   * Get a specific group by name with member details
-   */
-  getGroupByName(name: string): Observable<GroupWithDetails> {
-    return this.http.get<GroupWithDetails>(`${this.apiUrl}/${encodeURIComponent(name)}`)
-      .pipe(
-        tap(group => this.selectedGroupSubject.next(group)),
-        catchError(this.handleError)
-      );
-  }
-
-  /**
    * Create a new group (room)
    */
   createGroup(groupData: CreateGroupRequest): Observable<GroupWithDetails> {
@@ -197,30 +184,6 @@ export class GroupsService {
   }
 
   /**
-   * Manage group members (add/remove specific users) - only for group creators
-   */
-  manageGroupMembers(request: ManageGroupMembersRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${encodeURIComponent(request.groupName)}/members`, request)
-      .pipe(
-        tap(() => {
-          // Refresh group details to get updated member list
-          this.getGroupByName(request.groupName).subscribe();
-        }),
-        catchError(this.handleError)
-      );
-  }
-
-  /**
-   * Get group members
-   */
-  getGroupMembers(groupName: string): Observable<User[]> {
-    return this.http.get<User[]>(`${this.apiUrl}/${encodeURIComponent(groupName)}/members`)
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  /**
    * Check if current user is member of a group
    */
   isGroupMember(groupName: string): Observable<boolean> {
@@ -229,68 +192,6 @@ export class GroupsService {
         map(response => response.isMember),
         catchError(this.handleError)
       );
-  }
-
-  // ==================== SEARCH AND DISCOVERY ====================
-
-  /**
-   * Search groups by name
-   */
-  searchGroups(query: string): Observable<GroupWithDetails[]> {
-    if (!query.trim()) {
-      return this.allGroups$;
-    }
-
-    const params = new HttpParams().set('search', query);
-    
-    return this.http.get<GroupWithDetails[]>(`${this.apiUrl}/search`, { params })
-      .pipe(
-        map(groups => groups.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))),
-        catchError(this.handleError)
-      );
-  }
-
-  /**
-   * Get popular groups (by member count)
-   */
-  getPopularGroups(limit: number = 10): Observable<GroupWithDetails[]> {
-    const params = new HttpParams()
-      .set('sortBy', 'memberCount')
-      .set('sortOrder', 'desc')
-      .set('limit', limit.toString());
-
-    return this.http.get<GroupWithDetails[]>(`${this.apiUrl}/popular`, { params })
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  /**
-   * Get recently created groups
-   */
-  getRecentGroups(limit: number = 10): Observable<GroupWithDetails[]> {
-    const params = new HttpParams()
-      .set('sortBy', 'createdAt')
-      .set('sortOrder', 'desc')
-      .set('limit', limit.toString());
-
-    return this.http.get<GroupWithDetails[]>(`${this.apiUrl}/recent`, { params })
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  /**
-   * Filter groups locally (for immediate UI feedback)
-   */
-  filterGroupsLocally(groups: GroupWithDetails[], query: string): GroupWithDetails[] {
-    if (!query.trim()) return groups;
-    
-    const lowercaseQuery = query.toLowerCase();
-    
-    return groups.filter(group => 
-      group.name.toLowerCase().includes(lowercaseQuery)
-    ).sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
   }
 
   // ==================== GROUP VALIDATION ====================
@@ -321,17 +222,6 @@ export class GroupsService {
     
     if (groupData.name && groupData.name.trim().length > NOTE_CONSTANTS.MAX_GROUP_NAME_LENGTH) {
       errors.push(`Group name cannot exceed ${NOTE_CONSTANTS.MAX_GROUP_NAME_LENGTH} characters`);
-    }
-    
-    // Check for invalid characters
-    if (groupData.name && !/^[a-zA-Z0-9\s\-_()]+$/.test(groupData.name)) {
-      errors.push('Group name can only contain letters, numbers, spaces, hyphens, underscores, and parentheses');
-    }
-    
-    // Check for reserved names
-    const reservedNames = ['admin', 'system', 'public', 'private', 'all', 'none'];
-    if (groupData.name && reservedNames.includes(groupData.name.toLowerCase().trim())) {
-      errors.push('This group name is reserved. Please choose a different name');
     }
     
     return {
@@ -416,117 +306,6 @@ export class GroupsService {
     );
   }
 
-  // ==================== ROOM/GROUP DISCOVERY ====================
-
-  /**
-   * Get groups formatted for dropdown/select
-   */
-  getGroupsForSelect(): Observable<Array<{ value: string; label: string; memberCount: number }>> {
-    return this.userGroups$.pipe(
-      map(groups => 
-        groups.map(group => ({
-          value: group.name,
-          label: `${group.name} (${group.memberCount} members)`,
-          memberCount: group.memberCount
-        }))
-      )
-    );
-  }
-
-  /**
-   * Get group suggestions based on current user's activity
-   */
-  getGroupSuggestions(limit: number = 5): Observable<GroupWithDetails[]> {
-    const params = new HttpParams().set('limit', limit.toString());
-    
-    return this.http.get<GroupWithDetails[]>(`${this.apiUrl}/suggestions`, { params })
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  /**
-   * Get trending groups (most active recently)
-   */
-  getTrendingGroups(limit: number = 10): Observable<GroupWithDetails[]> {
-    const params = new HttpParams().set('limit', limit.toString());
-    
-    return this.http.get<GroupWithDetails[]>(`${this.apiUrl}/trending`, { params })
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  // ==================== GROUP STATISTICS ====================
-
-  /**
-   * Get group statistics
-   */
-  getGroupStats(groupName: string): Observable<{
-    memberCount: number;
-    noteCount: number;
-    recentActivity: Date | null;
-    createdAt: Date;
-  }> {
-    return this.http.get<{
-      memberCount: number;
-      noteCount: number;
-      recentActivity: Date | null;
-      createdAt: Date;
-    }>(`${this.apiUrl}/${encodeURIComponent(groupName)}/stats`)
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  /**
-   * Get overall groups statistics
-   */
-  getOverallGroupsStats(): Observable<{
-    totalGroups: number;
-    totalMembers: number;
-    averageMembersPerGroup: number;
-    mostPopularGroup: GroupWithDetails | null;
-    userGroupsCount: number;
-  }> {
-    return this.http.get<{
-      totalGroups: number;
-      totalMembers: number;
-      averageMembersPerGroup: number;
-      mostPopularGroup: GroupWithDetails | null;
-      userGroupsCount: number;
-    }>(`${this.apiUrl}/overall-stats`)
-      .pipe(
-        catchError(this.handleError)
-      );
-  }
-
-  // ==================== SORTING AND FILTERING ====================
-
-  /**
-   * Sort groups locally
-   */
-  sortGroupsLocally(groups: GroupWithDetails[], sortBy: 'name' | 'memberCount' | 'noteCount', order: 'asc' | 'desc' = 'asc'): GroupWithDetails[] {
-    return [...groups].sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortBy) {
-        case 'name':
-          comparison = a.name.toLowerCase().localeCompare(b.name.toLowerCase());
-          break;
-        case 'memberCount':
-          comparison = a.memberCount - b.memberCount;
-          break;
-        case 'noteCount':
-          comparison = (a.noteCount || 0) - (b.noteCount || 0);
-          break;
-        default:
-          comparison = 0;
-      }
-      
-      return order === 'asc' ? comparison : -comparison;
-    });
-  }
 
   // ==================== STATE MANAGEMENT ====================
 
@@ -615,23 +394,6 @@ export class GroupsService {
   }
 
   /**
-   * Generate group avatar color (for UI purposes)
-   */
-  generateGroupColor(groupName: string): string {
-    // Simple hash function to generate consistent colors
-    let hash = 0;
-    for (let i = 0; i < groupName.length; i++) {
-      const char = groupName.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32-bit integer
-    }
-    
-    // Convert to HSL for better color distribution
-    const hue = Math.abs(hash % 360);
-    return `hsl(${hue}, 60%, 70%)`;
-  }
-
-  /**
    * Get group display name with member count
    */
   getGroupDisplayName(group: GroupWithDetails): string {
@@ -647,48 +409,36 @@ export class GroupsService {
     );
   }
 
-  // ==================== BULK OPERATIONS ====================
+  // ==================== CONVENIENCE METHODS ====================
 
   /**
-   * Join multiple groups at once
+   * Get groups where user is owner
    */
-  joinMultipleGroups(groupNames: string[]): Observable<{ joined: string[]; failed: string[] }> {
-    return this.http.post<{ joined: string[]; failed: string[] }>(`${this.apiUrl}/bulk-join`, {
-      groupNames
-    }).pipe(
-      tap(result => {
-        // Update local state for successfully joined groups
-        result.joined.forEach(groupName => {
-          this.updateGroupMembershipInState(groupName, true);
-        });
-      }),
-      catchError(this.handleError)
+  getOwnedGroups(): Observable<GroupWithDetails[]> {
+    return this.userGroups$.pipe(
+      map(groups => groups.filter(group => group.isOwner))
     );
   }
 
   /**
-   * Leave multiple groups at once
+   * Get groups where user is member but not owner
    */
-  leaveMultipleGroups(groupNames: string[]): Observable<{ left: string[]; failed: string[] }> {
-    return this.http.post<{ left: string[]; failed: string[] }>(`${this.apiUrl}/bulk-leave`, {
-      groupNames
-    }).pipe(
-      tap(result => {
-        // Update local state for successfully left groups
-        result.left.forEach(groupName => {
-          this.updateGroupMembershipInState(groupName, false);
-        });
-      }),
-      catchError(this.handleError)
+  getJoinedGroups(): Observable<GroupWithDetails[]> {
+    return this.userGroups$.pipe(
+      map(groups => groups.filter(group => group.isMember && !group.isOwner))
     );
   }
 
-  // ==================== ERROR HANDLING ====================
-
   /**
-   * Handle HTTP errors
+   * Get available groups to join (not already a member)
    */
-  private handleError = (error: any): Observable<never> => {
+  getAvailableGroups(): Observable<GroupWithDetails[]> {
+    return this.allGroups$.pipe(
+      map(groups => groups.filter(group => !group.isMember))
+    );
+  }
+
+    private handleError = (error: any): Observable<never> => {
     console.error('GroupsService Error:', error);
     
     let errorMessage = 'An unknown error occurred';
@@ -727,65 +477,4 @@ export class GroupsService {
     
     return throwError(() => new Error(errorMessage));
   };
-
-  // ==================== CONVENIENCE METHODS ====================
-
-  /**
-   * Get groups where user is owner
-   */
-  getOwnedGroups(): Observable<GroupWithDetails[]> {
-    return this.userGroups$.pipe(
-      map(groups => groups.filter(group => group.isOwner))
-    );
-  }
-
-  /**
-   * Get groups where user is member but not owner
-   */
-  getJoinedGroups(): Observable<GroupWithDetails[]> {
-    return this.userGroups$.pipe(
-      map(groups => groups.filter(group => group.isMember && !group.isOwner))
-    );
-  }
-
-  /**
-   * Get available groups to join (not already a member)
-   */
-  getAvailableGroups(): Observable<GroupWithDetails[]> {
-    return this.allGroups$.pipe(
-      map(groups => groups.filter(group => !group.isMember))
-    );
-  }
-
-  /**
-   * Quick join group with validation
-   */
-  quickJoinGroup(groupName: string): Observable<{ success: boolean; message: string }> {
-    return this.joinGroup(groupName).pipe(
-      map(() => ({ 
-        success: true, 
-        message: `Successfully joined group "${groupName}"` 
-      })),
-      catchError(error => of({ 
-        success: false, 
-        message: error.message || 'Failed to join group' 
-      }))
-    );
-  }
-
-  /**
-   * Quick leave group with validation
-   */
-  quickLeaveGroup(groupName: string): Observable<{ success: boolean; message: string }> {
-    return this.leaveGroup(groupName).pipe(
-      map(() => ({ 
-        success: true, 
-        message: `Successfully left group "${groupName}"` 
-      })),
-      catchError(error => of({ 
-        success: false, 
-        message: error.message || 'Failed to leave group' 
-      }))
-    );
-  }
 }

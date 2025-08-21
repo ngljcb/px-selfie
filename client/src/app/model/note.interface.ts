@@ -34,14 +34,6 @@ export interface Group {
 }
 
 /**
- * Interface for Group member
- */
-export interface GroupUser {
-  groupName: string;
-  userId: string;
-}
-
-/**
  * Interface for Note authorized user
  */
 export interface NoteAuthorizedUser {
@@ -160,15 +152,6 @@ export interface CreateGroupRequest {
   name: string;
   userIds?: string[];
   createdAt?: Date;
-}
-
-/**
- * Interface for managing group members
- */
-export interface ManageGroupMembersRequest {
-  groupName: string;
-  addUserIds?: string[];
-  removeUserIds?: string[];
 }
 
 /**

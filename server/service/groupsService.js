@@ -454,140 +454,6 @@ async function checkGroupNameExists(name) {
   return !!group;
 }
 
-/**
- * Ottiene statistiche di un gruppo
- */
-async function getGroupStats(userId, groupName) {
-  const group = await getGroupByName(userId, groupName);
-  if (!group) {
-    throw new Error('Group not found');
-  }
-
-  // Conta membri
-  const { data: members, error: membersError } = await supabase
-    .from('group_users')
-    .select('user_id', { count: 'exact' })
-    .eq('group_name', groupName);
-
-  if (membersError) {
-    throw new Error('Error counting members');
-  }
-
-  // Conta note del gruppo
-  const { data: notes, error: notesError } = await supabase
-    .from('notes')
-    .select('id, last_modify', { count: 'exact' })
-    .eq('group_name', groupName);
-
-  if (notesError) {
-    throw new Error('Error counting notes');
-  }
-
-  // Trova l'ultima attività
-  let recentActivity = null;
-  if (notes && notes.length > 0) {
-    const sortedNotes = notes.sort((a, b) => new Date(b.last_modify) - new Date(a.last_modify));
-    recentActivity = sortedNotes[0].last_modify;
-  }
-
-  return {
-    memberCount: members?.length || 0,
-    noteCount: notes?.length || 0,
-    recentActivity,
-    createdAt: group.createdAt
-  };
-}
-
-/**
- * Ottiene statistiche generali dei gruppi
- */
-async function getOverallGroupsStats(userId) {
-  // Conta tutti i gruppi
-  const { data: allGroups, error: groupsError } = await supabase
-    .from('groups')
-    .select('name', { count: 'exact' });
-
-  if (groupsError) {
-    throw new Error('Error counting groups');
-  }
-
-  // Conta gruppi dell'utente
-  const { data: userGroups, error: userGroupsError } = await supabase
-    .from('group_users')
-    .select('group_name', { count: 'exact' })
-    .eq('user_id', userId);
-
-  if (userGroupsError) {
-    throw new Error('Error counting user groups');
-  }
-
-  // Conta tutti i membri
-  const { data: allMembers, error: membersError } = await supabase
-    .from('group_users')
-    .select('user_id', { count: 'exact' });
-
-  if (membersError) {
-    throw new Error('Error counting members');
-  }
-
-  // Trova il gruppo più popolare
-  const popularGroups = await getPopularGroups(userId, 1);
-  const mostPopularGroup = popularGroups.length > 0 ? popularGroups[0] : null;
-
-  const totalGroups = allGroups?.length || 0;
-  const totalMembers = allMembers?.length || 0;
-
-  return {
-    totalGroups,
-    totalMembers,
-    averageMembersPerGroup: totalGroups > 0 ? Math.round(totalMembers / totalGroups) : 0,
-    mostPopularGroup,
-    userGroupsCount: userGroups?.length || 0
-  };
-}
-
-/**
- * Unisciti a più gruppi contemporaneamente
- */
-async function joinMultipleGroups(userId, groupNames) {
-  const result = {
-    joined: [],
-    failed: []
-  };
-
-  for (const groupName of groupNames) {
-    try {
-      await joinGroup(userId, groupName);
-      result.joined.push(groupName);
-    } catch (error) {
-      result.failed.push(groupName);
-    }
-  }
-
-  return result;
-}
-
-/**
- * Lascia più gruppi contemporaneamente
- */
-async function leaveMultipleGroups(userId, groupNames) {
-  const result = {
-    left: [],
-    failed: []
-  };
-
-  for (const groupName of groupNames) {
-    try {
-      await leaveGroup(userId, groupName);
-      result.left.push(groupName);
-    } catch (error) {
-      result.failed.push(groupName);
-    }
-  }
-
-  return result;
-}
-
 // ==================== FUNZIONI HELPER ====================
 
 /**
@@ -629,37 +495,6 @@ async function enrichGroupWithDetails(group, userId) {
 }
 
 /**
- * Aggiunge un membro al gruppo
- */
-async function addGroupMember(groupName, userId) {
-  const { error } = await supabase
-    .from('group_users')
-    .insert({
-      group_name: groupName,
-      user_id: userId
-    });
-
-  if (error) {
-    throw new Error(`Error adding group member: ${error.message}`);
-  }
-}
-
-/**
- * Rimuove un membro dal gruppo
- */
-async function removeGroupMember(groupName, userId) {
-  const { error } = await supabase
-    .from('group_users')
-    .delete()
-    .eq('group_name', groupName)
-    .eq('user_id', userId);
-
-  if (error) {
-    throw new Error(`Error removing group member: ${error.message}`);
-  }
-}
-
-/**
  * Valida il nome del gruppo
  */
 async function validateGroupName(name) {
@@ -671,16 +506,6 @@ async function validateGroupName(name) {
 
   if (trimmedName.length > 100) {
     throw new Error('Group name cannot exceed 100 characters');
-  }
-
-  // Verifica caratteri validi
-  if (!/^[a-zA-Z0-9\s\-_()]+$/.test(trimmedName)) {
-    throw new Error('Group name can only contain letters, numbers, spaces, hyphens, underscores, and parentheses');
-  }
-
-  // Verifica nomi riservati
-  if (RESERVED_GROUP_NAMES.includes(trimmedName.toLowerCase())) {
-    throw new Error('This group name is reserved. Please choose a different name');
   }
 }
 
@@ -699,8 +524,4 @@ module.exports = {
   getPopularGroups,
   getRecentGroups,
   checkGroupNameExists,
-  getGroupStats,
-  getOverallGroupsStats,
-  joinMultipleGroups,
-  leaveMultipleGroups
 };
