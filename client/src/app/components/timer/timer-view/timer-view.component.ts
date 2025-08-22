@@ -38,6 +38,9 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   // Notifiche
   notifications: TimerNotification[] = [];
   
+  // NUOVO: Flag per sapere se la sessione è completata
+  private sessionCompleted = false;
+  
   // Utility per template
   Math = Math; // Per usare Math.round nel template
 
@@ -47,7 +50,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
 
   constructor(
     private timerService: TimerService,
-    private statisticsService: StatisticsService // NUOVO
+    private statisticsService: StatisticsService
   ) {}
 
   ngOnInit(): void {
@@ -61,14 +64,11 @@ export class TimerViewComponent implements OnInit, OnDestroy {
         // Controlla se c'è stata una transizione di fase o fine timer
         this.checkForPhaseTransition(previousState, state);
       });
-
-    // Richiedi permessi notifiche all'avvio
-    this.timerService.requestNotificationPermission();
     
     // Inizializza AudioContext con la prima interazione utente
     this.initializeAudioOnFirstInteraction();
 
-    // NUOVO: Controlla il login streak all'avvio
+    // Controlla il login streak all'avvio
     this.checkLoginStreak();
   }
 
@@ -77,7 +77,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // NUOVO: Controlla il login streak
+  // Controlla il login streak
   private checkLoginStreak(): void {
     this.statisticsService.checkLoginStreak()
       .pipe(takeUntil(this.destroy$))
@@ -111,7 +111,10 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     if (previousState.status !== TimerStatus.COMPLETED && 
         currentState.status === TimerStatus.COMPLETED) {
       
-      // NUOVO: Aggiorna le statistiche quando la sessione è completata
+      // NUOVO: Segna che la sessione è completata e ferma il timer
+      this.sessionCompleted = true;
+      
+      // Aggiorna le statistiche quando la sessione è completata
       this.updateSessionStatistics(currentState);
       
       this.showNotification('Sessione completata! Ottimo lavoro!', 'session-complete');
@@ -143,7 +146,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  // NUOVO: Aggiorna le statistiche quando una sessione è completata
+  // Aggiorna le statistiche quando una sessione è completata
   private updateSessionStatistics(timerState: TimerState): void {
     // Calcola il tempo totale di studio effettivo (solo fasi di studio, non pause)
     const studyTimePerCycle = timerState.config.studyMinutes;
@@ -217,10 +220,14 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   }
 
   resetTimer(): void {
+    // NUOVO: Reset anche del flag di completamento
+    this.sessionCompleted = false;
     this.timerService.resetTimer();
   }
 
   stopTimer(): void {
+    // NUOVO: Reset del flag di completamento quando si ferma/termina
+    this.sessionCompleted = false;
     this.timerService.stopTimer();
   }
 
@@ -262,6 +269,9 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   // ==================== CONTROLLO SPECIFICO PER NUOVA SESSIONE ====================
 
   startNewSession(): void {
+    // NUOVO: Reset del flag di completamento
+    this.sessionCompleted = false;
+    
     // Forza il reset completo del timer allo stato iniziale
     this.timerService.resetTimer();
     // Assicurati che il timer torni allo stato IDLE con fase STUDY
@@ -345,8 +355,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     return this.timerState?.currentPhase === TimerPhase.BREAK;
   }
 
-  // ==================== NUOVO METODO PER GESTIRE LA DISPONIBILITÀ DEL BOTTONE RICOMINCIA ====================
-
   canRestart(): boolean {
     return this.timerState?.canRestart ?? true;
   }
@@ -373,6 +381,19 @@ export class TimerViewComponent implements OnInit, OnDestroy {
 
   getProgressBarWidth(): string {
     return `${this.getSessionProgress()}%`;
+  }
+
+  // ==================== NUOVO: METODO PER IL TEMPO VISUALIZZATO ====================
+
+  /**
+   * Ritorna il tempo da visualizzare nel timer principale
+   * Se la sessione è completata, mostra 0:00, altrimenti mostra il tempo rimanente
+   */
+  getDisplayTime(): number {
+    if (this.sessionCompleted && this.isCompleted()) {
+      return 0; // Mostra 0:00 quando la sessione è completata
+    }
+    return this.timerState?.remainingSeconds || 0;
   }
 
   // ==================== METODO PER CALCOLARE IL TEMPO TOTALE EFFETTIVO ====================

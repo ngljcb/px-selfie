@@ -1,4 +1,4 @@
-  <!-- CONTAINER PRINCIPALE -->
+<!-- CONTAINER PRINCIPALE -->
 <div class="timer-app-container">
     
     @if (timerState) {
@@ -29,7 +29,7 @@
 
         <!-- Countdown principale -->
         <div class="time-display">
-          <span class="time-number">{{ formatTime(safeTimerState.remainingSeconds) }}</span>
+          <span class="time-number">{{ formatTime(getDisplayTime()) }}</span>
         </div>
 
         <!-- Info fase corrente -->
@@ -79,7 +79,7 @@
           }
         </div>
 
-        <!-- Animazione pulsante -->
+        <!-- Animazione pulsante (disabilitata) -->
         <div class="pulse-animation" 
             [class.active]="isRunning()" 
             [class.study-pulse]="isStudyPhase()" 

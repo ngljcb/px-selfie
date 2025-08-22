@@ -1,7 +1,7 @@
 const notesService = require('../service/notesService');
 
 /**
- * Controller per la gestione delle note
+ * Controller per la gestione delle note - UPDATED WITH TIME MACHINE INTEGRATION
  */
 
 // GET /api/notes - Lista note con filtri e paginazione
@@ -63,17 +63,28 @@ async function getNoteById(req, res) {
   }
 }
 
-// POST /api/notes - Crea nuova nota
+// POST /api/notes - Crea nuova nota - UPDATED WITH TIME MACHINE INTEGRATION
 async function createNote(req, res) {
   try {
     const userId = req.user.id;
+    const { 
+      title, 
+      text, 
+      category, 
+      accessibility, 
+      groupName, 
+      authorizedUserIds,
+      createdAt // UPDATED: Extract createdAt from Time Machine
+    } = req.body;
+
     const noteData = {
-      title: req.body.title,
-      text: req.body.text,
-      category: req.body.category,
-      accessibility: req.body.accessibility,
-      groupName: req.body.groupName,
-      authorizedUserIds: req.body.authorizedUserIds
+      title,
+      text,
+      category,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined // UPDATED: Pass createdAt from Time Machine if provided
     };
 
     // Validazione base
@@ -137,16 +148,25 @@ async function deleteNote(req, res) {
   }
 }
 
-// POST /api/notes/:id/duplicate - Duplica nota
+// POST /api/notes/:id/duplicate - Duplica nota - UPDATED WITH TIME MACHINE INTEGRATION
 async function duplicateNote(req, res) {
   try {
     const userId = req.user.id;
     const sourceNoteId = req.params.id;
+    const { 
+      newTitle, 
+      accessibility, 
+      groupName, 
+      authorizedUserIds,
+      createdAt // UPDATED: Extract createdAt from Time Machine
+    } = req.body;
+
     const duplicateData = {
-      newTitle: req.body.newTitle,
-      accessibility: req.body.accessibility,
-      groupName: req.body.groupName,
-      authorizedUserIds: req.body.authorizedUserIds
+      newTitle,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined // UPDATED: Pass createdAt from Time Machine if provided
     };
 
     const duplicatedNote = await notesService.duplicateNote(userId, sourceNoteId, duplicateData);
@@ -243,52 +263,6 @@ async function getNotesStats(req, res) {
   }
 }
 
-// GET /api/notes/:id/export/markdown - Esporta nota come Markdown
-async function exportNoteAsMarkdown(req, res) {
-  try {
-    const userId = req.user.id;
-    const noteId = req.params.id;
-
-    const markdownContent = await notesService.exportNoteAsMarkdown(userId, noteId);
-    
-    res.setHeader('Content-Type', 'text/markdown');
-    res.setHeader('Content-Disposition', `attachment; filename="note-${noteId}.md"`);
-    res.status(200).send(markdownContent);
-  } catch (error) {
-    console.error('Error exporting note as markdown:', error);
-    if (error.message === 'Note not found') {
-      return res.status(404).json({ error: 'Note not found' });
-    }
-    if (error.message === 'Access denied') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/notes/:id/export/html - Esporta nota come HTML
-async function exportNoteAsHTML(req, res) {
-  try {
-    const userId = req.user.id;
-    const noteId = req.params.id;
-
-    const htmlContent = await notesService.exportNoteAsHTML(userId, noteId);
-    
-    res.setHeader('Content-Type', 'text/html');
-    res.setHeader('Content-Disposition', `attachment; filename="note-${noteId}.html"`);
-    res.status(200).send(htmlContent);
-  } catch (error) {
-    console.error('Error exporting note as HTML:', error);
-    if (error.message === 'Note not found') {
-      return res.status(404).json({ error: 'Note not found' });
-    }
-    if (error.message === 'Access denied') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
 // GET /api/notes/count-by-accessibility - Conta note per tipo di accessibilità
 async function getNotesCountByAccessibility(req, res) {
   try {
@@ -314,7 +288,5 @@ module.exports = {
   getNotePermissions,
   bulkOperation,
   getNotesStats,
-  exportNoteAsMarkdown,
-  exportNoteAsHTML,
   getNotesCountByAccessibility
 };

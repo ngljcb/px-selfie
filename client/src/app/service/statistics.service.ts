@@ -1,40 +1,61 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { TimeMachineService } from './time-machine.service'; // Import del servizio Time Machine
 import { 
   UserStatistics, 
   UpdateSessionStatsDTO, 
   StatisticsResponse, 
-  LoginStreakCheckDTO 
+  LoginStreakCheckDTO,
+  StatisticsHistoryResponse
 } from '../model/statistics.interface';
 
 @Injectable({
   providedIn: 'root'
 })
 export class StatisticsService {
-  private readonly apiUrl = `${environment.API_BASE_URL}/api`; // CORRETTO
+  private readonly apiUrl = `${environment.API_BASE_URL}/api`;
   
   // Subject per mantenere le statistiche in cache
   private statisticsSubject = new BehaviorSubject<StatisticsResponse | null>(null);
   public statistics$ = this.statisticsSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private timeMachineService: TimeMachineService // Iniettato per gestire il tempo virtuale
+  ) {}
 
   // ==================== RECUPERO STATISTICHE ====================
 
   /**
    * Recupera le statistiche dell'utente corrente
+   * Utilizza automaticamente il tempo virtuale se attivo
    */
   getUserStatistics(): Observable<StatisticsResponse> {
+    const virtualTime = this.timeMachineService.getVirtualNow();
+    
+    // Prepara parametri e headers
+    let params: any = {};
+    let headers = new HttpHeaders();
+    
+    if (virtualTime) {
+      params.virtual_time = virtualTime.toISOString();
+      headers = headers.set('x-virtual-time', virtualTime.toISOString());
+    }
+
     return this.http.get<StatisticsResponse>(`${this.apiUrl}/statistics`, {
-      withCredentials: true // AGGIUNTO per coerenza con auth.service
+      params,
+      headers,
+      withCredentials: true
     })
       .pipe(
         tap(stats => {
           // Aggiorna il subject per condividere i dati
           this.statisticsSubject.next(stats);
+          console.log('Statistiche recuperate:', stats, 
+                     virtualTime ? `(Time Machine attiva: ${virtualTime.toISOString()})` : '(tempo reale)');
         }),
         catchError(error => {
           console.error('Errore nel recupero statistiche:', error);
@@ -47,20 +68,33 @@ export class StatisticsService {
 
   /**
    * Aggiorna le statistiche quando una sessione viene completata
+   * Utilizza automaticamente il tempo virtuale se attivo
    * @param studyTimeMinutes Tempo di studio in minuti della sessione completata
    */
   updateSessionStats(studyTimeMinutes: number): Observable<StatisticsResponse> {
+    const virtualTime = this.timeMachineService.getVirtualNow();
+    
     const payload: UpdateSessionStatsDTO = {
       study_time_minutes: studyTimeMinutes
     };
 
+    let headers = new HttpHeaders();
+    
+    if (virtualTime) {
+      payload.virtual_time = virtualTime.toISOString();
+      headers = headers.set('x-virtual-time', virtualTime.toISOString());
+    }
+
     return this.http.post<StatisticsResponse>(`${this.apiUrl}/statistics/session-completed`, payload, {
-      withCredentials: true // AGGIUNTO
+      headers,
+      withCredentials: true
     })
       .pipe(
         tap(updatedStats => {
           // Aggiorna il subject con i nuovi dati
           this.statisticsSubject.next(updatedStats);
+          console.log('Statistiche sessione aggiornate:', updatedStats,
+                     virtualTime ? `(Time Machine attiva: ${virtualTime.toISOString()})` : '(tempo reale)');
         }),
         catchError(error => {
           console.error('Errore nell\'aggiornamento statistiche sessione:', error);
@@ -73,14 +107,27 @@ export class StatisticsService {
 
   /**
    * Controlla e aggiorna lo streak consecutivo al login dell'utente
+   * Utilizza automaticamente il tempo virtuale se attivo
    */
   checkLoginStreak(): Observable<LoginStreakCheckDTO> {
-    return this.http.post<LoginStreakCheckDTO>(`${this.apiUrl}/statistics/login-check`, {}, {
-      withCredentials: true // AGGIUNTO
+    const virtualTime = this.timeMachineService.getVirtualNow();
+    
+    let payload: any = {};
+    let headers = new HttpHeaders();
+    
+    if (virtualTime) {
+      payload.virtual_time = virtualTime.toISOString();
+      headers = headers.set('x-virtual-time', virtualTime.toISOString());
+    }
+
+    return this.http.post<LoginStreakCheckDTO>(`${this.apiUrl}/statistics/login-check`, payload, {
+      headers,
+      withCredentials: true
     })
       .pipe(
         tap(streakInfo => {
-          console.log('Streak info:', streakInfo);
+          console.log('Streak info:', streakInfo,
+                     virtualTime ? `(Time Machine attiva: ${virtualTime.toISOString()})` : '(tempo reale)');
           // Se lo streak è stato resettato, potremmo voler ricaricare le statistiche
           if (streakInfo.streakWasReset) {
             this.getUserStatistics().subscribe(); // Ricarica le statistiche aggiornate
@@ -88,6 +135,35 @@ export class StatisticsService {
         }),
         catchError(error => {
           console.error('Errore nel controllo streak login:', error);
+          throw error;
+        })
+      );
+  }
+
+  // ==================== NUOVO: CRONOLOGIA STATISTICHE ====================
+
+  /**
+   * Recupera la cronologia delle statistiche (utile per debug)
+   */
+  getStatisticsHistory(): Observable<StatisticsHistoryResponse> {
+    const virtualTime = this.timeMachineService.getVirtualNow();
+    
+    let params: any = {};
+    let headers = new HttpHeaders();
+    
+    if (virtualTime) {
+      params.virtual_time = virtualTime.toISOString();
+      headers = headers.set('x-virtual-time', virtualTime.toISOString());
+    }
+
+    return this.http.get<StatisticsHistoryResponse>(`${this.apiUrl}/statistics/history`, {
+      params,
+      headers,
+      withCredentials: true
+    })
+      .pipe(
+        catchError(error => {
+          console.error('Errore nel recupero cronologia statistiche:', error);
           throw error;
         })
       );
@@ -114,6 +190,20 @@ export class StatisticsService {
    */
   clearStatistics(): void {
     this.statisticsSubject.next(null);
+  }
+
+   /**
+   * Controlla se la Time Machine è attiva
+   */
+  isTimeMachineActive(): boolean {
+    return this.timeMachineService.getVirtualNow() !== null;
+  }
+
+    /**
+   * Ottiene il tempo corrente (virtuale o reale)
+   */
+  getCurrentTime(): Date {
+    return this.timeMachineService.getNow();
   }
 
   // ==================== HELPER METHODS ====================

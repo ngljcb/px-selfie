@@ -1,7 +1,7 @@
 const groupsService = require('../service/groupsService');
 
 /**
- * Controller per la gestione dei gruppi
+ * Controller per la gestione dei gruppi - UPDATED WITH TIME MACHINE INTEGRATION
  */
 
 // GET /api/groups - Lista tutti i gruppi con filtri
@@ -37,35 +37,24 @@ async function getUserGroups(req, res) {
   }
 }
 
-// GET /api/groups/:name - Dettagli specifici di un gruppo
-async function getGroupByName(req, res) {
-  try {
-    const userId = req.user.id;
-    const groupName = decodeURIComponent(req.params.name);
-
-    const group = await groupsService.getGroupByName(userId, groupName);
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-
-    res.status(200).json(group);
-  } catch (error) {
-    console.error('Error getting group by name:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// POST /api/groups - Crea nuovo gruppo
+// POST /api/groups - Crea nuovo gruppo - UPDATED WITH TIME MACHINE INTEGRATION
 async function createGroup(req, res) {
   try {
     const userId = req.user.id;
-    const { name, userIds } = req.body;
+    const { name, userIds, createdAt } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Group name is required' });
     }
 
-    const group = await groupsService.createGroup(userId, { name: name.trim(), userIds });
+    // UPDATED: Pass createdAt from Time Machine if provided
+    const groupData = { 
+      name: name.trim(), 
+      userIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined
+    };
+
+    const group = await groupsService.createGroup(userId, groupData);
     res.status(201).json(group);
   } catch (error) {
     console.error('Error creating group:', error);
@@ -142,109 +131,6 @@ async function leaveGroup(req, res) {
   }
 }
 
-// POST /api/groups/:name/members - Gestione membri (solo per proprietari)
-async function manageGroupMembers(req, res) {
-  try {
-    const userId = req.user.id;
-    const groupName = decodeURIComponent(req.params.name);
-    const { addUserIds, removeUserIds } = req.body;
-
-    const result = await groupsService.manageGroupMembers(userId, {
-      groupName,
-      addUserIds,
-      removeUserIds
-    });
-
-    res.status(200).json(result);
-  } catch (error) {
-    console.error('Error managing group members:', error);
-    if (error.message === 'Group not found') {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-    if (error.message === 'Access denied') {
-      return res.status(403).json({ error: 'Only group owners can manage members' });
-    }
-    res.status(400).json({ error: error.message });
-  }
-}
-
-// GET /api/groups/:name/members - Lista membri del gruppo
-async function getGroupMembers(req, res) {
-  try {
-    const userId = req.user.id;
-    const groupName = decodeURIComponent(req.params.name);
-
-    const members = await groupsService.getGroupMembers(userId, groupName);
-    res.status(200).json(members);
-  } catch (error) {
-    console.error('Error getting group members:', error);
-    if (error.message === 'Group not found') {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/groups/:name/membership - Verifica appartenenza al gruppo
-async function checkGroupMembership(req, res) {
-  try {
-    const userId = req.user.id;
-    const groupName = decodeURIComponent(req.params.name);
-
-    const isMember = await groupsService.isGroupMember(userId, groupName);
-    res.status(200).json({ isMember });
-  } catch (error) {
-    console.error('Error checking group membership:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/groups/search - Cerca gruppi per nome
-async function searchGroups(req, res) {
-  try {
-    const userId = req.user.id;
-    const { search } = req.query;
-
-    if (!search || !search.trim()) {
-      return res.status(200).json([]);
-    }
-
-    const groups = await groupsService.searchGroups(userId, search.trim());
-    res.status(200).json(groups);
-  } catch (error) {
-    console.error('Error searching groups:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/groups/popular - Gruppi più popolari
-async function getPopularGroups(req, res) {
-  try {
-    const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
-
-    const groups = await groupsService.getPopularGroups(userId, limit);
-    res.status(200).json(groups);
-  } catch (error) {
-    console.error('Error getting popular groups:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/groups/recent - Gruppi creati di recente
-async function getRecentGroups(req, res) {
-  try {
-    const userId = req.user.id;
-    const limit = parseInt(req.query.limit) || 10;
-
-    const groups = await groupsService.getRecentGroups(userId, limit);
-    res.status(200).json(groups);
-  } catch (error) {
-    console.error('Error getting recent groups:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
 // GET /api/groups/check-name - Verifica disponibilità nome gruppo
 async function checkGroupNameExists(req, res) {
   try {
@@ -262,89 +148,12 @@ async function checkGroupNameExists(req, res) {
   }
 }
 
-// GET /api/groups/:name/stats - Statistiche del gruppo
-async function getGroupStats(req, res) {
-  try {
-    const userId = req.user.id;
-    const groupName = decodeURIComponent(req.params.name);
-
-    const stats = await groupsService.getGroupStats(userId, groupName);
-    res.status(200).json(stats);
-  } catch (error) {
-    console.error('Error getting group stats:', error);
-    if (error.message === 'Group not found') {
-      return res.status(404).json({ error: 'Group not found' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/groups/overall-stats - Statistiche generali dei gruppi
-async function getOverallGroupsStats(req, res) {
-  try {
-    const userId = req.user.id;
-
-    const stats = await groupsService.getOverallGroupsStats(userId);
-    res.status(200).json(stats);
-  } catch (error) {
-    console.error('Error getting overall groups stats:', error);
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// POST /api/groups/bulk-join - Unisciti a più gruppi
-async function joinMultipleGroups(req, res) {
-  try {
-    const userId = req.user.id;
-    const { groupNames } = req.body;
-
-    if (!groupNames || !Array.isArray(groupNames)) {
-      return res.status(400).json({ error: 'groupNames array is required' });
-    }
-
-    const result = await groupsService.joinMultipleGroups(userId, groupNames);
-    res.status(200).json(result);
-  } catch (error) {
-    console.error('Error joining multiple groups:', error);
-    res.status(400).json({ error: error.message });
-  }
-}
-
-// POST /api/groups/bulk-leave - Lascia più gruppi
-async function leaveMultipleGroups(req, res) {
-  try {
-    const userId = req.user.id;
-    const { groupNames } = req.body;
-
-    if (!groupNames || !Array.isArray(groupNames)) {
-      return res.status(400).json({ error: 'groupNames array is required' });
-    }
-
-    const result = await groupsService.leaveMultipleGroups(userId, groupNames);
-    res.status(200).json(result);
-  } catch (error) {
-    console.error('Error leaving multiple groups:', error);
-    res.status(400).json({ error: error.message });
-  }
-}
-
 module.exports = {
   getAllGroups,
   getUserGroups,
-  getGroupByName,
   createGroup,
   deleteGroup,
   joinGroup,
   leaveGroup,
-  manageGroupMembers,
-  getGroupMembers,
-  checkGroupMembership,
-  searchGroups,
-  getPopularGroups,
-  getRecentGroups,
   checkGroupNameExists,
-  getGroupStats,
-  getOverallGroupsStats,
-  joinMultipleGroups,
-  leaveMultipleGroups
 };

@@ -1,12 +1,12 @@
 // src/app/features/timer/timer-stats/timer-stats.component.scss
 
 // ==================== VARIABLES ====================
-$bg-primary: #f8f9fa;
+$bg-primary: var(--secondary-bg, #f8f9fa);
 $bg-secondary: #ffffff;
 $border-color: #e9ecef;
 $text-primary: #343a40;
 $text-secondary: #6c757d;
-$accent-color: #fbd65a;
+$accent-color: var(--primary-bg, #fbd65a);
 
 // ==================== MAIN CONTAINER ====================
 .timer-stats {
@@ -30,7 +30,7 @@ $accent-color: #fbd65a;
     width: 20px;
     height: 20px;
     border: 2px solid $border-color;
-    border-top: 2px solid $accent-color;
+    border-top: 2px solid var(--primary-bg, #fbd65a);
     border-radius: 50%;
     animation: spin 1s linear infinite;
   }
@@ -88,7 +88,7 @@ $accent-color: #fbd65a;
 // ==================== HEADER ====================
 .stats-header {
   padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, $accent-color 0%, #fcf3b5 100%);
+  background: linear-gradient(135deg, var(--primary-bg, #fbd65a) 0%, var(--primary-hover-bg, #fde289) 100%);
 
   .stats-title {
     margin: 0;

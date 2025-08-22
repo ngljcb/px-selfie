@@ -35,10 +35,16 @@ export class TimerService {
 
   constructor(
     private audioService: AudioService,
-    private statisticsService: StatisticsService // NUOVO SERVIZIO INIETTATO
+    private statisticsService: StatisticsService
   ) {
     // Carica configurazione salvata (localStorage)
     this.loadSavedConfig();
+    
+    // NUOVO: Sottoscrivi ai cambiamenti della Time Machine per aggiornare le statistiche
+    this.statisticsService.refreshStatistics().subscribe({
+      next: () => console.log('Statistiche iniziali caricate'),
+      error: (error) => console.error('Errore caricamento statistiche iniziali:', error)
+    });
   }
 
   // ==================== CONTROLLI TIMER ====================
@@ -47,12 +53,15 @@ export class TimerService {
     const currentState = this.timerStateSubject.value;
     
     if (currentState.status === 'idle') {
-      // Nuova sessione
+      // Nuova sessione - IMPORTANTE: crearla subito qui
       this.startNewSession();
     }
 
     // Resume AudioContext se necessario (per policy browser)
     this.audioService.resumeAudioContext();
+
+    // RIMOSSO: Non richiediamo più automaticamente i permessi di notifica
+    // this.requestNotificationPermission();
 
     this.updateTimerState({ 
       status: 'running',
@@ -272,14 +281,13 @@ export class TimerService {
 
   private completeSession(): void {
     this.stopCountdown();
+    
+    // IMPORTANTE: Aggiorna le statistiche PRIMA di terminare la sessione
+    // per garantire che currentSession sia disponibile
+    this.updateStatisticsOnCompletion();
+    
     this.endCurrentSession(true); // Completata con successo
     this.updateTimerState({ status: 'completed' });
-    
-    // Notifica completamento
-    this.notifySessionComplete();
-    
-    // ==================== NUOVO: AGGIORNA STATISTICHE ====================
-    this.updateStatisticsOnCompletion();
   }
 
   private resetToInitialState(config?: TimerConfig): void {
@@ -301,36 +309,101 @@ export class TimerService {
     this.timerStateSubject.next({ ...currentState, ...updates });
   }
 
-  // ==================== NUOVO: AGGIORNAMENTO STATISTICHE ====================
+  // ==================== AGGIORNAMENTO STATISTICHE ====================
 
   /**
    * Aggiorna le statistiche quando una sessione viene completata
+   * CORREZIONE: Evita chiamate multiple e gestisce meglio la sessione
    */
   private updateStatisticsOnCompletion(): void {
+    // Flag per evitare chiamate multiple
+    if (this.statisticsUpdateInProgress) {
+      console.log('Aggiornamento statistiche già in corso, skipping...');
+      return;
+    }
+    
+    this.statisticsUpdateInProgress = true;
+
+    // CONTROLLO MIGLIORATO: Se non c'è sessione corrente, prova a calcolarne i dati
     if (!this.currentSession) {
-      console.warn('Nessuna sessione corrente trovata per aggiornare le statistiche');
+      console.warn('Nessuna sessione corrente trovata, calcolo manuale dei minuti di studio');
+      
+      // Calcolo alternativo: usa lo stato corrente del timer
+      const currentState = this.timerStateSubject.value;
+      const totalStudySeconds = this.calculateStudyTimeFromState(currentState);
+      const studyTimeMinutes = Math.floor(totalStudySeconds / 60);
+      
+      if (studyTimeMinutes > 0) {
+        this.updateStatsWithMinutes(studyTimeMinutes);
+      } else {
+        console.warn('Nessun tempo di studio valido da registrare');
+        this.statisticsUpdateInProgress = false;
+      }
       return;
     }
 
+    // Aggiorna il tempo di studio totale della sessione corrente
+    this.currentSession.totalStudyTime = this.calculateStudyTime();
+    
     // Calcola i minuti di studio della sessione completata
     const studyTimeMinutes = Math.floor(this.currentSession.totalStudyTime / 60);
     
+    console.log('Sessione completata:', {
+      id: this.currentSession.id,
+      totalStudySeconds: this.currentSession.totalStudyTime,
+      studyTimeMinutes
+    });
+    
     if (studyTimeMinutes > 0) {
-      this.statisticsService.updateSessionStats(studyTimeMinutes) // CORRETTO
-        .subscribe({
-          next: (updatedStats) => {
-            console.log('Statistiche aggiornate:', updatedStats);
-          },
-          error: (error) => {
-            console.error('Errore nell\'aggiornamento delle statistiche:', error);
-            // Non bloccare l'esperienza utente se le statistiche falliscono
-          }
-        });
+      this.updateStatsWithMinutes(studyTimeMinutes);
+    } else {
+      console.warn('Sessione completata ma nessun tempo di studio valido');
+      this.statisticsUpdateInProgress = false;
     }
   }
+
+  // NUOVO: Flag per evitare chiamate multiple
+  private statisticsUpdateInProgress = false;
+
+  /**
+   * Metodo helper per aggiornare le statistiche con i minuti di studio
+   */
+  private updateStatsWithMinutes(studyTimeMinutes: number): void {
+    this.statisticsService.updateSessionStats(studyTimeMinutes)
+      .subscribe({
+        next: (updatedStats) => {
+          console.log('Statistiche aggiornate con successo:', updatedStats);
+          this.statisticsUpdateInProgress = false; // Reset flag
+        },
+        error: (error) => {
+          console.error('Errore nell\'aggiornamento delle statistiche:', error);
+          this.statisticsUpdateInProgress = false; // Reset flag anche in caso di errore
+          // Non bloccare l'esperienza utente se le statistiche falliscono
+        }
+      });
+  }
+
+  /**
+   * Calcola i secondi di studio dallo stato corrente del timer
+   * Metodo di fallback quando non c'è sessione corrente
+   */
+  private calculateStudyTimeFromState(state: TimerState): number {
+    const completedCycles = state.currentCycle - 1;
+    const studySecondsPerCycle = state.config.studyMinutes * 60;
+    
+    // Studio dei cicli completati
+    let totalStudyTime = completedCycles * studySecondsPerCycle;
+    
+    // Se il ciclo corrente era in fase studio e completato, aggiungi anche quello
+    if (state.status === 'completed' || state.currentPhase === 'break') {
+      totalStudyTime += studySecondsPerCycle;
+    }
+    
+    return totalStudyTime;
+  }
+
   /**
    * Metodo pubblico per controllare lo streak al login
-   * Da chiamare dal componente di autenticazione
    */
   public checkLoginStreak(): void {
     this.statisticsService.checkLoginStreak()
@@ -359,6 +432,8 @@ export class TimerService {
       totalStudyTime: 0,
       wasCompleted: false
     };
+    
+    console.log('Nuova sessione avviata:', this.currentSession.id);
   }
 
   private endCurrentSession(completed: boolean): void {
@@ -368,6 +443,12 @@ export class TimerService {
       this.currentSession.completedCycles = completed ? currentState.config.totalCycles : currentState.currentCycle - 1;
       this.currentSession.wasCompleted = completed;
       this.currentSession.totalStudyTime = this.calculateStudyTime();
+      
+      console.log('Sessione terminata:', {
+        id: this.currentSession.id,
+        completed,
+        totalStudyTime: this.currentSession.totalStudyTime
+      });
       
       // Salva la sessione in localStorage per backup/debug
       this.saveSession(this.currentSession);
@@ -426,74 +507,51 @@ export class TimerService {
   // ==================== NOTIFICHE CON AUDIO ====================
 
   private notifyStudyPhaseComplete(): void {
-    const message = '🎉 Tempo di pausa!';
+    const message = 'Tempo di pausa!';
     
     this.audioService.playStudyCompleteSound();
     
+    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
+    // Non richiede più automaticamente i permessi
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
         icon: '/assets/icons/timer-icon.png'
       });
     }
-    
-    console.log(message);
   }
 
   private notifyBreakPhaseComplete(): void {
-    const message = '📚 Torniamo a studiare!';
+    const message = 'Torniamo a studiare!';
     
     this.audioService.playBreakCompleteSound();
     
+    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
         icon: '/assets/icons/timer-icon.png'
       });
     }
-    
-    console.log(message);
-  }
-
-  private notifySessionComplete(): void {
-    const message = '🎊 Sessione completata! Ottimo lavoro!';
-    
-    this.audioService.playSessionCompleteSound();
-    
-    if (Notification.permission === 'granted') {
-      new Notification('Timer SELFIE', { 
-        body: message,
-        icon: '/assets/icons/timer-icon.png'
-      });
-    }
-    
-    console.log(message);
   }
 
   private notifyPhaseSkipped(skippedPhase: 'study' | 'break'): void {
     const message = skippedPhase === 'study' 
-      ? '⏭️ Fase di studio saltata!' 
-      : '⏭️ Pausa saltata!';
+      ? 'Fase di studio saltata!' 
+      : 'Pausa saltata!';
     
     this.audioService.playPhaseSkippedSound();
     
+    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
         icon: '/assets/icons/timer-icon.png'
       });
     }
-    
-    console.log(message);
   }
 
   // ==================== UTILITY PUBBLICHE ====================
-
-  requestNotificationPermission(): void {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }
 
   formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
