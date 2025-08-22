@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Category } from '../model/note.interface';
+import { ErrorHandlerService } from './error-handler.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,10 @@ export class CategoriesService {
   private categoriesSubject = new BehaviorSubject<Category[]>([]);
   public categories$ = this.categoriesSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {
     // Load predefined categories on service initialization
     this.loadCategories();
   }
@@ -30,7 +34,7 @@ export class CategoriesService {
     return this.http.get<Category[]>(`${this.apiUrl}`)
       .pipe(
         tap(categories => this.categoriesSubject.next(categories)),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -161,40 +165,4 @@ export class CategoriesService {
       map(categories => categories.length > 0 ? categories[0] : null)
     );
   }
-
-  // ==================== ERROR HANDLING ====================
-
-  /**
-   * Handle HTTP errors
-   */
-  private handleError = (error: any): Observable<never> => {
-    console.error('CategoriesService Error:', error);
-    
-    let errorMessage = 'An unknown error occurred';
-    
-    if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    } else if (error.status) {
-      switch (error.status) {
-        case 401:
-          errorMessage = 'Authentication required';
-          break;
-        case 403:
-          errorMessage = 'Access denied';
-          break;
-        case 404:
-          errorMessage = 'Categories not found';
-          break;
-        case 500:
-          errorMessage = 'Server error. Please try again later';
-          break;
-        default:
-          errorMessage = `HTTP Error ${error.status}`;
-      }
-    }
-    
-    return throwError(() => new Error(errorMessage));
-  };
 }

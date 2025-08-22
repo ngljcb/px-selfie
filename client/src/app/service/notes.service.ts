@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject} from 'rxjs';
+import { ErrorHandlerService } from './error-handler.service';
 import { map, catchError, tap } from 'rxjs/operators';
 import { 
   Note, 
@@ -35,7 +36,10 @@ export class NotesService {
   private totalNotesSubject = new BehaviorSubject<number>(0);
   public totalNotes$ = this.totalNotesSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
   // ==================== CORE CRUD OPERATIONS ====================
 
@@ -70,7 +74,7 @@ export class NotesService {
           // ALWAYS update total count regardless of pagination
           this.totalNotesSubject.next(response.total);
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -89,7 +93,7 @@ export class NotesService {
           ...preview,
           preview: this.generatePreview(preview.preview)
         }))),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -101,7 +105,7 @@ export class NotesService {
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(note => this.selectedNoteSubject.next(note)),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -120,7 +124,7 @@ export class NotesService {
           this.notesSubject.next([newNote, ...currentNotes]);
           this.totalNotesSubject.next(currentTotal + 1);
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -144,7 +148,7 @@ export class NotesService {
             this.selectedNoteSubject.next(updatedNote);
           }
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -168,7 +172,7 @@ export class NotesService {
             this.selectedNoteSubject.next(null);
           }
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -189,7 +193,7 @@ export class NotesService {
           this.notesSubject.next([duplicatedNote, ...currentNotes]);
           this.totalNotesSubject.next(currentTotal + 1); // Increment total count
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -199,7 +203,7 @@ export class NotesService {
   shareNote(request: ShareNoteRequest): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${request.noteId}/share`, request)
       .pipe(
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -209,7 +213,7 @@ export class NotesService {
   getNotePermissions(noteId: string): Observable<NotePermissions> {
     return this.http.get<NotePermissions>(`${this.apiUrl}/${noteId}/permissions`)
       .pipe(
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -255,7 +259,7 @@ export class NotesService {
           // Refresh notes after bulk operation
           this.refreshNotes();
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -427,46 +431,6 @@ export class NotesService {
     return truncated + '...';
   }
 
-  /**
-   * Handle HTTP errors
-   */
-  private handleError = (error: any): Observable<never> => {
-    console.error('NotesService Error:', error);
-    
-    let errorMessage = 'An unknown error occurred';
-    
-    if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    } else if (error.status) {
-      switch (error.status) {
-        case 400:
-          errorMessage = 'Invalid request data';
-          break;
-        case 401:
-          errorMessage = 'Authentication required';
-          break;
-        case 403:
-          errorMessage = 'Access denied';
-          break;
-        case 404:
-          errorMessage = 'Note not found';
-          break;
-        case 409:
-          errorMessage = 'Conflict: Note already exists or invalid state';
-          break;
-        case 500:
-          errorMessage = 'Server error. Please try again later';
-          break;
-        default:
-          errorMessage = `HTTP Error ${error.status}`;
-      }
-    }
-    
-    return throwError(() => new Error(errorMessage));
-  };
-
   // ==================== ADVANCED FEATURES ====================
 
   /**
@@ -475,7 +439,7 @@ export class NotesService {
   getNotesStats(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/stats`)
       .pipe(
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -636,7 +600,7 @@ export class NotesService {
   getNotesCountByAccessibility(): Observable<Record<string, number>> {
     return this.http.get<Record<string, number>>(`${this.apiUrl}/count-by-accessibility`)
       .pipe(
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 }

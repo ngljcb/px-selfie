@@ -136,17 +136,4 @@ export class AudioService {
   isAudioEnabled(): boolean {
     return this.isEnabled && !!this.audioContext;
   }
-
-  /**
-   * Resume AudioContext se è in stato sospeso (necessario per alcuni browser)
-   */
-  async resumeAudioContext(): Promise<void> {
-    if (this.audioContext && this.audioContext.state === 'suspended') {
-      try {
-        await this.audioContext.resume();
-      } catch (error) {
-        console.warn('Impossibile riprendere AudioContext:', error);
-      }
-    }
-  }
 }

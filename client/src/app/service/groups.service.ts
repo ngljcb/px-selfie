@@ -4,42 +4,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
-import { Group, CreateGroupRequest } from '../model/group.interface';
+import { Group} from '../model/entity/group.interface';
+import { CreateGroupRequest } from '../model/request/create-group-request.interface';
 import { User } from '../model/entity/user.interface';
-
-/**
- * Extended Group interface with member details and stats
- */
-export interface GroupWithDetails extends Group {
-  memberCount: number;
-  members?: User[];
-  isOwner: boolean;
-  isMember: boolean;
-  noteCount?: number;
-  createdAt?: Date;
-}
-
-/**
- * Interface for group search and filtering
- */
-export interface GroupFilterParams {
-  searchQuery?: string;
-  sortBy?: 'name' | 'memberCount' | 'createdAt' | 'noteCount';
-  sortOrder?: 'asc' | 'desc';
-  limit?: number;
-  offset?: number;
-  onlyJoined?: boolean; // Show only groups user is member of
-}
-
-/**
- * Response interface for paginated groups
- */
-export interface GroupsResponse {
-  groups: GroupWithDetails[];
-  total: number;
-  hasMore: boolean;
-}
-
+import { ErrorHandlerService } from './error-handler.service';
+import { GroupWithDetails } from '../model/entity/group.interface';
+import { GroupFilterParams } from '../model/entity/group.interface';
+import { GroupsResponse } from '../model/entity/group.interface';
 @Injectable({
   providedIn: 'root'
 })
@@ -56,7 +27,10 @@ export class GroupsService {
   private selectedGroupSubject = new BehaviorSubject<GroupWithDetails | null>(null);
   public selectedGroup$ = this.selectedGroupSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+  ) {}
 
   // ==================== CORE CRUD OPERATIONS ====================
 
@@ -83,7 +57,7 @@ export class GroupsService {
             this.allGroupsSubject.next(response.groups);
           }
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -95,7 +69,7 @@ export class GroupsService {
       .pipe(
         map(groups => groups.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))),
         tap(groups => this.userGroupsSubject.next(groups)),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -122,7 +96,7 @@ export class GroupsService {
           this.userGroupsSubject.next([...currentUserGroups, newGroup]
             .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase())));
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -145,7 +119,7 @@ export class GroupsService {
             this.selectedGroupSubject.next(null);
           }
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -161,7 +135,7 @@ export class GroupsService {
           // Update local state - add group to user's groups
           this.updateGroupMembershipInState(groupName, true);
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -175,7 +149,7 @@ export class GroupsService {
           // Update local state - remove group from user's groups
           this.updateGroupMembershipInState(groupName, false);
         }),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -186,7 +160,7 @@ export class GroupsService {
     return this.http.get<{ isMember: boolean }>(`${this.apiUrl}/${encodeURIComponent(groupName)}/membership`)
       .pipe(
         map(response => response.isMember),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -201,7 +175,7 @@ export class GroupsService {
     return this.http.get<{ exists: boolean }>(`${this.apiUrl}/check-name`, { params })
       .pipe(
         map(response => response.exists),
-        catchError(this.handleError)
+        catchError(this.errorHandler.handleError)
       );
   }
 
@@ -433,44 +407,4 @@ export class GroupsService {
       map(groups => groups.filter(group => !group.isMember))
     );
   }
-
-    private handleError = (error: any): Observable<never> => {
-    console.error('GroupsService Error:', error);
-    
-    let errorMessage = 'An unknown error occurred';
-    
-    if (error.error?.message) {
-      errorMessage = error.error.message;
-    } else if (error.message) {
-      errorMessage = error.message;
-    } else if (error.status) {
-      switch (error.status) {
-        case 400:
-          errorMessage = 'Invalid group data';
-          break;
-        case 401:
-          errorMessage = 'Authentication required';
-          break;
-        case 403:
-          errorMessage = 'Access denied. Only group owners can perform this action';
-          break;
-        case 404:
-          errorMessage = 'Group not found';
-          break;
-        case 409:
-          errorMessage = 'Group name already exists or user already in group';
-          break;
-        case 422:
-          errorMessage = 'Cannot delete group that contains notes or has members';
-          break;
-        case 500:
-          errorMessage = 'Server error. Please try again later';
-          break;
-        default:
-          errorMessage = `HTTP Error ${error.status}`;
-      }
-    }
-    
-    return throwError(() => new Error(errorMessage));
-  };
 }

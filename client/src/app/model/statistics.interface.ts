@@ -1,5 +1,3 @@
-// src/app/features/timer/models/statistics.interface.ts
-
 export interface UserStatistics {
   user_id: string;
   total_completed_sessions: number;

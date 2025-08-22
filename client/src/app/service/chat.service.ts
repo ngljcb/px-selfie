@@ -3,19 +3,8 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-
-export interface ChatResponse {
-  success: boolean;
-  response: string;
-  messageCount: number;
-  message?: string;
-}
-
-export interface ChatMessage {
-  content: string;
-  isUser: boolean;
-  timestamp: Date;
-}
+import { ChatResponse } from '../model/chat.interface';
+import { ErrorHandlerService } from './error-handler.service';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +12,10 @@ export interface ChatMessage {
 export class ChatService {
   private readonly apiUrl = `${environment.API_BASE_URL}/api/chat`;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private errorHandler: ErrorHandlerService
+) {}
 
   sendMessage(message: string): Observable<ChatResponse> {
     const payload = { message: message.trim() };
@@ -35,46 +27,8 @@ export class ChatService {
       }
     }).pipe(
       retry(1), // Riprova una volta in caso di errore di rete
-      catchError(this.handleError)
+      catchError(this.errorHandler.handleError)
     );
-  }
-
-  private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'Si è verificato un errore inaspettato';
-
-    if (error.error instanceof ErrorEvent) {
-      // Errore client-side o di rete
-      errorMessage = 'Errore di connessione. Verifica la tua connessione internet.';
-    } else {
-      // Errore server-side
-      switch (error.status) {
-        case 400:
-          errorMessage = 'Richiesta non valida. Riprova con un messaggio diverso.';
-          break;
-        case 401:
-          errorMessage = 'Sessione scaduta. Effettua il login di nuovo.';
-          break;
-        case 403:
-          errorMessage = 'Non hai i permessi per utilizzare questa funzionalità.';
-          break;
-        case 429:
-          errorMessage = 'Troppe richieste. Attendi un momento prima di riprovare.';
-          break;
-        case 500:
-          errorMessage = 'Errore del server. Riprova più tardi.';
-          break;
-        case 503:
-          errorMessage = 'Servizio temporaneamente non disponibile.';
-          break;
-        default:
-          if (error.error?.message) {
-            errorMessage = error.error.message;
-          }
-      }
-    }
-
-    console.error('Errore Chat AI:', error);
-    return throwError(() => new Error(errorMessage));
   }
 
   // Utility per formattare i messaggi con markdown di base

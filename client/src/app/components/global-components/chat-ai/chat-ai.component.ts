@@ -1,8 +1,9 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ChatService, ChatMessage, ChatResponse } from '../../../service/chat.service';
+import { ChatService} from '../../../service/chat.service';
 import { AuthService } from '../../../service/auth.service';
+import { ChatResponse, ChatMessage } from '../../../model/chat.interface';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 

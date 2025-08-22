@@ -1,5 +1,5 @@
 import type { Category } from "./entity/category.interface";
-import type { Group } from "./group.interface";
+import type { Group } from "./entity/group.interface";
 
 /**
  * Enum for note accessibility types
@@ -148,9 +148,7 @@ export interface ShareNoteRequest {
  */
 export interface NotePermissions {
   canView: boolean;
-  canEdit: boolean;
   canDelete: boolean;
-  canShare: boolean;
 }
 
 /**
@@ -176,4 +174,4 @@ export interface BulkNoteOperation {
 }
 
 export type {Category} from "./entity/category.interface";
-export type {Group} from "./group.interface";
+export type {Group} from "./entity/group.interface";

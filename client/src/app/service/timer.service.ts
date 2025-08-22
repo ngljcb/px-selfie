@@ -7,8 +7,6 @@ import {
   TimerState, 
   TimeProposal, 
   TimerSession,
-  TimerStatus,
-  TimerPhase,
   DEFAULT_TIMER_CONFIG 
 } from '../model/timer.interface';
 
@@ -56,12 +54,6 @@ export class TimerService {
       // Nuova sessione - IMPORTANTE: crearla subito qui
       this.startNewSession();
     }
-
-    // Resume AudioContext se necessario (per policy browser)
-    this.audioService.resumeAudioContext();
-
-    // RIMOSSO: Non richiediamo più automaticamente i permessi di notifica
-    // this.requestNotificationPermission();
 
     this.updateTimerState({ 
       status: 'running',

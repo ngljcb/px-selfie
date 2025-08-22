@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
-import { GroupsService, GroupWithDetails } from '../../../service/groups.service';
-import { CreateGroupRequest } from '../../../model/group.interface';
+import { GroupsService} from '../../../service/groups.service';
+import { CreateGroupRequest } from '../../../model/request/create-group-request.interface';
+import { GroupWithDetails } from '../../../model/entity/group.interface';
 import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({
