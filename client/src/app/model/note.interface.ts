@@ -1,3 +1,6 @@
+import type { Category } from "./category.interface";
+import type { Group } from "./group.interface";
+
 /**
  * Enum for note accessibility types
  */
@@ -17,31 +20,7 @@ export enum NoteSortType {
   CONTENT_LENGTH = 'content_length'
 }
 
-/**
- * Interface for predefined Category entity (read-only)
- */
-export interface Category {
-  name: string; // Primary key as per DB schema
-}
-
-/**
- * Interface for Group entity - UPDATED with Time Machine integration
- */
-export interface Group {
-  name: string;
-  creator: string | null;
-  createdAt?: Date; // Added created_at field for Time Machine filtering
-}
-
-/**
- * Interface for Note authorized user
- */
-export interface NoteAuthorizedUser {
-  id: string;
-  noteId: string;
-  userId: string;
-  grantedAt: Date;
-}
+// ==================== NOTE INTERFACES ====================
 
 /**
  * Main Note interface - UPDATED: removed lastModify
@@ -55,6 +34,16 @@ export interface Note {
   category: string | null; // References category.name
   accessibility: AccessibilityType;
   groupName: string | null;
+}
+
+/**
+ * Interface for Note authorized user
+ */
+export interface NoteAuthorizedUser {
+  id: string;
+  noteId: string;
+  userId: string;
+  grantedAt: Date;
 }
 
 /**
@@ -147,24 +136,6 @@ export interface NotePreview {
 }
 
 /**
- * Interface for creating a new group - UPDATED: added createdAt for Time Machine
- */
-export interface CreateGroupRequest {
-  name: string;
-  userIds?: string[];
-  createdAt?: Date; // Added for Time Machine support
-}
-
-/**
- * Interface for user information (minimal)
- */
-export interface User {
-  id: string;
-  email?: string;
-  displayName?: string;
-}
-
-/**
  * Interface for note sharing/authorization
  */
 export interface ShareNoteRequest {
@@ -188,19 +159,6 @@ export interface NotePermissions {
 export type NoteOperation = 'create' | 'read' | 'delete' | 'duplicate' | 'share';
 
 /**
- * Interface for note statistics (optional, for dashboard)
- */
-export interface NoteStats {
-  totalNotes: number;
-  privateNotes: number;
-  publicNotes: number;
-  groupNotes: number;
-  authorizedNotes: number;
-  categoriesCount: number;
-  averageNoteLength: number;
-}
-
-/**
  * Validation interface for note content
  */
 export interface NoteValidation {
@@ -217,13 +175,6 @@ export interface BulkNoteOperation {
   noteIds: string[];
 }
 
-/**
- * Constants for note functionality
- */
-export const NOTE_CONSTANTS = {
-  PREVIEW_LENGTH: 200,
-  MAX_TITLE_LENGTH: 255,
-  MAX_CATEGORY_NAME_LENGTH: 100,
-  MAX_GROUP_NAME_LENGTH: 100,
-  DEFAULT_PAGE_SIZE: 20
-} as const;
+export type {Category} from "./category.interface";
+export type {Group} from "./group.interface";
+

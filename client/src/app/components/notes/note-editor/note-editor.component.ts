@@ -8,12 +8,11 @@ import { Subject, takeUntil, debounceTime, distinctUntilChanged, combineLatest }
 
 import { 
   CreateNoteRequest, 
-  Category, 
   AccessibilityType, 
+  Category,
   Group,
-  User,
-  NOTE_CONSTANTS 
 } from '../../../model/note.interface';
+import { User } from '../../../model/user.interface';
 import { NotesService } from '../../../service/notes.service';
 import { CategoriesService } from '../../../service/categories.service';
 import { GroupsService } from '../../../service/groups.service';

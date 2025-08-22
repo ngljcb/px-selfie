@@ -14,7 +14,7 @@ import {
   Category, 
   AccessibilityType,
   NoteSortType,
-  NoteFilterParams
+  NoteFilterParams,
 } from '../../../model/note.interface';
 import { NotesService } from '../../../service/notes.service';
 import { CategoriesService } from '../../../service/categories.service';

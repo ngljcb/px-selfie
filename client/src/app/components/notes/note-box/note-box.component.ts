@@ -12,7 +12,6 @@ import { Router } from '@angular/router';
 import { 
   NoteWithDetails, 
   AccessibilityType,
-  NOTE_CONSTANTS
 } from '../../../model/note.interface';
 import { NotesService } from '../../../service/notes.service';
 
@@ -37,7 +36,7 @@ export class NoteBoxComponent {
   feedbackType: 'success' | 'error' = 'success';
   
   // Constants
-  previewLength = NOTE_CONSTANTS.PREVIEW_LENGTH;
+  previewLength = 200;
 
   // Accessibility type definitions
   accessibilityTypes = [
@@ -289,7 +288,7 @@ export class NoteBoxComponent {
    * Get preview text (ensuring it exists)
    */
   getPreviewText(): string {
-    return this.note.preview || this.note.text?.substring(0, NOTE_CONSTANTS.PREVIEW_LENGTH) || 'No content';
+    return this.note.preview || this.note.text?.substring(0, 200) || 'No content';
   }
 
   /**

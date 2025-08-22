@@ -553,20 +553,6 @@ export class TimerService {
 
   // ==================== UTILITY PUBBLICHE ====================
 
-  /**
-   * NUOVO: Controlla se le notifiche sono supportate e autorizzate
-   */
-  areNotificationsEnabled(): boolean {
-    return 'Notification' in window && Notification.permission === 'granted';
-  }
-
-  /**
-   * NUOVO: Controlla se le notifiche sono supportate ma non autorizzate
-   */
-  canRequestNotifications(): boolean {
-    return 'Notification' in window && Notification.permission === 'default';
-  }
-
   formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;

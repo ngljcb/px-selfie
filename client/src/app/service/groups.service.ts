@@ -4,12 +4,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
-import { 
-  Group, 
-  CreateGroupRequest, 
-  User,
-  NOTE_CONSTANTS
-} from '../model/note.interface';
+import { Group, CreateGroupRequest } from '../model/group.interface';
+import { User } from '../model/user.interface';
 
 /**
  * Extended Group interface with member details and stats
@@ -220,8 +216,8 @@ export class GroupsService {
       errors.push('Group name is required');
     }
     
-    if (groupData.name && groupData.name.trim().length > NOTE_CONSTANTS.MAX_GROUP_NAME_LENGTH) {
-      errors.push(`Group name cannot exceed ${NOTE_CONSTANTS.MAX_GROUP_NAME_LENGTH} characters`);
+    if (groupData.name && groupData.name.trim().length > 100) {
+      errors.push(`Group name cannot exceed ${100} characters`);
     }
     
     return {
@@ -390,7 +386,7 @@ export class GroupsService {
     return name
       .trim()
       .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-      .substring(0, NOTE_CONSTANTS.MAX_GROUP_NAME_LENGTH);
+      .substring(0, 100);
   }
 
   /**

@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
 import { GroupsService, GroupWithDetails } from '../../../service/groups.service';
-import { CreateGroupRequest } from '../../../model/note.interface';
+import { CreateGroupRequest } from '../../../model/group.interface';
 import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({

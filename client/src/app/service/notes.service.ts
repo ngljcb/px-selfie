@@ -14,7 +14,6 @@ import {
   ShareNoteRequest,
   NotePermissions,
   BulkNoteOperation,
-  NOTE_CONSTANTS,
   NoteSortType,
   AccessibilityType
 } from '../model/note.interface';
@@ -413,15 +412,15 @@ export class NotesService {
       .replace(/[#*_`]/g, '') // Remove markdown formatting
       .trim();
     
-    if (cleanText.length <= NOTE_CONSTANTS.PREVIEW_LENGTH) {
+    if (cleanText.length <= 200) {
       return cleanText;
     }
     
     // Find the last complete word within the limit
-    const truncated = cleanText.substring(0, NOTE_CONSTANTS.PREVIEW_LENGTH);
+    const truncated = cleanText.substring(0, 200);
     const lastSpaceIndex = truncated.lastIndexOf(' ');
     
-    if (lastSpaceIndex > NOTE_CONSTANTS.PREVIEW_LENGTH * 0.8) {
+    if (lastSpaceIndex > 200 * 0.8) {
       return truncated.substring(0, lastSpaceIndex) + '...';
     }
     
@@ -564,8 +563,8 @@ export class NotesService {
     const errors: string[] = [];
     
     // Title validation
-    if (noteData.title && noteData.title.length > NOTE_CONSTANTS.MAX_TITLE_LENGTH) {
-      errors.push(`Title cannot exceed ${NOTE_CONSTANTS.MAX_TITLE_LENGTH} characters`);
+    if (noteData.title && noteData.title.length > 100) {
+      errors.push(`Title cannot exceed ${100} characters`);
     }
     
     // Content validation
@@ -622,7 +621,7 @@ export class NotesService {
       default:
         filters = { 
           sortBy: NoteSortType.CREATION_DATE,
-          limit: NOTE_CONSTANTS.DEFAULT_PAGE_SIZE
+          limit: 20
         };
     }
     
