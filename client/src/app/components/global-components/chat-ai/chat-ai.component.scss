@@ -20,11 +20,11 @@ $shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
 $shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
-// Floating Action Button - Posizionato sopra la time machine
+// Floating Action Button - Parallelo alla time machine
 .chat-fab {
   position: fixed;
-  bottom: 200px; // Sopra la time machine (che è a ~24px)
-  right: 24px;
+  bottom: 24px; // Stesso livello della time machine
+  left: 24px; // Angolo sinistro invece che destro
   width: 150px; // Stessa dimensione della time machine
   height: 150px; // Stessa dimensione della time machine
   background: transparent; // Sfondo trasparente per mostrare solo l'immagine
@@ -59,15 +59,16 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: transparent; // Desktop: nessun overlay per permettere interazione
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: flex-end; // Desktop: allinea al bottom per posizionare vicino al FAB
+  justify-content: flex-start; // Desktop: allinea a sinistra
   z-index: 1001;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 24px 24px 24px; // Padding per desktop
+  pointer-events: none; // Desktop: permette click attraverso l'overlay
 
   &.show {
     opacity: 1;
@@ -75,9 +76,12 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
   @media (max-width: 768px) {
-    align-items: center; // Cambiato da flex-end a center
-    justify-content: center;
-    padding: 20px; // Aggiunto padding per centrare meglio
+    background: rgba(0, 0, 0, 0.5); // Mobile: overlay scuro
+    backdrop-filter: blur(4px); // Mobile: blur per focus
+    align-items: center; // Mobile: centrato
+    justify-content: center; // Mobile: centrato
+    padding: 20px; // Mobile: padding
+    pointer-events: auto; // Mobile: ripristina eventi per chiusura
   }
 }
 
@@ -85,15 +89,14 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   background: $white;
   border-radius: 16px;
   box-shadow: $shadow-xl;
-  width: 90%;
-  max-width: 480px;
-  height: 600px;
-  max-height: 80vh;
+  width: 400px; // Dimensione fissa più piccola per desktop
+  height: 500px; // Altezza fissa più piccola per desktop
   display: flex;
   flex-direction: column;
   transform: scale(0.9) translateY(20px);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto; // Ripristina eventi per il contenuto del modal
 
   &.show {
     transform: scale(1) translateY(0);
@@ -101,11 +104,11 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
   @media (max-width: 768px) {
-    width: 85%; // Ridotto da 100% a 85%
-    max-width: 400px; // Aggiunto max-width per mobile
-    height: 60vh; // Ridotto da 70vh a 60vh
-    max-height: 500px; // Aggiunto max-height
-    border-radius: 16px; // Mantieni bordi arrotondati su tutti i lati
+    width: 85%; // Mobile: responsive
+    max-width: 400px; // Mobile: max-width
+    height: 60vh; // Mobile: responsive height
+    max-height: 500px; // Mobile: max-height
+    border-radius: 16px; // Mobile: bordi arrotondati
   }
 }
 
@@ -411,8 +414,9 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 // Responsive
 @media (max-width: 640px) {
   .chat-fab {
-    bottom: 120px; // Regolazione per mobile, sopra la time machine
-    right: 16px;
+    bottom: 120px; // Mobile: sopra la time machine
+    right: 16px; // Mobile: ritorna a destra
+    left: unset; // Mobile: rimuove il posizionamento a sinistra
     width: 100px; // Stessa dimensione della time machine su mobile
     height: 100px; // Stessa dimensione della time machine su mobile
 

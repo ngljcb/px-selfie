@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatService} from '../../../service/chat.service';
 import { AuthService } from '../../../service/auth.service';
-import { ChatResponse, ChatMessage } from '../../../model/chat.interface';
+import { ChatMessage } from '../../../model/entity/chat.interface';
+import { ChatResponse } from '../../../model/response/chat-response.interface';
 import { Subject, interval } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 

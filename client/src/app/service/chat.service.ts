@@ -3,7 +3,7 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, retry } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { ChatResponse } from '../model/chat.interface';
+import { ChatResponse } from '../model/response/chat-response.interface';
 import { ErrorHandlerService } from './error-handler.service';
 
 @Injectable({

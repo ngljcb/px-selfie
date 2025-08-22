@@ -6,11 +6,9 @@ import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Group} from '../model/entity/group.interface';
 import { CreateGroupRequest } from '../model/request/create-group-request.interface';
-import { User } from '../model/entity/user.interface';
 import { ErrorHandlerService } from './error-handler.service';
 import { GroupWithDetails } from '../model/entity/group.interface';
-import { GroupFilterParams } from '../model/entity/group.interface';
-import { GroupsResponse } from '../model/entity/group.interface';
+import { GroupsResponse } from '../model/response/group-response.interface';
 @Injectable({
   providedIn: 'root'
 })
@@ -37,23 +35,12 @@ export class GroupsService {
   /**
    * Get all groups (public directory - everyone can see all groups)
    */
-  getAllGroups(filters?: GroupFilterParams): Observable<GroupsResponse> {
+  getAllGroups(): Observable<GroupsResponse> {
     let params = new HttpParams();
-    
-    if (filters) {
-      if (filters.searchQuery) params = params.set('search', filters.searchQuery);
-      if (filters.sortBy) params = params.set('sortBy', filters.sortBy);
-      if (filters.sortOrder) params = params.set('sortOrder', filters.sortOrder);
-      if (filters.limit) params = params.set('limit', filters.limit.toString());
-      if (filters.offset) params = params.set('offset', filters.offset.toString());
-      if (filters.onlyJoined) params = params.set('onlyJoined', 'true');
-    }
 
     return this.http.get<GroupsResponse>(`${this.apiUrl}`, { params })
       .pipe(
-        tap(response => {
-          // Update local state if this is the first page
-          if (!filters?.offset || filters.offset === 0) {
+        tap(response => {{
             this.allGroupsSubject.next(response.groups);
           }
         }),
@@ -282,8 +269,8 @@ export class GroupsService {
   /**
    * Refresh all groups from server
    */
-  refreshAllGroups(filters?: GroupFilterParams): Observable<GroupsResponse> {
-    return this.getAllGroups(filters);
+  refreshAllGroups(): Observable<GroupsResponse> {
+    return this.getAllGroups();
   }
 
   /**
@@ -306,7 +293,7 @@ export class GroupsService {
    * Initialize groups (call this when user logs in)
    */
   initializeGroups(): Observable<{ allGroups: GroupsResponse; userGroups: GroupWithDetails[] }> {
-    const allGroups$ = this.getAllGroups({ limit: 50 });
+    const allGroups$ = this.getAllGroups();
     const userGroups$ = this.getUserGroups();
     
     return allGroups$.pipe(
