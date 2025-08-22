@@ -21,26 +21,24 @@ export class ChatService {
     const payload = { message: message.trim() };
     
     return this.http.post<ChatResponse>(this.apiUrl, payload, {
-      withCredentials: true, // Per includere i cookie
+      withCredentials: true, 
       headers: {
         'Content-Type': 'application/json'
       }
     }).pipe(
-      retry(1), // Riprova una volta in caso di errore di rete
+      retry(1), 
       catchError(this.errorHandler.handleError)
     );
   }
 
-  // Utility per formattare i messaggi con markdown di base
   formatMessage(content: string): string {
     return content
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **grassetto**
-      .replace(/\*(.*?)\*/g, '<em>$1</em>') // *corsivo*
-      .replace(/`(.*?)`/g, '<code>$1</code>') // `codice`
-      .replace(/\n/g, '<br>'); // nuove righe
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') 
+      .replace(/`(.*?)`/g, '<code>$1</code>') 
+      .replace(/\n/g, '<br>'); 
   }
 
-  // Utility per formattare il timestamp
   formatTime(timestamp: Date): string {
     const now = new Date();
     const messageTime = new Date(timestamp);
@@ -50,7 +48,7 @@ export class ChatService {
       return 'Ora';
     } else if (diffInMinutes < 60) {
       return `${diffInMinutes}m fa`;
-    } else if (diffInMinutes < 1440) { // 24 ore
+    } else if (diffInMinutes < 1440) { 
       const hours = Math.floor(diffInMinutes / 60);
       return `${hours}h fa`;
     } else {

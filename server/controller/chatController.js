@@ -12,7 +12,6 @@ async function sendMessage(req, res) {
       });
     }
 
-    // Il servizio gestisce automaticamente la creazione della sessione se necessario
     const result = await chatService.sendMessage(userId, message.trim());
     
     res.status(200).json({
@@ -21,7 +20,6 @@ async function sendMessage(req, res) {
       messageCount: result.messageCount
     });
   } catch (error) {
-    console.error('Errore nel controller sendMessage:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Errore interno del server'

@@ -23,16 +23,14 @@ import {
   providedIn: 'root'
 })
 export class NotesService {
-  private readonly apiUrl = '/api/notes'; // Base API URL
-  
-  // Reactive state management
+  private readonly apiUrl = '/api/notes'; 
+
   private notesSubject = new BehaviorSubject<NoteWithDetails[]>([]);
   public notes$ = this.notesSubject.asObservable();
   
   private selectedNoteSubject = new BehaviorSubject<NoteWithDetails | null>(null);
   public selectedNote$ = this.selectedNoteSubject.asObservable();
 
-  // FIXED: Add totalNotes state management
   private totalNotesSubject = new BehaviorSubject<number>(0);
   public totalNotes$ = this.totalNotesSubject.asObservable();
 
@@ -41,11 +39,6 @@ export class NotesService {
     private errorHandler: ErrorHandlerService
   ) {}
 
-  // ==================== CORE CRUD OPERATIONS ====================
-
-  /**
-   * Get all notes with filtering and pagination
-   */
   getNotes(filters?: NoteFilterParams): Observable<NotesResponse> {
     let params = new HttpParams();
     
@@ -67,20 +60,15 @@ export class NotesService {
           notes: response.notes.map(note => this.enrichNoteWithMetadata(note))
         })),
         tap(response => {
-          // FIXED: Update both notes and total count
           if (!filters?.offset || filters.offset === 0) {
             this.notesSubject.next(response.notes);
           }
-          // ALWAYS update total count regardless of pagination
           this.totalNotesSubject.next(response.total);
         }),
         catchError(this.errorHandler.handleError)
       );
   }
 
-  /**
-   * Get note previews for home page display
-   */
   getNotePreviews(sortBy: NoteSortType.CREATION_DATE): Observable<NotePreview[]> {
     const params = new HttpParams()
       .set('preview', 'true')
@@ -97,9 +85,6 @@ export class NotesService {
       );
   }
 
-  /**
-   * Get a single note by ID
-   */
   getNoteById(id: string): Observable<NoteWithDetails> {
     return this.http.get<NoteWithDetails>(`${this.apiUrl}/${id}`)
       .pipe(
@@ -109,9 +94,6 @@ export class NotesService {
       );
   }
 
-  /**
-   * Create a new note
-   */
   createNote(noteData: CreateNoteRequest): Observable<NoteWithDetails> {
     return this.http.post<NoteWithDetails>(`${this.apiUrl}`, noteData)
       .pipe(
@@ -128,22 +110,17 @@ export class NotesService {
       );
   }
 
-  /**
-   * Update an existing note
-   */
   updateNote(id: string, noteData: UpdateNoteRequest): Observable<NoteWithDetails> {
     return this.http.put<NoteWithDetails>(`${this.apiUrl}/${id}`, noteData)
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(updatedNote => {
-          // Update local state
           const currentNotes = this.notesSubject.value;
           const index = currentNotes.findIndex(n => n.id === id);
           if (index !== -1) {
             currentNotes[index] = updatedNote;
             this.notesSubject.next([...currentNotes]);
           }
-          // Update selected note if it's the same
           if (this.selectedNoteSubject.value?.id === id) {
             this.selectedNoteSubject.next(updatedNote);
           }
@@ -152,22 +129,18 @@ export class NotesService {
       );
   }
 
-  /**
-   * Delete a note
-   */
   deleteNote(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`)
       .pipe(
         tap(() => {
-          // FIXED: Update both notes and total count
+
           const currentNotes = this.notesSubject.value;
           const currentTotal = this.totalNotesSubject.value;
           
           const filteredNotes = currentNotes.filter(n => n.id !== id);
           this.notesSubject.next(filteredNotes);
-          this.totalNotesSubject.next(Math.max(0, currentTotal - 1)); // Decrement total count
-          
-          // Clear selected note if it's the deleted one
+          this.totalNotesSubject.next(Math.max(0, currentTotal - 1)); 
+
           if (this.selectedNoteSubject.value?.id === id) {
             this.selectedNoteSubject.next(null);
           }
@@ -176,11 +149,6 @@ export class NotesService {
       );
   }
 
-  // ==================== SPECIALIZED OPERATIONS ====================
-
-  /**
-   * Duplicate an existing note
-   */
   duplicateNote(request: DuplicateNoteRequest): Observable<NoteWithDetails> {
     return this.http.post<NoteWithDetails>(`${this.apiUrl}/${request.sourceNoteId}/duplicate`, request)
       .pipe(
@@ -197,9 +165,6 @@ export class NotesService {
       );
   }
 
-  /**
-   * Share note with specific users
-   */
   shareNote(request: ShareNoteRequest): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/${request.noteId}/share`, request)
       .pipe(
@@ -207,9 +172,6 @@ export class NotesService {
       );
   }
 
-  /**
-   * Get note permissions for current user
-   */
   getNotePermissions(noteId: string): Observable<NotePermissions> {
     return this.http.get<NotePermissions>(`${this.apiUrl}/${noteId}/permissions`)
       .pipe(
@@ -217,16 +179,12 @@ export class NotesService {
       );
   }
 
-  /**
-   * Copy note content to clipboard
-   */
   copyNoteContent(note: Note): Promise<void> {
     const content = `${note.title || 'Untitled'}\n\n${note.text || ''}`;
     
     if (navigator.clipboard && window.isSecureContext) {
       return navigator.clipboard.writeText(content);
     } else {
-      // Fallback for older browsers
       return new Promise((resolve, reject) => {
         const textArea = document.createElement('textarea');
         textArea.value = content;
@@ -249,25 +207,16 @@ export class NotesService {
     }
   }
 
-  /**
-   * Bulk operations on multiple notes
-   */
   bulkOperation(operation: BulkNoteOperation): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/bulk`, operation)
       .pipe(
         tap(() => {
-          // Refresh notes after bulk operation
           this.refreshNotes();
         }),
         catchError(this.errorHandler.handleError)
       );
   }
 
-  // ==================== SEARCH AND FILTERING ====================
-
-  /**
-   * Search notes by text content and title
-   */
   searchNotes(query: string, filters?: Omit<NoteFilterParams, 'searchQuery'>): Observable<NoteWithDetails[]> {
     const searchFilters: NoteFilterParams = { 
       ...filters, 
@@ -280,119 +229,65 @@ export class NotesService {
     );
   }
 
-  /**
-   * Get notes by category
-   */
   getNotesByCategory(categoryName: string): Observable<NoteWithDetails[]> {
     return this.getNotes({ categoryName }).pipe(
       map(response => response.notes)
     );
   }
 
-  /**
-   * Get notes by group
-   */
   getNotesByGroup(groupName: string): Observable<NoteWithDetails[]> {
     return this.getNotes({ groupName }).pipe(
       map(response => response.notes)
     );
   }
 
-  /**
-   * Get public notes
-   */
   getPublicNotes(): Observable<NoteWithDetails[]> {
     return this.getNotes({ accessibility: AccessibilityType.PUBLIC }).pipe(
       map(response => response.notes)
     );
   }
 
-  // ==================== UTILITY METHODS ====================
-
-  /**
-   * Refresh notes from server
-   */
   refreshNotes(filters?: NoteFilterParams): Observable<NotesResponse> {
     return this.getNotes(filters);
   }
 
-  /**
-   * Clear selected note
-   */
   clearSelectedNote(): void {
     this.selectedNoteSubject.next(null);
   }
 
-  /**
-   * Set selected note
-   */
   setSelectedNote(note: NoteWithDetails): void {
     this.selectedNoteSubject.next(note);
   }
 
-  /**
-   * Get current notes from local state
-   */
   getCurrentNotes(): NoteWithDetails[] {
     return this.notesSubject.value;
   }
 
-  /**
-   * FIXED: Get current total notes count
-   */
   getCurrentTotalNotes(): number {
     return this.totalNotesSubject.value;
   }
 
-  /**
-   * DEBUG: Get all current state for debugging
-   */
-  getDebugState(): { notes: number; total: number } {
-    return {
-      notes: this.notesSubject.value.length,
-      total: this.totalNotesSubject.value
-    };
-  }
-
-  /**
-   * Check if user can edit note
-   */
   canEditNote(note: Note, currentUserId: string): boolean {
     return note.creator === currentUserId;
   }
 
-  /**
-   * Check if user can delete note
-   */
   canDeleteNote(note: Note, currentUserId: string): boolean {
     return note.creator === currentUserId;
   }
 
-  /**
-   * Check if user can view note
-   */
   canViewNote(note: Note, currentUserId: string, userGroups: string[] = []): boolean {
-    // Creator can always view
+
     if (note.creator === currentUserId) return true;
-    
-    // Public notes are viewable by everyone
+
     if (note.accessibility === AccessibilityType.PUBLIC) return true;
-    
-    // Group notes are viewable by group members
+
     if (note.accessibility === AccessibilityType.GROUP && note.groupName && userGroups.includes(note.groupName)) {
       return true;
     }
-    
-    // For authorized notes, we need to check with backend
-    // This will be handled in the component by calling getNotePermissions
+
     return note.accessibility === AccessibilityType.AUTHORIZED;
   }
 
-  // ==================== PRIVATE HELPER METHODS ====================
-
-  /**
-   * Enrich note with computed metadata
-   */
   private enrichNoteWithMetadata(note: NoteWithDetails): NoteWithDetails {
     const preview = this.generatePreview(note.text || '');
     const contentLength = (note.text || '').length;
@@ -405,22 +300,18 @@ export class NotesService {
     };
   }
 
-  /**
-   * Generate preview text (first N characters)
-   */
   private generatePreview(text: string): string {
     if (!text) return '';
     
     const cleanText = text
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/[#*_`]/g, '') // Remove markdown formatting
+      .replace(/<[^>]*>/g, '') 
+      .replace(/[#*_`]/g, '')
       .trim();
     
     if (cleanText.length <= 200) {
       return cleanText;
     }
-    
-    // Find the last complete word within the limit
+
     const truncated = cleanText.substring(0, 200);
     const lastSpaceIndex = truncated.lastIndexOf(' ');
     
@@ -431,11 +322,6 @@ export class NotesService {
     return truncated + '...';
   }
 
-  // ==================== ADVANCED FEATURES ====================
-
-  /**
-   * Get notes statistics for dashboard
-   */
   getNotesStats(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/stats`)
       .pipe(
@@ -443,11 +329,6 @@ export class NotesService {
       );
   }
 
-  // ==================== SORTING UTILITIES ====================
-
-  /**
-   * Sort notes locally (for immediate UI feedback)
-   */
   sortNotesLocally(notes: NoteWithDetails[], sortBy: NoteSortType, order: 'asc' | 'desc' = 'desc'): NoteWithDetails[] {
     return [...notes].sort((a, b) => {
       let comparison = 0;
@@ -475,9 +356,6 @@ export class NotesService {
     });
   }
 
-  /**
-   * Filter notes locally by search query
-   */
   filterNotesLocally(notes: NoteWithDetails[], query: string): NoteWithDetails[] {
     if (!query.trim()) return notes;
     
@@ -488,26 +366,6 @@ export class NotesService {
     );
   }
 
-  // ==================== CLIPBOARD OPERATIONS ====================
-
-  /**
-   * Paste content from clipboard
-   */
-  async pasteFromClipboard(): Promise<string> {
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
-        return await navigator.clipboard.readText();
-      } catch (error) {
-        console.warn('Could not read from clipboard:', error);
-        return '';
-      }
-    }
-    return '';
-  }
-
-  /**
-   * Copy note title and content
-   */
   async copyNoteToClipboard(note: Note): Promise<boolean> {
     try {
       await this.copyNoteContent(note);
@@ -518,25 +376,17 @@ export class NotesService {
     }
   }
 
-  // ==================== VALIDATION UTILITIES ====================
-
-  /**
-   * Validate note data before submission
-   */
   validateNote(noteData: CreateNoteRequest | UpdateNoteRequest): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
-    
-    // Title validation
+
     if (noteData.title && noteData.title.length > 100) {
       errors.push(`Title cannot exceed ${100} characters`);
     }
-    
-    // Content validation
+
     if (!noteData.text || noteData.text.trim().length === 0) {
       errors.push('Note content cannot be empty');
     }
-    
-    // Accessibility validation
+
     if (noteData.accessibility === AccessibilityType.GROUP && !noteData.groupName) {
       errors.push('Group name is required for group notes');
     }
@@ -551,20 +401,12 @@ export class NotesService {
     };
   }
 
-  // ==================== STATE MANAGEMENT ====================
-
-  /**
-   * Reset service state
-   */
   resetState(): void {
     this.notesSubject.next([]);
     this.selectedNoteSubject.next(null);
     this.totalNotesSubject.next(0); // FIXED: Reset total count
   }
 
-  /**
-   * Load notes for specific view
-   */
   loadNotesForView(viewType: 'home' | 'list' | 'category' | 'group', identifier?: string): Observable<NoteWithDetails[]> {
     let filters: NoteFilterParams = {};
     
@@ -594,9 +436,6 @@ export class NotesService {
     );
   }
 
-  /**
-   * Get notes count by accessibility type
-   */
   getNotesCountByAccessibility(): Observable<Record<string, number>> {
     return this.http.get<Record<string, number>>(`${this.apiUrl}/count-by-accessibility`)
       .pipe(

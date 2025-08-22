@@ -549,7 +549,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       errorMessage: this.errorMessage,
       isTimeMachineActive: this.isTimeMachineActive()
     });
-    console.log('Service debug state:', this.notesService.getDebugState());
     this.notesService.refreshNotes().subscribe(response => {
       console.log('Force refresh response:', response);
     });

@@ -30,10 +30,3 @@ export interface LoginStreakCheckDTO {
   currentStreak: number; // Streak attuale dopo il controllo
   virtual_time?: string; // Tempo virtuale opzionale per Time Machine
 }
-
-// Nuovo DTO per la cronologia delle statistiche (per debug/visualizzazioni avanzate)
-export interface StatisticsHistoryResponse {
-  message: string;
-  statistics: StatisticsResponse;
-  virtualTime: string | null;
-}

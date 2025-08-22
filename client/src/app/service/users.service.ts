@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable} from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { User } from '../model/entity/user.interface';
 import { ErrorHandlerService } from './error-handler.service';
@@ -9,16 +9,13 @@ import { ErrorHandlerService } from './error-handler.service';
   providedIn: 'root'
 })
 export class UsersService {
-  private readonly apiUrl = '/api/users'; // Base API URL
+  private readonly apiUrl = '/api/users'; 
 
   constructor(
     private http: HttpClient,
     private errorHandler: ErrorHandlerService
   ) {}
 
-  /**
-   * Search users by username/nickname
-   */
   searchUsersByUsername(query: string): Observable<User[]> {
     if (!query.trim()) {
       return new Observable(observer => observer.next([]));
@@ -28,14 +25,11 @@ export class UsersService {
 
     return this.http.get<User[]>(`${this.apiUrl}/search`, { params })
       .pipe(
-        map(users => users.slice(0, 10)), // Limit to 10 results
+        map(users => users.slice(0, 10)),
         catchError(this.errorHandler.handleError)
       );
   }
 
-  /**
-   * Get user by ID
-   */
   getUserById(userId: string): Observable<User> {
     return this.http.get<User>(`${this.apiUrl}/${userId}`)
       .pipe(
@@ -43,9 +37,6 @@ export class UsersService {
       );
   }
 
-  /**
-   * Get multiple users by IDs
-   */
   getUsersByIds(userIds: string[]): Observable<User[]> {
     if (userIds.length === 0) {
       return new Observable(observer => observer.next([]));
@@ -59,9 +50,6 @@ export class UsersService {
       );
   }
 
-  /**
-   * Check if username exists
-   */
   checkUsernameExists(username: string): Observable<boolean> {
     const params = new HttpParams().set('username', username);
 

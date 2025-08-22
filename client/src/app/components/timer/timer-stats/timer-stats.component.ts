@@ -1,5 +1,4 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil, distinctUntilChanged } from 'rxjs/operators';
 import { StatisticsService } from '../../../service/statistics.service';
@@ -138,32 +137,5 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
       totalStudyTimeFormatted: '0m',
       consecutiveStudyDays: 0
     };
-  }
-
-  // ==================== METODI DI DEBUG (OPZIONALI) ====================
-
-  /**
-   * Metodo per debug - mostra info sulla Time Machine
-   */
-  logTimeMachineInfo(): void {
-    console.log('Time Machine attiva:', this.isTimeMachineActive);
-    console.log('Tempo corrente:', this.currentTime);
-    console.log('Tempo virtuale:', this.timeMachineService.getVirtualNow());
-  }
-
-  /**
-   * Recupera cronologia per debug (se necessario)
-   */
-  loadStatisticsHistory(): void {
-    this.statisticsService.getStatisticsHistory()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (history) => {
-          console.log('Cronologia statistiche:', history);
-        },
-        error: (error) => {
-          console.error('Errore nel recupero cronologia:', error);
-        }
-      });
   }
 }

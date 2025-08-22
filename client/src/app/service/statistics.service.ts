@@ -5,11 +5,9 @@ import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { TimeMachineService } from './time-machine.service'; // Import del servizio Time Machine
 import { 
-  UserStatistics, 
   UpdateSessionStatsDTO, 
   StatisticsResponse, 
   LoginStreakCheckDTO,
-  StatisticsHistoryResponse
 } from '../model/statistics.interface';
 
 @Injectable({
@@ -135,35 +133,6 @@ export class StatisticsService {
         }),
         catchError(error => {
           console.error('Errore nel controllo streak login:', error);
-          throw error;
-        })
-      );
-  }
-
-  // ==================== NUOVO: CRONOLOGIA STATISTICHE ====================
-
-  /**
-   * Recupera la cronologia delle statistiche (utile per debug)
-   */
-  getStatisticsHistory(): Observable<StatisticsHistoryResponse> {
-    const virtualTime = this.timeMachineService.getVirtualNow();
-    
-    let params: any = {};
-    let headers = new HttpHeaders();
-    
-    if (virtualTime) {
-      params.virtual_time = virtualTime.toISOString();
-      headers = headers.set('x-virtual-time', virtualTime.toISOString());
-    }
-
-    return this.http.get<StatisticsHistoryResponse>(`${this.apiUrl}/statistics/history`, {
-      params,
-      headers,
-      withCredentials: true
-    })
-      .pipe(
-        catchError(error => {
-          console.error('Errore nel recupero cronologia statistiche:', error);
           throw error;
         })
       );

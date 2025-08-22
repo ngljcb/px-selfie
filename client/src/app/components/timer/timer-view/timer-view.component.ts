@@ -9,17 +9,10 @@ import {
   TimerState, 
   TimerConfig, 
   TimerStatus, 
-  TimerPhase 
+  TimerPhase,
+  TimerNotification,
 } from '../../../model/timer.interface';
 import { StatisticsService } from '../../../service/statistics.service';
-
-// Interfaccia per le notifiche
-interface TimerNotification {
-  id: string;
-  message: string;
-  type: 'study-complete' | 'break-complete' | 'session-complete' | 'phase-skipped';
-  timestamp: Date;
-}
 
 @Component({
   selector: 'app-timer-view',

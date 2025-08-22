@@ -1,17 +1,13 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Mappa per memorizzare le sessioni chat per ogni utente (in memoria)
 const userChatSessions = new Map();
 
-// Inizializza Gemini AI con la chiave API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 async function createChatSession(userId) {
   try {
-    // Cambiato da 'gemini-pro' a 'gemini-1.5-flash'
     const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    
-    // Configurazione della chat
+
     const chat = model.startChat({
       history: [
         {
@@ -29,17 +25,14 @@ async function createChatSession(userId) {
       },
     });
 
-    // Salva la sessione per l'utente
     userChatSessions.set(userId, {
       chat,
       createdAt: new Date(),
       messageCount: 0
     });
 
-    console.log(`Chat session creata per user ${userId}`);
     return true;
   } catch (error) {
-    console.error('Errore nella creazione della chat session:', error);
     throw new Error('Impossibile creare la sessione chat');
   }
 }
@@ -47,20 +40,16 @@ async function createChatSession(userId) {
 async function sendMessage(userId, message) {
   try {
     let userSession = userChatSessions.get(userId);
-    
-    // Se non esiste una sessione, la crea automaticamente
+
     if (!userSession) {
-      console.log(`Creazione automatica sessione chat per user ${userId}`);
       await createChatSession(userId);
       userSession = userChatSessions.get(userId);
     }
 
-    // Invia il messaggio alla chat
     const result = await userSession.chat.sendMessage(message);
     const response = await result.response;
     const responseText = response.text();
 
-    // Incrementa il contatore dei messaggi
     userSession.messageCount++;
 
     return {
@@ -69,7 +58,6 @@ async function sendMessage(userId, message) {
       messageCount: userSession.messageCount
     };
   } catch (error) {
-    console.error('Errore nell\'invio del messaggio:', error);
     throw new Error('Errore nella comunicazione con l\'AI');
   }
 }
@@ -77,12 +65,8 @@ async function sendMessage(userId, message) {
 function deleteSession(userId) {
   try {
     const deleted = userChatSessions.delete(userId);
-    if (deleted) {
-      console.log(`Chat session eliminata per user ${userId}`);
-    }
     return deleted;
   } catch (error) {
-    console.error('Errore nell\'eliminazione della chat session:', error);
     return false;
   }
 }

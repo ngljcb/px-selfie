@@ -17,7 +17,6 @@ export class TimerService {
   private timerSubscription?: Subscription;
   private currentSession?: TimerSession;
 
-  // State management con BehaviorSubject
   private timerStateSubject = new BehaviorSubject<TimerState>({
     config: DEFAULT_TIMER_CONFIG,
     currentCycle: 1,
@@ -28,30 +27,24 @@ export class TimerService {
     canRestart: true
   });
 
-  // Observable pubblico per i componenti
   public timerState$: Observable<TimerState> = this.timerStateSubject.asObservable();
 
   constructor(
     private audioService: AudioService,
     private statisticsService: StatisticsService
   ) {
-    // Carica configurazione salvata (localStorage)
     this.loadSavedConfig();
-    
-    // NUOVO: Sottoscrivi ai cambiamenti della Time Machine per aggiornare le statistiche
+
     this.statisticsService.refreshStatistics().subscribe({
       next: () => console.log('Statistiche iniziali caricate'),
       error: (error) => console.error('Errore caricamento statistiche iniziali:', error)
     });
   }
 
-  // ==================== CONTROLLI TIMER ====================
-
   startTimer(): void {
     const currentState = this.timerStateSubject.value;
     
     if (currentState.status === 'idle') {
-      // Nuova sessione - IMPORTANTE: crearla subito qui
       this.startNewSession();
     }
 
@@ -70,24 +63,20 @@ export class TimerService {
   resetTimer(): void {
     this.stopCountdown();
     const currentState = this.timerStateSubject.value;
-    
-    // Ricomincia il ciclo corrente = torna all'inizio dello studio del ciclo corrente
+
     const studySeconds = currentState.config.studyMinutes * 60;
-    
-    // Calcola il tempo totale che dovrebbe essere già trascorso fino all'inizio di questo ciclo
+
     const completedCycles = currentState.currentCycle - 1;
     const studySecondsPerCycle = currentState.config.studyMinutes * 60;
     const breakSecondsPerCycle = currentState.config.breakMinutes * 60;
     const secondsPerCompleteCycle = studySecondsPerCycle + breakSecondsPerCycle;
-    
-    // Tempo trascorso fino all'inizio del ciclo corrente
+
     const elapsedUntilCurrentCycle = completedCycles * secondsPerCompleteCycle;
 
-    // Determina lo stato: se era idle mantieni idle, altrimenti metti paused
     const newStatus = currentState.status === 'idle' ? 'idle' : 'paused';
 
     this.updateTimerState({
-      currentPhase: 'study', // Torna sempre allo studio
+      currentPhase: 'study', 
       remainingSeconds: studySeconds,
       status: newStatus,
       totalElapsedSeconds: elapsedUntilCurrentCycle,
@@ -97,22 +86,19 @@ export class TimerService {
 
   stopTimer(): void {
     this.stopCountdown();
-    this.endCurrentSession(false); // Non completata
+    this.endCurrentSession(false); 
     this.resetToInitialState();
   }
 
   skipCurrentPhase(): void {
     const currentState = this.timerStateSubject.value;
-    
-    // Solo se il timer è in esecuzione
+
     if (currentState.status !== 'running') {
       return;
     }
 
-    // Ferma il countdown corrente
     this.stopCountdown();
     
-    // Aggiorna il tempo di studio totale se stiamo saltando una fase di studio
     if (currentState.currentPhase === 'study') {
       const elapsedStudyTime = (currentState.config.studyMinutes * 60) - currentState.remainingSeconds;
       this.updateTimerState({
@@ -120,17 +106,12 @@ export class TimerService {
       });
     }
     
-    // Simula il completamento della fase corrente
     this.onPhaseCompleted();
-    
-    // Notifica il salto
+
     this.notifyPhaseSkipped(currentState.currentPhase);
-    
-    // Riavvia il countdown per la nuova fase
+
     this.startCountdown();
   }
-
-  // ==================== CONFIGURAZIONE ====================
 
   updateConfig(newConfig: TimerConfig): void {
     this.saveConfig(newConfig);
@@ -141,12 +122,9 @@ export class TimerService {
     return this.timerStateSubject.value.config;
   }
 
-  // ==================== PROPOSTE SMART ====================
-
   generateTimeProposals(availableMinutes: number): TimeProposal[] {
     const proposals: TimeProposal[] = [];
 
-    // Proposta 1: Pomodoro classico (25+5)
     if (availableMinutes >= 30) {
       const cycles = Math.floor(availableMinutes / 30);
       proposals.push({
@@ -159,7 +137,6 @@ export class TimerService {
       });
     }
 
-    // Proposta 2: Sessioni standard progetto (30+5)
     if (availableMinutes >= 35) {
       const cycles = Math.floor(availableMinutes / 35);
       proposals.push({
@@ -172,7 +149,6 @@ export class TimerService {
       });
     }
 
-    // Proposta 3: Studio intensivo (45+10)
     if (availableMinutes >= 55) {
       const cycles = Math.floor(availableMinutes / 55);
       proposals.push({
@@ -185,7 +161,6 @@ export class TimerService {
       });
     }
 
-    // Proposta 4: Ottimizzata per tempo disponibile
     if (availableMinutes >= 20 && proposals.length === 0) {
       const optimalStudy = Math.floor(availableMinutes * 0.85);
       const optimalBreak = Math.floor(availableMinutes * 0.15);
@@ -202,20 +177,16 @@ export class TimerService {
     return proposals.sort((a, b) => b.efficiency - a.efficiency);
   }
 
-  // ==================== METODI PRIVATI ====================
-
   private startCountdown(): void {
     this.timerSubscription = interval(1000).subscribe(() => {
       const currentState = this.timerStateSubject.value;
       
       if (currentState.remainingSeconds > 0) {
-        // Continua countdown
         this.updateTimerState({
           remainingSeconds: currentState.remainingSeconds - 1,
           totalElapsedSeconds: currentState.totalElapsedSeconds + 1
         });
       } else {
-        // Fase completata
         this.onPhaseCompleted();
       }
     });
@@ -232,11 +203,9 @@ export class TimerService {
     const currentState = this.timerStateSubject.value;
     
     if (currentState.currentPhase === 'study') {
-      // Studio completato → Pausa
       this.startBreakPhase();
       this.notifyStudyPhaseComplete();
     } else {
-      // Pausa completata → Prossimo ciclo o fine
       this.completeCurrentCycle();
       this.notifyBreakPhaseComplete();
     }
@@ -254,10 +223,8 @@ export class TimerService {
     const currentState = this.timerStateSubject.value;
     
     if (currentState.currentCycle >= currentState.config.totalCycles) {
-      // Sessione completata!
       this.completeSession();
     } else {
-      // Prossimo ciclo
       this.startNextCycle();
     }
   }
@@ -273,12 +240,10 @@ export class TimerService {
 
   private completeSession(): void {
     this.stopCountdown();
-    
-    // IMPORTANTE: Aggiorna le statistiche PRIMA di terminare la sessione
-    // per garantire che currentSession sia disponibile
+
     this.updateStatisticsOnCompletion();
     
-    this.endCurrentSession(true); // Completata con successo
+    this.endCurrentSession(true);
     this.updateTimerState({ status: 'completed' });
   }
 
@@ -301,14 +266,8 @@ export class TimerService {
     this.timerStateSubject.next({ ...currentState, ...updates });
   }
 
-  // ==================== AGGIORNAMENTO STATISTICHE ====================
-
-  /**
-   * Aggiorna le statistiche quando una sessione viene completata
-   * CORREZIONE: Evita chiamate multiple e gestisce meglio la sessione
-   */
   private updateStatisticsOnCompletion(): void {
-    // Flag per evitare chiamate multiple
+
     if (this.statisticsUpdateInProgress) {
       console.log('Aggiornamento statistiche già in corso, skipping...');
       return;
@@ -316,11 +275,9 @@ export class TimerService {
     
     this.statisticsUpdateInProgress = true;
 
-    // CONTROLLO MIGLIORATO: Se non c'è sessione corrente, prova a calcolarne i dati
     if (!this.currentSession) {
       console.warn('Nessuna sessione corrente trovata, calcolo manuale dei minuti di studio');
-      
-      // Calcolo alternativo: usa lo stato corrente del timer
+
       const currentState = this.timerStateSubject.value;
       const totalStudySeconds = this.calculateStudyTimeFromState(currentState);
       const studyTimeMinutes = Math.floor(totalStudySeconds / 60);
@@ -334,10 +291,8 @@ export class TimerService {
       return;
     }
 
-    // Aggiorna il tempo di studio totale della sessione corrente
     this.currentSession.totalStudyTime = this.calculateStudyTime();
-    
-    // Calcola i minuti di studio della sessione completata
+
     const studyTimeMinutes = Math.floor(this.currentSession.totalStudyTime / 60);
     
     console.log('Sessione completata:', {
@@ -354,39 +309,28 @@ export class TimerService {
     }
   }
 
-  // NUOVO: Flag per evitare chiamate multiple
   private statisticsUpdateInProgress = false;
 
-  /**
-   * Metodo helper per aggiornare le statistiche con i minuti di studio
-   */
   private updateStatsWithMinutes(studyTimeMinutes: number): void {
     this.statisticsService.updateSessionStats(studyTimeMinutes)
       .subscribe({
         next: (updatedStats) => {
           console.log('Statistiche aggiornate con successo:', updatedStats);
-          this.statisticsUpdateInProgress = false; // Reset flag
+          this.statisticsUpdateInProgress = false; 
         },
         error: (error) => {
           console.error('Errore nell\'aggiornamento delle statistiche:', error);
-          this.statisticsUpdateInProgress = false; // Reset flag anche in caso di errore
-          // Non bloccare l'esperienza utente se le statistiche falliscono
+          this.statisticsUpdateInProgress = false;
         }
       });
   }
 
-  /**
-   * Calcola i secondi di studio dallo stato corrente del timer
-   * Metodo di fallback quando non c'è sessione corrente
-   */
   private calculateStudyTimeFromState(state: TimerState): number {
     const completedCycles = state.currentCycle - 1;
     const studySecondsPerCycle = state.config.studyMinutes * 60;
-    
-    // Studio dei cicli completati
+
     let totalStudyTime = completedCycles * studySecondsPerCycle;
-    
-    // Se il ciclo corrente era in fase studio e completato, aggiungi anche quello
+
     if (state.status === 'completed' || state.currentPhase === 'break') {
       totalStudyTime += studySecondsPerCycle;
     }
@@ -394,9 +338,6 @@ export class TimerService {
     return totalStudyTime;
   }
 
-  /**
-   * Metodo pubblico per controllare lo streak al login
-   */
   public checkLoginStreak(): void {
     this.statisticsService.checkLoginStreak()
       .subscribe({
@@ -411,8 +352,6 @@ export class TimerService {
         }
       });
   }
-
-  // ==================== SESSIONI E PERSISTENZA ====================
 
   private startNewSession(): void {
     const currentState = this.timerStateSubject.value;
@@ -441,9 +380,7 @@ export class TimerService {
         completed,
         totalStudyTime: this.currentSession.totalStudyTime
       });
-      
-      // Salva la sessione in localStorage per backup/debug
-      this.saveSession(this.currentSession);
+
       this.currentSession = undefined;
     }
   }
@@ -454,8 +391,7 @@ export class TimerService {
     const studySecondsPerCycle = currentState.config.studyMinutes * 60;
     
     let totalStudyTime = completedCycles * studySecondsPerCycle;
-    
-    // Aggiungi tempo della fase corrente se è studio
+
     if (currentState.currentPhase === 'study') {
       const currentPhaseElapsed = (currentState.config.studyMinutes * 60) - currentState.remainingSeconds;
       totalStudyTime += currentPhaseElapsed;
@@ -480,31 +416,15 @@ export class TimerService {
     }
   }
 
-  private saveSession(session: TimerSession): void {
-    // Manteniamo il salvataggio in localStorage per backup
-    const sessions = this.getSavedSessions();
-    sessions.push(session);
-    localStorage.setItem('timer-sessions', JSON.stringify(sessions));
-  }
-
-  private getSavedSessions(): TimerSession[] {
-    const saved = localStorage.getItem('timer-sessions');
-    return saved ? JSON.parse(saved) : [];
-  }
-
   private generateSessionId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
-
-  // ==================== NOTIFICHE CON AUDIO ====================
 
   private notifyStudyPhaseComplete(): void {
     const message = 'Tempo di pausa!';
     
     this.audioService.playStudyCompleteSound();
-    
-    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
-    // Non richiede più automaticamente i permessi
+
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
@@ -517,8 +437,7 @@ export class TimerService {
     const message = 'Torniamo a studiare!';
     
     this.audioService.playBreakCompleteSound();
-    
-    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
+
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
@@ -533,8 +452,7 @@ export class TimerService {
       : 'Pausa saltata!';
     
     this.audioService.playPhaseSkippedSound();
-    
-    // MODIFICA: Controlla se i permessi sono già stati concessi PRIMA di mostrare notifiche
+
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
@@ -542,8 +460,6 @@ export class TimerService {
       });
     }
   }
-
-  // ==================== UTILITY PUBBLICHE ====================
 
   formatTime(seconds: number): string {
     const minutes = Math.floor(seconds / 60);
