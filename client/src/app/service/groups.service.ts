@@ -5,7 +5,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
 import { Group, CreateGroupRequest } from '../model/group.interface';
-import { User } from '../model/user.interface';
+import { User } from '../model/entity/user.interface';
 
 /**
  * Extended Group interface with member details and stats
