@@ -1,5 +1,6 @@
 const supabase = require('../persistence/supabase');
 
+const PREVIEW_LENGTH = 200;
 const ACCESSIBILITY_TYPES = {
   PRIVATE: 'private',
   PUBLIC: 'public',
