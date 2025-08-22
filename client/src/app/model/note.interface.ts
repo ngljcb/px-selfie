@@ -1,4 +1,4 @@
-import type { Category } from "./category.interface";
+import type { Category } from "./entity/category.interface";
 import type { Group } from "./group.interface";
 
 /**
@@ -175,6 +175,5 @@ export interface BulkNoteOperation {
   noteIds: string[];
 }
 
-export type {Category} from "./category.interface";
+export type {Category} from "./entity/category.interface";
 export type {Group} from "./group.interface";
-

@@ -1,6 +1,7 @@
 const authService = require('../service/authService');
 const supabase = require('../persistence/supabase');
 const cookie = require('cookie');
+const chatService = require('../service/chatService');
 
 async function register(req, res) {
   const { email, password, username, name, birthday } = req.body;
@@ -73,6 +74,12 @@ async function logout(req, res) {
 
   if (!access_token) {
     return res.status(400).json({ error: 'Token non presente nel cookie' });
+  }
+  else {
+    const { data } = await supabase.auth.getUser(access_token);
+    if (data?.user?.id) {
+      chatService.deleteSession(data.user.id);
+    }
   }
 
   try {
