@@ -56,9 +56,9 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 .modal-overlay {
   position: fixed;
   top: 0;
-  left: 0;
+  left: 155px;
   right: 0;
-  bottom: 0;
+  bottom: 40px;
   background: transparent; // Desktop: nessun overlay per permettere interazione
   display: flex;
   align-items: flex-end; // Desktop: allinea al bottom per posizionare vicino al FAB
@@ -82,6 +82,8 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     justify-content: center; // Mobile: centrato
     padding: 20px; // Mobile: padding
     pointer-events: auto; // Mobile: ripristina eventi per chiusura
+    left: 0;
+    bottom: 0;
   }
 }
 
@@ -117,7 +119,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: 15px 19px;
   border-bottom: 1px solid $gray-200;
   background: linear-gradient(135deg, $gray-50 0%, $white 100%);
   border-radius: 16px 16px 0 0;
@@ -128,18 +130,18 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     gap: 12px;
 
     .header-icon {
-      width: 40px;
-      height: 40px;
-      padding: 8px;
-      background: $primary-color;
+      width: 44px;
+      height: 44px;
+      padding: 4px;
+      margin-left: 2px;
+      background: $white;
       border-radius: 12px;
-      filter: brightness(0) invert(1);
     }
 
     .header-text {
       h3 {
         margin: 0;
-        font-size: 18px;
+        font-size: 20px;
         font-weight: 600;
         color: $gray-900;
         line-height: 1.2;
