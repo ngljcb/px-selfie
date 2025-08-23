@@ -1,24 +1,13 @@
 const supabase = require('../persistence/supabase');
 
-/**
- * Service per la gestione dei gruppi - UPDATED WITH TIME MACHINE INTEGRATION
- */
-
-// Nomi riservati che non possono essere usati per i gruppi
 const RESERVED_GROUP_NAMES = ['admin', 'system', 'public', 'private', 'all', 'none'];
 
-/**
- * Ottiene tutti i gruppi con filtri
- */
 async function getAllGroups(userId, filters) {
-  // FIXED: Simplified query without complex relations that cause issues
   let query = supabase
     .from('groups')
     .select('name, creator, created_at');
 
-  // Se onlyJoined è true, filtra solo i gruppi di cui l'utente è membro
   if (filters.onlyJoined) {
-    // Get user groups separately
     const { data: userGroupMemberships } = await supabase
       .from('group_users')
       .select('group_name')
@@ -28,7 +17,6 @@ async function getAllGroups(userId, filters) {
       const groupNames = userGroupMemberships.map(m => m.group_name);
       query = query.in('name', groupNames);
     } else {
-      // User has no groups
       return {
         groups: [],
         total: 0,
@@ -37,16 +25,13 @@ async function getAllGroups(userId, filters) {
     }
   }
 
-  // Filtro di ricerca
   if (filters.search) {
     query = query.ilike('name', `%${filters.search}%`);
   }
 
-  // Ordinamento
   const ascending = filters.sortOrder === 'asc';
   query = query.order('name', { ascending });
 
-  // Paginazione
   if (filters.limit) {
     query = query.range(filters.offset || 0, (filters.offset || 0) + filters.limit - 1);
   }
@@ -57,7 +42,6 @@ async function getAllGroups(userId, filters) {
     throw new Error(`Error fetching groups: ${error.message}`);
   }
 
-  // Arricchimento dati per ogni gruppo
   const enrichedGroups = await Promise.all(
     (groups || []).map(group => enrichGroupWithDetails(group, userId))
   );
@@ -69,11 +53,7 @@ async function getAllGroups(userId, filters) {
   };
 }
 
-/**
- * Ottiene i gruppi dell'utente corrente
- */
 async function getUserGroups(userId) {
-  // FIXED: First get user's group memberships, then get group details
   const { data: memberships, error: membershipError } = await supabase
     .from('group_users')
     .select('group_name')
@@ -89,7 +69,6 @@ async function getUserGroups(userId) {
 
   const groupNames = memberships.map(m => m.group_name);
 
-  // Get group details with created_at
   const { data: groups, error } = await supabase
     .from('groups')
     .select('name, creator, created_at')
@@ -100,7 +79,6 @@ async function getUserGroups(userId) {
     throw new Error(`Error fetching user groups: ${error.message}`);
   }
 
-  // Arricchimento dati
   const enrichedGroups = await Promise.all(
     (groups || []).map(group => enrichGroupWithDetails(group, userId))
   );
@@ -108,31 +86,25 @@ async function getUserGroups(userId) {
   return enrichedGroups;
 }
 
-/**
- * Crea un nuovo gruppo - UPDATED WITH TIME MACHINE INTEGRATION
- */
 async function createGroup(userId, groupData) {
+
   const { name, createdAt } = groupData;
 
-  // Validazione nome gruppo
   await validateGroupName(name);
 
-  // Verifica che il nome non sia già in uso
   const exists = await checkGroupNameExists(name);
   if (exists) {
     throw new Error('A group with this name already exists');
   }
 
-  // UPDATED: Use provided createdAt from Time Machine or current time as fallback
   const creationDate = createdAt || new Date().toISOString();
 
-  // Crea il gruppo
   const { data: group, error } = await supabase
     .from('groups')
     .insert({
       name: name.trim(),
       creator: userId,
-      created_at: creationDate // UPDATED: Explicitly set created_at
+      created_at: creationDate 
     })
     .select()
     .single();
@@ -141,17 +113,12 @@ async function createGroup(userId, groupData) {
     throw new Error(`Error creating group: ${error.message}`);
   }
 
-  // Aggiungi il creatore come membro
   await addGroupMember(name, userId);
 
   return await enrichGroupWithDetails(group, userId);
 }
 
-/**
- * Elimina un gruppo
- */
 async function deleteGroup(userId, groupName) {
-  // Verifica che il gruppo esista e che l'utente sia il creatore
   const group = await getGroupByName(userId, groupName);
   if (!group) {
     throw new Error('Group not found');
@@ -161,7 +128,6 @@ async function deleteGroup(userId, groupName) {
     throw new Error('Access denied');
   }
 
-  // Verifica che il gruppo non abbia note associate
   const { data: notes, error: notesError } = await supabase
     .from('notes')
     .select('id')
@@ -176,7 +142,6 @@ async function deleteGroup(userId, groupName) {
     throw new Error('Cannot delete group that contains notes');
   }
 
-  // Elimina il gruppo (i membri vengono eliminati automaticamente per CASCADE)
   const { error } = await supabase
     .from('groups')
     .delete()
@@ -187,17 +152,12 @@ async function deleteGroup(userId, groupName) {
   }
 }
 
-/**
- * Unisciti a un gruppo
- */
 async function joinGroup(userId, groupName) {
-  // Verifica che il gruppo esista
   const group = await getGroupByName(userId, groupName);
   if (!group) {
     throw new Error('Group not found');
   }
 
-  // Verifica che l'utente non sia già membro
   const isMember = await isGroupMember(userId, groupName);
   if (isMember) {
     throw new Error('Already a member');
@@ -206,23 +166,18 @@ async function joinGroup(userId, groupName) {
   await addGroupMember(groupName, userId);
 }
 
-/**
- * Lascia un gruppo
- */
 async function leaveGroup(userId, groupName) {
-  // Verifica che il gruppo esista
+
   const group = await getGroupByName(userId, groupName);
   if (!group) {
     throw new Error('Group not found');
   }
 
-  // Verifica che l'utente sia membro
   const isMember = await isGroupMember(userId, groupName);
   if (!isMember) {
     throw new Error('Not a member');
   }
 
-  // Il creatore non può lasciare il proprio gruppo
   if (group.creator === userId) {
     throw new Error('Cannot leave as owner');
   }
@@ -230,9 +185,6 @@ async function leaveGroup(userId, groupName) {
   await removeGroupMember(groupName, userId);
 }
 
-/**
- * Verifica se un utente è membro di un gruppo
- */
 async function isGroupMember(userId, groupName) {
   const { data: membership, error } = await supabase
     .from('group_users')
@@ -248,9 +200,6 @@ async function isGroupMember(userId, groupName) {
   return !!membership;
 }
 
-/**
- * Verifica se un nome gruppo esiste già
- */
 async function checkGroupNameExists(name) {
   const { data: group, error } = await supabase
     .from('groups')
@@ -265,13 +214,8 @@ async function checkGroupNameExists(name) {
   return !!group;
 }
 
-// ==================== FUNZIONI HELPER ====================
-
-/**
- * Arricchisce un gruppo con dettagli aggiuntivi
- */
 async function enrichGroupWithDetails(group, userId) {
-  // Conta membri
+
   const { data: members, error: membersError } = await supabase
     .from('group_users')
     .select('user_id', { count: 'exact' })
@@ -279,13 +223,10 @@ async function enrichGroupWithDetails(group, userId) {
 
   const memberCount = members?.length || 0;
 
-  // Verifica se l'utente è membro
   const isMember = await isGroupMember(userId, group.name);
 
-  // Verifica se l'utente è il proprietario
   const isOwner = group.creator === userId;
 
-  // Conta note (se necessario)
   const { data: notes, error: notesError } = await supabase
     .from('notes')
     .select('id', { count: 'exact' })
@@ -300,14 +241,11 @@ async function enrichGroupWithDetails(group, userId) {
     isOwner,
     isMember,
     noteCount,
-    createdAt: group.created_at, // Include created_at for Time Machine filtering
+    createdAt: group.created_at, 
     members: []
   };
 }
 
-/**
- * Ottiene un gruppo per nome
- */
 async function getGroupByName(userId, groupName) {
   const { data: group, error } = await supabase
     .from('groups')
@@ -325,9 +263,6 @@ async function getGroupByName(userId, groupName) {
   return group;
 }
 
-/**
- * Aggiunge un membro al gruppo
- */
 async function addGroupMember(groupName, userId) {
   const { error } = await supabase
     .from('group_users')
@@ -341,9 +276,6 @@ async function addGroupMember(groupName, userId) {
   }
 }
 
-/**
- * Rimuove un membro dal gruppo
- */
 async function removeGroupMember(groupName, userId) {
   const { error } = await supabase
     .from('group_users')
@@ -356,9 +288,6 @@ async function removeGroupMember(groupName, userId) {
   }
 }
 
-/**
- * Valida il nome del gruppo
- */
 async function validateGroupName(name) {
   if (!name || !name.trim()) {
     throw new Error('Group name is required');

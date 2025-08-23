@@ -1,5 +1,3 @@
-// src/app/features/timer/models/statistics.interface.ts
-
 export interface UserStatistics {
   user_id: string;
   total_completed_sessions: number;
@@ -31,11 +29,4 @@ export interface LoginStreakCheckDTO {
   streakWasReset: boolean; // Indica se lo streak è stato resettato
   currentStreak: number; // Streak attuale dopo il controllo
   virtual_time?: string; // Tempo virtuale opzionale per Time Machine
-}
-
-// Nuovo DTO per la cronologia delle statistiche (per debug/visualizzazioni avanzate)
-export interface StatisticsHistoryResponse {
-  message: string;
-  statistics: StatisticsResponse;
-  virtualTime: string | null;
 }

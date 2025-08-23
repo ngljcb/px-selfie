@@ -12,7 +12,7 @@ import {
   Category,
   Group,
 } from '../../../model/note.interface';
-import { User } from '../../../model/user.interface';
+import { User } from '../../../model/entity/user.interface';
 import { NotesService } from '../../../service/notes.service';
 import { CategoriesService } from '../../../service/categories.service';
 import { GroupsService } from '../../../service/groups.service';

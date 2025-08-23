@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router } from '@angular/router';
 import { HeaderComponent } from './components/global-components/header/header.component';
 import { TimeMachineComponent } from './components/global-components/time-machine/time-machine.component';
+import { ChatAiComponent } from "./components/global-components/chat-ai/chat-ai.component";
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CommonModule, HeaderComponent, TimeMachineComponent],
+  imports: [RouterOutlet, CommonModule, HeaderComponent, TimeMachineComponent, ChatAiComponent],
   templateUrl: './app.component.html'
 })
 export class AppComponent {

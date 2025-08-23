@@ -134,6 +134,11 @@
       background-color: var(--primary-hover-bg, #fcf3b5);
       animation: studyPulse 2s ease-in-out infinite;
     }
+    
+    &.completed {
+      background-color: var(--primary-bg, #fbd65a);
+      animation: completedGlow 1.5s ease-in-out infinite alternate;
+    }
   }
 
   &.break-mode {
@@ -143,11 +148,11 @@
       background-color: #c8f7e0;
       animation: breakPulse 2s ease-in-out infinite;
     }
-  }
-
-  &.completed {
-    background-color: #ffd93d;
-    animation: completedGlow 1.5s ease-in-out infinite alternate;
+    
+    &.completed {
+      background-color: #a8e6cf;
+      animation: completedGlow 1.5s ease-in-out infinite alternate;
+    }
   }
 
   &:hover {
@@ -513,7 +518,7 @@
 
 @keyframes completedGlow {
   0% { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
-  100% { box-shadow: 0 4px 12px rgba(255, 217, 61, 0.4); }
+  100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 }
 
 @keyframes fadeIn {
