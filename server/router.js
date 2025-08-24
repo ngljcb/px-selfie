@@ -10,6 +10,7 @@ const groupsController = require('./controller/groupsController');
 const usersController = require('./controller/usersController');
 const categoriesController = require('./controller/categoriesController');
 const chatController = require('./controller/chatController');
+const gradesController = require('./controller/gradesController');
 
 const router = express.Router();
 
@@ -75,5 +76,12 @@ router.get('/categories', checkAuth, categoriesController.getCategories);
 
 /* ---- CHAT AI ---- */
 router.post('/chat', checkAuth, chatController.sendMessage);
+
+/* ---- GRADES ---- */
+router.get('/grades', checkAuth, gradesController.listGrades);
+router.get('/grades/:id', checkAuth, gradesController.getGrade);
+router.post('/grades', checkAuth, gradesController.createGrade);
+router.patch('/grades/:id', checkAuth, gradesController.updateGrade);
+router.delete('/grades/:id', checkAuth, gradesController.deleteGrade);
 
 module.exports = router;
