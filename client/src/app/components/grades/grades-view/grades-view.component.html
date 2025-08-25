@@ -1,0 +1,66 @@
+<main class="grades-layout">
+  <!-- Page header -->
+  <header class="page-header">
+    <h1>Grades</h1>
+    <p class="subtitle">Your exams, CFU and averages in a clean overview.</p>
+  </header>
+
+  <!-- Stat cards -->
+  <section class="stats">
+    <article class="card">
+      <div class="label">average</div>
+      <div class="value">{{ average }}</div>
+    </article>
+    <article class="card">
+      <div class="label">total CFU</div>
+      <div class="value">{{ totalCFU }}</div>
+    </article>
+    <article class="card">
+      <div class="label">base di laurea</div>
+      <div class="value">{{ laureaBase }}</div>
+    </article>
+  </section>
+
+  <!-- Messages -->
+  <section *ngIf="error" class="banner error">{{ error }}</section>
+  <section *ngIf="loading" class="banner loading">Loading…</section>
+  <section *ngIf="!loading && !error && grades.length === 0" class="banner empty">
+    No grades yet. Add your first exam to see stats here.
+  </section>
+
+  <!-- Year groups -->
+  <section *ngIf="!loading && !error && grades.length > 0" class="years">
+    <div class="year-block" *ngFor="let y of years">
+      <h3 class="year-title"><span class="pill">{{ y }}</span></h3>
+
+      <div class="table-card">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-course">COURSE</th>
+                <th class="col-cfu center">CFU</th>
+                <th class="col-vote center">GRADE</th>
+                <th class="col-date center">COMPLETION DATE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let g of byYear.get(y)!; trackBy: trackById">
+                <td class="course">
+                  <span class="course-chip">{{ g.course_name }}</span>
+                </td>
+                <td class="center">{{ g.cfu }}</td>
+                <td class="center">
+                  <span class="badge" [class.badge-good]="toNumericGrade(g.grade) !== null && toNumericGrade(g.grade)! >= 28" [class.badge-ok]="toNumericGrade(g.grade) !== null && toNumericGrade(g.grade)! >= 24 && toNumericGrade(g.grade)! < 28" [class.badge-pass]="(g.grade + '').toLowerCase() === 'passed'">
+                    {{ g.grade }}
+                  </span>
+                </td>
+                <td class="center">{{ formatDate(g.date) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
