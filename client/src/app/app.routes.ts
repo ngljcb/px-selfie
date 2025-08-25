@@ -8,6 +8,7 @@ import { LoginComponent } from './components/auth/login/login.component';
 import { AuthGuard } from './components/auth/guard/auth.guard';
 import { TimerViewComponent } from './components/timer/timer-view/timer-view.component';
 import { GroupComponent } from './components/notes/group/group.component';
+import { GradesViewComponent } from './components/grades/grades-view/grades-view.component';
 
 export const routes: Routes = [
   {
@@ -61,6 +62,11 @@ export const routes: Routes = [
   {
     path: 'groups',
     component: GroupComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'grades',
+    component: GradesViewComponent,
     canActivate: [AuthGuard]
   }
 ];

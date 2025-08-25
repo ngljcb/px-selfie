@@ -1,0 +1,192 @@
+:host {
+  display: block;
+}
+
+/* page layout */
+.grades-layout {
+  --ink: #1f2937;
+  --muted: #6b7280;
+  --line: #e5e7eb;
+  --panel: #ffffff;
+  --soft: #f9fafb;
+  --accent: #1f7ae0;
+
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 0 20px;
+  color: var(--ink);
+}
+
+/* header */
+.page-header {
+  margin-bottom: 12px;
+
+  h1 {
+    margin: 0 0 4px 0;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: .2px;
+  }
+  .subtitle {
+    margin: 0;
+    color: var(--muted);
+  }
+}
+
+/* stat cards */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 12px 0 18px;
+
+  .card {
+    background: var(--panel);
+    border: 1px dashed #9ec3ff;
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 8px 18px rgba(0,0,0,.05);
+
+    .label {
+      color: #b11;
+      font-style: italic;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .value {
+      font-size: 26px;
+      font-weight: 800;
+    }
+  }
+}
+
+/* banners */
+.banner {
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin: 6px 0 18px;
+  font-weight: 600;
+
+  &.loading {
+    background: #eef2ff;
+    color: #334155;
+    border: 1px solid #c7d2fe;
+  }
+  &.error {
+    background: #ffeaea;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+  }
+  &.empty {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+}
+
+/* year block */
+.years {
+  display: grid;
+  gap: 22px;
+}
+
+.year-block {
+  display: grid;
+  gap: 10px;
+}
+
+.year-title {
+  margin: 0;
+  .pill {
+    display: inline-block;
+    background: #1f7ae033;
+    color: #0b3c7a;
+    font-weight: 800;
+    letter-spacing: .3px;
+    border: 1px solid #9ec3ff;
+    border-radius: 999px;
+    padding: 6px 14px;
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+}
+
+/* table card */
+.table-card {
+  background: #fffdf4;
+  border: 1px dashed #9ec3ff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0,0,0,.04);
+}
+
+.table-scroll {
+  overflow-x: auto;        /* desktop + mobile */
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;        /* keeps columns readable on narrow view */
+
+  thead th {
+    text-align: left;
+    background: var(--soft);
+    color: #39507a;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line);
+    letter-spacing: .3px;
+  }
+
+  tbody td {
+    padding: 14px;
+    border-bottom: 1px solid var(--line);
+    background: #f4f8ff;
+  }
+
+  tbody tr:nth-child(2n) td { background: #eef5ff; }
+
+  .col-course { width: 52%; }
+  .col-cfu, .col-vote, .col-date { width: 16%; }
+
+  .center { text-align: center !important; }
+
+  .course .course-chip {
+    display: inline-block;
+    background: rgba(15,64,122,.08);
+    color: #0f407a;
+    font-weight: 700;
+    padding: 7px 10px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+
+  .badge {
+    display: inline-block;
+    min-width: 52px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    background: #eef2ff;
+    color: #223;
+  }
+  .badge-ok   { background: #ffeab3; color: #624; }
+  .badge-good { background: #c9f7d5; color: #175d3a; }
+  .badge-pass { background: #ddeafc; color: #214a9c; }
+}
+
+/* responsive */
+@media (max-width: 960px) {
+  .stats { grid-template-columns: 1fr; }
+  .grades-layout { margin: 16px auto; padding: 0 14px; }
+  table { min-width: 560px; }
+}
+
+@media (max-width: 640px) {
+  .page-header h1 { font-size: 24px; }
+  table { min-width: 520px; }
+}

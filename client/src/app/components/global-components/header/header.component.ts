@@ -18,7 +18,7 @@ export class HeaderComponent {
     { label: 'Calendar', href: 'calendar' },
     { label: 'Notes', href: 'notes' },
     { label: 'Pomodoro', href: 'timer' },
-    { label: 'Grades', href: '#' }
+    { label: 'Grades', href: 'grades' }
   ];
 
    constructor(
