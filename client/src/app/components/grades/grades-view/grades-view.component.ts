@@ -1,12 +1,13 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { GradesService } from '../../../service/grades.service';
 import { Grade } from '../../../model/entity/grade.model';
 
 @Component({
   selector: 'app-grades-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './grades-view.component.html',
   styleUrl: './grades-view.component.scss',
 })
@@ -17,7 +18,7 @@ export class GradesViewComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
-  // paging hooks (kept for future use)
+  // paging (se servirà in futuro)
   limit = 1000;
   offset = 0;
   total = 0;
@@ -29,6 +30,9 @@ export class GradesViewComponent implements OnInit {
 
   years: string[] = [];
   byYear = new Map<string, Grade[]>();
+
+  /** Anni collassati: di default VUOTO => tutto visibile */
+  collapsedYears = new Set<string>();
 
   ngOnInit(): void {
     this.fetch();
@@ -45,6 +49,7 @@ export class GradesViewComponent implements OnInit {
         this.normalizeAndSort();
         this.computeTotals();
         this.groupByYear();
+        this.collapsedYears.clear();
         this.loading = false;
       },
       error: (err) => {
@@ -54,7 +59,7 @@ export class GradesViewComponent implements OnInit {
     });
   }
 
-  // ----- helpers (public for template) -----
+  // ---------- Helpers usati nel template ----------
   toNumericGrade(grade: number | string | null | undefined): number | null {
     if (grade == null) return null;
     if (typeof grade === 'number') return grade;
@@ -76,7 +81,16 @@ export class GradesViewComponent implements OnInit {
 
   trackById = (_: number, g: Grade) => g.id;
 
-  // ----- internal -----
+  isCollapsed(year: string): boolean {
+    return this.collapsedYears.has(year);
+  }
+
+  toggleYear(year: string): void {
+    if (this.collapsedYears.has(year)) this.collapsedYears.delete(year);
+    else this.collapsedYears.add(year);
+  }
+
+  // ---------- Interni ----------
   private normalizeAndSort(): void {
     this.grades.sort((a, b) => {
       const ya = (a.year ?? '').localeCompare(b.year ?? '');
