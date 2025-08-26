@@ -1,4 +1,4 @@
-<!-- note-viewer.component.html - SIMPLIFIED VERSION -->
+<!-- note-viewer.component.html - UPDATED WITH METADATA -->
 
 <!-- Modal Backdrop -->
 <div *ngIf="isOpen && note" 
@@ -12,9 +12,52 @@
     <!-- Header with title and close button -->
     <header class="flex items-start justify-between p-6 border-b border-gray-200">
       <div class="flex-1 min-w-0 mr-4">
-        <h1 class="text-2xl font-bold text-gray-900 break-words">
+        <h1 class="text-2xl font-bold text-gray-900 break-words mb-2">
           {{ getDisplayTitle() }}
         </h1>
+        
+        <!-- Note metadata -->
+        <div class="space-y-2 text-sm text-gray-600">
+          <!-- Creator info -->
+          <div class="flex items-center">
+            <span class="text-gray-500 w-20">Owner:</span>
+            <span class="font-medium">{{ getCreatorDisplayName() }}</span>
+          </div>
+          
+          <!-- Creation date -->
+          <div class="flex items-center">
+            <span class="text-gray-500 w-20">Date:</span>
+            <span>{{ getFormattedCreationDate() }}</span>
+          </div>
+          
+          <!-- Accessibility type -->
+          <div class="flex items-center">
+            <span class="text-gray-500 w-20">Visibility:</span>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
+                  [ngClass]="{
+                    'bg-gray-100 text-gray-800': note.accessibility === 'private',
+                    'bg-green-100 text-green-800': note.accessibility === 'public',
+                    'bg-blue-100 text-blue-800': note.accessibility === 'authorized',
+                    'bg-purple-100 text-purple-800': note.accessibility === 'group'
+                  }">
+              {{ getAccessibilityLabel() }}
+            </span>
+          </div>
+          
+          <!-- Group info (only for group notes) -->
+          <div *ngIf="isGroupNote()" class="flex items-center">
+            <span class="text-gray-500 w-20">Group:</span>
+            <span class="font-medium text-purple-700">{{ getGroupDisplayName() }}</span>
+          </div>
+          
+          <!-- Category info -->
+          <div *ngIf="note.category" class="flex items-center">
+            <span class="text-gray-500 w-20">Category:</span>
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+              {{ note.category }}
+            </span>
+          </div>
+        </div>
       </div>
       
       <!-- Close button -->
@@ -79,6 +122,18 @@
     .max-w-4xl {
       max-width: 100%;
       margin: 0.5rem;
+    }
+    
+    /* Stack metadata on mobile */
+    .space-y-2 > div {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .space-y-2 > div span:first-child {
+      width: auto;
+      margin-bottom: 0.25rem;
+      font-weight: 500;
     }
   }
 </style>

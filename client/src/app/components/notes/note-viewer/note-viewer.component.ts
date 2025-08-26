@@ -1,6 +1,9 @@
-import { Component, Input, Output, EventEmitter, HostListener } from '@angular/core';
+import { Component, Input, Output, EventEmitter, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Subject, takeUntil } from 'rxjs';
 import { NoteWithDetails } from '../../../model/note.interface';
+import { User } from '../../../model/entity/user.interface';
+import { UsersService } from '../../../service/users.service';
 
 @Component({
   selector: 'app-note-viewer',
@@ -8,14 +11,66 @@ import { NoteWithDetails } from '../../../model/note.interface';
   imports: [CommonModule],
   templateUrl: './note-viewer.component.html'
 })
-export class NoteViewerComponent {
+export class NoteViewerComponent implements OnInit, OnDestroy {
   
   @Input() note: NoteWithDetails | null = null;
   @Input() isOpen = false;
   
   @Output() onClose = new EventEmitter<void>();
 
-  constructor() {}
+  // User details for creator
+  creatorUser: User | null = null;
+  isLoadingCreator = false;
+
+  // Subject for cleanup
+  private destroy$ = new Subject<void>();
+
+  constructor(private usersService: UsersService) {}
+
+  ngOnInit(): void {
+    // Load creator details when note changes
+    if (this.note?.creator) {
+      this.loadCreatorDetails(this.note.creator);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  ngOnChanges(): void {
+    // Load creator details when note input changes
+    if (this.note?.creator) {
+      this.loadCreatorDetails(this.note.creator);
+    } else {
+      this.creatorUser = null;
+    }
+  }
+
+  // ========== DATA LOADING ==========
+
+  /**
+   * Load creator user details
+   */
+  private loadCreatorDetails(creatorId: string): void {
+    if (!creatorId) return;
+
+    this.isLoadingCreator = true;
+    this.usersService.getUserById(creatorId).pipe(
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (user) => {
+        this.creatorUser = user;
+        this.isLoadingCreator = false;
+      },
+      error: (error) => {
+        console.error('Error loading creator details:', error);
+        this.creatorUser = null;
+        this.isLoadingCreator = false;
+      }
+    });
+  }
 
   // ========== MODAL MANAGEMENT ==========
 
@@ -52,6 +107,59 @@ export class NoteViewerComponent {
    */
   getDisplayTitle(): string {
     return this.note?.title || 'Untitled';
+  }
+
+  /**
+   * Get creator display name
+   */
+  getCreatorDisplayName(): string {
+    if (this.isLoadingCreator) return 'Loading...';
+    return this.creatorUser?.displayName || 'Unknown User';
+  }
+
+  /**
+   * Get accessibility type label
+   */
+  getAccessibilityLabel(): string {
+    if (!this.note?.accessibility) return '';
+    
+    switch (this.note.accessibility) {
+      case 'private': return 'Private';
+      case 'public': return 'Public';
+      case 'authorized': return 'Authorized Users';
+      case 'group': return 'Group';
+      default: return this.note.accessibility;
+    }
+  }
+
+  /**
+   * Check if note is group note
+   */
+  isGroupNote(): boolean {
+    return this.note?.accessibility === 'group' && !!(this.note?.groupName || (this.note as any)?.group_name);
+  }
+
+  /**
+   * Get group display name
+   */
+  getGroupDisplayName(): string {
+    return this.note?.groupName || (this.note as any)?.group_name || 'Unknown Group';
+  }
+
+  /**
+   * Format creation date
+   */
+  getFormattedCreationDate(): string {
+    if (!this.note?.createdAt) return '';
+    
+    const date = new Date(this.note.createdAt);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 
   /**
