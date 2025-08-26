@@ -27,6 +27,8 @@ export class GradesCreateComponent {
   responseMessage = '';
   responseVariant: Variant = 'info';
 
+  gradeOptions: number[] = [30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18];
+
   constructor(private gradesService: GradesService, private router: Router) {}
 
   /** validazione dei campi */
