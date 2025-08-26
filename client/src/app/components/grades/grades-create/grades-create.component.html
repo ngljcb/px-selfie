@@ -28,8 +28,11 @@
           </div>
 
           <div class="form-group">
-            <label>Grade *</label>
-            <input [(ngModel)]="grade" name="grade" placeholder='e.g. 30, 28' required />
+            <label for="grade">Grade *</label>
+            <select id="grade" [(ngModel)]="grade" name="grade" required>
+              <option value="">-- Select grade --</option>
+              <option *ngFor="let g of gradeOptions" [value]="g">{{ g }}</option>
+            </select>
           </div>
         </div>
 

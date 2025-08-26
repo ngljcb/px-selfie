@@ -1,4 +1,3 @@
-// src/app/components/grades/grades-delete/grades-delete.component.ts
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
