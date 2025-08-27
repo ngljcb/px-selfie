@@ -9,6 +9,8 @@ const notesController = require('./controller/notesController');
 const groupsController = require('./controller/groupsController');
 const usersController = require('./controller/usersController');
 const categoriesController = require('./controller/categoriesController');
+const chatController = require('./controller/chatController');
+const gradesController = require('./controller/gradesController');
 
 const router = express.Router();
 
@@ -40,15 +42,13 @@ router.post('/events', checkAuth, eventsController.createEvent);
 router.patch('/events/:id', checkAuth, eventsController.updateEvent);
 router.delete('/events/:id', checkAuth, eventsController.deleteEvent);
 
-// Main CRUD operations
+/* ---- NOTES ---- */
 router.get('/notes', checkAuth, notesController.getNotes);
 router.get('/notes/previews', checkAuth, notesController.getNotePreviews);
 router.get('/notes/stats', checkAuth, notesController.getNotesStats);
 router.get('/notes/count-by-accessibility', checkAuth, notesController.getNotesCountByAccessibility);
 router.post('/notes', checkAuth, notesController.createNote);
 router.post('/notes/bulk', checkAuth, notesController.bulkOperation);
-
-// Individual note operations
 router.get('/notes/:id', checkAuth, notesController.getNoteById);
 router.put('/notes/:id', checkAuth, notesController.updateNote);
 router.delete('/notes/:id', checkAuth, notesController.deleteNote);
@@ -56,42 +56,32 @@ router.post('/notes/:id/duplicate', checkAuth, notesController.duplicateNote);
 router.post('/notes/:id/share', checkAuth, notesController.shareNote);
 router.get('/notes/:id/permissions', checkAuth, notesController.getNotePermissions);
 
-// Export operations
-router.get('/notes/:id/export/markdown', checkAuth, notesController.exportNoteAsMarkdown);
-router.get('/notes/:id/export/html', checkAuth, notesController.exportNoteAsHTML);
-
-// ==================== GROUPS ROUTES ====================
-// Main group operations
+/* ---- GROUPS ---- */
 router.get('/groups', checkAuth, groupsController.getAllGroups);
 router.get('/groups/my-groups', checkAuth, groupsController.getUserGroups);
-router.get('/groups/search', checkAuth, groupsController.searchGroups);
-router.get('/groups/popular', checkAuth, groupsController.getPopularGroups);
-router.get('/groups/recent', checkAuth, groupsController.getRecentGroups);
 router.get('/groups/check-name', checkAuth, groupsController.checkGroupNameExists);
-router.get('/groups/overall-stats', checkAuth, groupsController.getOverallGroupsStats);
 router.post('/groups', checkAuth, groupsController.createGroup);
-
-// Bulk operations
-router.post('/groups/bulk-join', checkAuth, groupsController.joinMultipleGroups);
-router.post('/groups/bulk-leave', checkAuth, groupsController.leaveMultipleGroups);
-
-// Individual group operations
-router.get('/groups/:name', checkAuth, groupsController.getGroupByName);
 router.delete('/groups/:name', checkAuth, groupsController.deleteGroup);
 router.post('/groups/:name/join', checkAuth, groupsController.joinGroup);
 router.post('/groups/:name/leave', checkAuth, groupsController.leaveGroup);
-router.get('/groups/:name/members', checkAuth, groupsController.getGroupMembers);
-router.post('/groups/:name/members', checkAuth, groupsController.manageGroupMembers);
-router.get('/groups/:name/membership', checkAuth, groupsController.checkGroupMembership);
-router.get('/groups/:name/stats', checkAuth, groupsController.getGroupStats);
 
-// ==================== USERS ROUTES ====================
+/* ---- USERS ---- */
 router.get('/users/search', checkAuth, usersController.searchUsersByUsername);
 router.get('/users/exists', checkAuth, usersController.checkUsernameExists);
 router.get('/users/batch', checkAuth, usersController.getUsersByIds);
 router.get('/users/:id', checkAuth, usersController.getUserById);
 
-// ==================== CATEGORIES ROUTES ====================
+/* ---- CATEGORIES ---- */
 router.get('/categories', checkAuth, categoriesController.getCategories);
+
+/* ---- CHAT AI ---- */
+router.post('/chat', checkAuth, chatController.sendMessage);
+
+/* ---- GRADES ---- */
+router.get('/grades', checkAuth, gradesController.listGrades);
+router.get('/grades/:id', checkAuth, gradesController.getGrade);
+router.post('/grades', checkAuth, gradesController.createGrade);
+router.patch('/grades/:id', checkAuth, gradesController.updateGrade);
+router.delete('/grades/:id', checkAuth, gradesController.deleteGrade);
 
 module.exports = router;

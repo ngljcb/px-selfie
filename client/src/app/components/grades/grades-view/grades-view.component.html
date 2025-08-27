@@ -1,0 +1,87 @@
+<main class="grades-layout">
+  <!-- STICKY SUMMARY (always visible on top) -->
+  <section class="summary" role="region" aria-label="Grades summary">
+    <header class="page-header">
+      <h1>Grades</h1>
+
+      <!-- ADD button (link to another component/route) -->
+      <a class="btn btn-add" [routerLink]="['/grades','new']" aria-label="Add grade">
+        <em class="fa fa-plus"></em> <span class="txt">add</span>
+      </a>
+    </header>
+
+    <div class="stats">
+      <article class="card">
+        <div class="label">average</div>
+        <div class="value center">{{ average }}</div>
+      </article>
+      <article class="card">
+        <div class="label">total CFU</div>
+        <div class="value center">{{ totalCFU }}</div>
+      </article>
+      <article class="card">
+        <div class="label">base di laurea</div>
+        <div class="value center">{{ laureaBase }}</div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Messaggi -->
+  <section *ngIf="error" class="banner error">{{ error }}</section>
+  <section *ngIf="loading" class="banner loading">Loading…</section>
+  <section *ngIf="!loading && !error && grades.length === 0" class="banner empty">
+    No grades yet. Add your first exam to see stats here.
+  </section>
+
+  <!-- Gruppi per anno -->
+  <section *ngIf="!loading && !error && grades.length > 0" class="years">
+    <div class="year-block" *ngFor="let y of years">
+      <!-- Header anno cliccabile -->
+      <button class="year-title" type="button" (click)="toggleYear(y)" [attr.aria-expanded]="!isCollapsed(y)">
+        <span class="pill">{{ y }}</span>
+        <em class="fa" [class.fa-chevron-down]="!isCollapsed(y)" [class.fa-chevron-right]="isCollapsed(y)"></em>
+      </button>
+
+      <!-- Tabella corsi: visibile se NON collassato -->
+      <div class="table-card" *ngIf="!isCollapsed(y)">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th class="col-course">COURSE</th>
+                <th class="col-cfu center">CFU</th>
+                <th class="col-vote center">GRADE</th>
+                <th class="col-date center">EXAM DATE</th>
+                <th class="col-actions center">ACTIONS</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let g of byYear.get(y)!; trackBy: trackById">
+                <td class="course">
+                  <span class="course-chip">{{ g.course_name }}</span>
+                </td>
+                <td class="center">{{ g.cfu }}</td>
+                <td class="center">
+                  <span class="badge" [class.badge-good]="toNumericGrade(g.grade) !== null && toNumericGrade(g.grade)! >= 28" [class.badge-ok]="toNumericGrade(g.grade) !== null && toNumericGrade(g.grade)! >= 24 && toNumericGrade(g.grade)! < 28" [class.badge-pass]="(g.grade + '').toLowerCase() === 'passed'">
+                    {{ g.grade }}
+                  </span>
+                </td>
+                <td class="center"><em>{{ formatDate(g.date) }}</em></td>
+                <td class="center actions">
+                  <!-- EDIT / DELETE links to external components -->
+                  <a class="icon-btn" [routerLink]="['/grades', g.id, 'edit']" aria-label="Edit grade">
+                    <em class="fa fa-pen"></em>
+                  </a>
+                  <a class="icon-btn danger" [routerLink]="['/grades', g.id, 'delete']" aria-label="Delete grade">
+                    <em class="fa fa-trash"></em>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- /tabella -->
+    </div>
+  </section>
+</main>

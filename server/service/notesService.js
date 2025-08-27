@@ -1,10 +1,5 @@
 const supabase = require('../persistence/supabase');
 
-/**
- * Service per la gestione delle note
- */
-
-// Costanti
 const PREVIEW_LENGTH = 200;
 const ACCESSIBILITY_TYPES = {
   PRIVATE: 'private',
@@ -13,17 +8,12 @@ const ACCESSIBILITY_TYPES = {
   GROUP: 'group'
 };
 
-/**
- * Ottiene lista note con filtri e paginazione
- */
 async function getNotes(userId, filters) {
-  // FIXED: Simplified approach - get notes and count them directly
+
   let query = supabase
     .from('notes')
-    .select('*')
-    .or(`creator.eq.${userId},accessibility.eq.public`);
+    .select('*');
 
-  // Filtri aggiuntivi
   if (filters.search) {
     query = query.or(`title.ilike.%${filters.search}%,text.ilike.%${filters.search}%`);
   }
@@ -40,20 +30,17 @@ async function getNotes(userId, filters) {
     query = query.eq('group_name', filters.group);
   }
 
-  // Ordinamento
   const orderColumn = getOrderColumn(filters.sortBy);
   query = query.order(orderColumn, { ascending: filters.sortOrder === 'asc' });
 
-  const { data: notes, error } = await query;
+  const { data: allNotes, error } = await query;
 
   if (error) {
     throw new Error(`Error fetching notes: ${error.message}`);
   }
 
-  // Post-elaborazione per filtrare note di gruppo e autorizzate
-  const accessibleNotes = await filterAccessibleNotes(notes || [], userId);
+  const accessibleNotes = await filterAccessibleNotes(allNotes || [], userId);
 
-  // Load categories for each note separately
   const enrichedNotes = await Promise.all(
     accessibleNotes.map(async (note) => {
       let categoryDetails = null;
@@ -73,7 +60,6 @@ async function getNotes(userId, filters) {
     })
   );
 
-  // Apply pagination to enriched notes
   const startIndex = filters.offset || 0;
   const endIndex = startIndex + (filters.limit || 50);
   const paginatedNotes = enrichedNotes.slice(startIndex, endIndex);
@@ -87,18 +73,14 @@ async function getNotes(userId, filters) {
   };
 }
 
-/**
- * Ottiene preview delle note per la home page
- */
 async function getNotePreviews(userId, sortBy, limit) {
   const orderColumn = getOrderColumn(sortBy);
   
   let query = supabase
     .from('notes')
-    .select('id, title, text, created_at, last_modify, category, accessibility, group_name')
-    .or(`creator.eq.${userId},accessibility.eq.public`)
+    .select('id, title, text, created_at, category, accessibility, group_name, creator')
     .order(orderColumn, { ascending: false })
-    .limit(limit);
+    .limit(limit * 3); 
 
   const { data: notes, error } = await query;
 
@@ -106,29 +88,24 @@ async function getNotePreviews(userId, sortBy, limit) {
     throw new Error(`Error fetching note previews: ${error.message}`);
   }
 
-  // Filtra note accessibili
   const accessibleNotes = await filterAccessibleNotes(notes || [], userId);
 
-  // Genera preview
-  return accessibleNotes.map(note => ({
+  const limitedNotes = accessibleNotes.slice(0, limit);
+
+  return limitedNotes.map(note => ({
     id: note.id,
     title: note.title,
     preview: generatePreview(note.text || ''),
     createdAt: note.created_at,
-    lastModify: note.last_modify,
     categoryName: note.category,
     accessibility: note.accessibility,
     contentLength: (note.text || '').length,
-    canEdit: note.creator === userId,
+    canEdit: false, 
     canDelete: note.creator === userId
   }));
 }
 
-/**
- * Ottiene una singola nota per ID
- */
 async function getNoteById(userId, noteId) {
-  // FIXED: Simplified query without complex relations
   const { data: note, error } = await supabase
     .from('notes')
     .select('*')
@@ -142,13 +119,11 @@ async function getNoteById(userId, noteId) {
     throw new Error(`Error fetching note: ${error.message}`);
   }
 
-  // Verifica permessi di accesso
   const hasAccess = await checkNoteAccess(note, userId);
   if (!hasAccess) {
     throw new Error('Access denied');
   }
 
-  // FIXED: Load related data separately to avoid relation issues
   let categoryDetails = null;
   if (note.category) {
     const { data: category } = await supabase
@@ -177,7 +152,7 @@ async function getNoteById(userId, noteId) {
       .eq('note_id', noteId);
     
     if (authUsers && authUsers.length > 0) {
-      // Get user details separately
+
       const userIds = authUsers.map(au => au.user_id);
       const { data: users } = await supabase
         .from('profiles')
@@ -191,7 +166,6 @@ async function getNoteById(userId, noteId) {
     }
   }
 
-  // Combine all data
   const enrichedNote = {
     ...note,
     category_details: categoryDetails,
@@ -202,12 +176,11 @@ async function getNoteById(userId, noteId) {
   return enrichNoteWithMetadata(enrichedNote, userId);
 }
 
-/**
- * Crea una nuova nota
- */
 async function createNote(userId, noteData) {
-  // Validazione
+
   await validateNoteData(noteData, userId);
+
+  const createdAt = noteData.createdAt || new Date().toISOString();
 
   const noteToInsert = {
     creator: userId,
@@ -215,7 +188,8 @@ async function createNote(userId, noteData) {
     text: noteData.text,
     category: noteData.category || null,
     accessibility: noteData.accessibility,
-    group_name: noteData.groupName || null
+    group_name: noteData.groupName || null,
+    created_at: createdAt 
   };
 
   const { data: note, error } = await supabase
@@ -228,12 +202,10 @@ async function createNote(userId, noteData) {
     throw new Error(`Error creating note: ${error.message}`);
   }
 
-  // Aggiungi utenti autorizzati se specificati
   if (noteData.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED && noteData.authorizedUserIds?.length > 0) {
     await addAuthorizedUsers(note.id, noteData.authorizedUserIds);
   }
 
-  // FIXED: Load category details separately
   let categoryDetails = null;
   if (note.category) {
     const { data: category } = await supabase
@@ -244,7 +216,6 @@ async function createNote(userId, noteData) {
     categoryDetails = category;
   }
 
-  // Combine data
   const enrichedNote = {
     ...note,
     category_details: categoryDetails
@@ -253,65 +224,8 @@ async function createNote(userId, noteData) {
   return enrichNoteWithMetadata(enrichedNote, userId);
 }
 
-/**
- * Aggiorna una nota esistente
- */
-async function updateNote(userId, noteId, updateData) {
-  // Verifica che l'utente possa modificare la nota
-  const existingNote = await getNoteById(userId, noteId);
-  if (existingNote.creator !== userId) {
-    throw new Error('Access denied');
-  }
-
-  // Validazione
-  await validateNoteData(updateData, userId);
-
-  const updateFields = {
-    title: updateData.title,
-    text: updateData.text,
-    category: updateData.category || null,
-    accessibility: updateData.accessibility,
-    group_name: updateData.groupName || null,
-    last_modify: new Date().toISOString()
-  };
-
-  const { data: note, error } = await supabase
-    .from('notes')
-    .update(updateFields)
-    .eq('id', noteId)
-    .select(`
-      *,
-      category_details:category(*),
-      group_details:groups(*)
-    `)
-    .single();
-
-  if (error) {
-    throw new Error(`Error updating note: ${error.message}`);
-  }
-
-  // Gestione utenti autorizzati
-  if (updateData.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED) {
-    // Rimuovi tutti gli utenti autorizzati esistenti
-    await removeAllAuthorizedUsers(noteId);
-    
-    // Aggiungi i nuovi utenti autorizzati
-    if (updateData.authorizedUserIds?.length > 0) {
-      await addAuthorizedUsers(noteId, updateData.authorizedUserIds);
-    }
-  } else {
-    // Se non è più una nota autorizzata, rimuovi tutti gli utenti autorizzati
-    await removeAllAuthorizedUsers(noteId);
-  }
-
-  return enrichNoteWithMetadata(note, userId);
-}
-
-/**
- * Elimina una nota
- */
 async function deleteNote(userId, noteId) {
-  // Verifica che l'utente possa eliminare la nota
+
   const note = await getNoteById(userId, noteId);
   if (note.creator !== userId) {
     throw new Error('Access denied');
@@ -327,72 +241,58 @@ async function deleteNote(userId, noteId) {
   }
 }
 
-/**
- * Duplica una nota
- */
 async function duplicateNote(userId, sourceNoteId, duplicateData) {
-  // Ottieni la nota originale
+
   const sourceNote = await getNoteById(userId, sourceNoteId);
 
-  // Crea i dati per la nuova nota
+  const createdAt = duplicateData.createdAt || new Date().toISOString();
+
   const newNoteData = {
     title: duplicateData.newTitle || `Copy of ${sourceNote.title || 'Untitled'}`,
     text: sourceNote.text,
     category: sourceNote.category,
     accessibility: duplicateData.accessibility || ACCESSIBILITY_TYPES.PRIVATE,
     groupName: duplicateData.groupName,
-    authorizedUserIds: duplicateData.authorizedUserIds
+    authorizedUserIds: duplicateData.authorizedUserIds,
+    createdAt: createdAt 
   };
 
   return await createNote(userId, newNoteData);
 }
 
-/**
- * Condivide una nota con specifici utenti
- */
 async function shareNote(userId, noteId, userIds) {
-  // Verifica che l'utente possa condividere la nota
+
   const note = await getNoteById(userId, noteId);
   if (note.creator !== userId) {
     throw new Error('Access denied');
   }
 
-  // Aggiorna la nota come "authorized" se non lo è già
   if (note.accessibility !== ACCESSIBILITY_TYPES.AUTHORIZED) {
     await supabase
       .from('notes')
       .update({ 
-        accessibility: ACCESSIBILITY_TYPES.AUTHORIZED,
-        last_modify: new Date().toISOString()
+        accessibility: ACCESSIBILITY_TYPES.AUTHORIZED
       })
       .eq('id', noteId);
   }
 
-  // Aggiungi gli utenti autorizzati
   await addAuthorizedUsers(noteId, userIds);
 }
 
-/**
- * Ottiene i permessi di una nota per l'utente corrente
- */
 async function getNotePermissions(userId, noteId) {
   const note = await getNoteById(userId, noteId);
   
   return {
-    canView: true, // Se siamo qui, l'utente può vedere la nota
-    canEdit: note.creator === userId,
+    canView: true, 
     canDelete: note.creator === userId,
     canShare: note.creator === userId
   };
 }
 
-/**
- * Operazioni bulk sulle note
- */
-async function bulkOperation(userId, operationData) {
-  const { operation, noteIds, newCategoryName, newAccessibility, newGroupName } = operationData;
 
-  // Verifica che l'utente possa modificare tutte le note
+async function bulkOperation(userId, operationData) {
+  const { operation, noteIds } = operationData;
+
   for (const noteId of noteIds) {
     const note = await getNoteById(userId, noteId);
     if (note.creator !== userId) {
@@ -400,146 +300,50 @@ async function bulkOperation(userId, operationData) {
     }
   }
 
-  let updateFields = {
-    last_modify: new Date().toISOString()
-  };
-
-  switch (operation) {
-    case 'delete':
-      const { error: deleteError } = await supabase
-        .from('notes')
-        .delete()
-        .in('id', noteIds);
-      
-      if (deleteError) {
-        throw new Error(`Error deleting notes: ${deleteError.message}`);
-      }
-      break;
-
-    case 'changeCategory':
-      updateFields.category = newCategoryName || null;
-      break;
-
-    case 'changeAccessibility':
-      updateFields.accessibility = newAccessibility;
-      if (newAccessibility === ACCESSIBILITY_TYPES.GROUP) {
-        updateFields.group_name = newGroupName;
-      }
-      break;
-
-    default:
-      throw new Error(`Unknown operation: ${operation}`);
-  }
-
-  if (operation !== 'delete') {
-    const { error } = await supabase
+  if (operation === 'delete') {
+    const { error: deleteError } = await supabase
       .from('notes')
-      .update(updateFields)
+      .delete()
       .in('id', noteIds);
-
-    if (error) {
-      throw new Error(`Error updating notes: ${error.message}`);
+    
+    if (deleteError) {
+      throw new Error(`Error deleting notes: ${deleteError.message}`);
     }
+  } else {
+    throw new Error(`Unsupported operation: ${operation}. Only 'delete' is supported.`);
   }
 
   return { success: true, processed: noteIds.length };
 }
 
-/**
- * Ottiene statistiche delle note dell'utente
- */
 async function getNotesStats(userId) {
-  const { data: notes, error } = await supabase
-    .from('notes')
-    .select('accessibility, text, category')
-    .eq('creator', userId);
-
-  if (error) {
-    throw new Error(`Error fetching notes stats: ${error.message}`);
-  }
+  const accessibleNotes = await filterAccessibleNotes(
+    (await supabase.from('notes').select('accessibility, text, category, creator')).data || [],
+    userId
+  );
 
   const stats = {
-    totalNotes: notes.length,
-    privateNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PRIVATE).length,
-    publicNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PUBLIC).length,
-    groupNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.GROUP).length,
-    authorizedNotes: notes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED).length,
-    categoriesCount: new Set(notes.map(n => n.category).filter(Boolean)).size,
-    averageNoteLength: notes.length > 0 ? 
-      Math.round(notes.reduce((sum, n) => sum + (n.text?.length || 0), 0) / notes.length) : 0
+    totalNotes: accessibleNotes.length,
+    privateNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PRIVATE && n.creator === userId).length,
+    publicNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.PUBLIC).length,
+    groupNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.GROUP).length,
+    authorizedNotes: accessibleNotes.filter(n => n.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED).length,
+    ownedNotes: accessibleNotes.filter(n => n.creator === userId).length,
+    sharedNotes: accessibleNotes.filter(n => n.creator !== userId).length,
+    categoriesCount: new Set(accessibleNotes.map(n => n.category).filter(Boolean)).size,
+    averageNoteLength: accessibleNotes.length > 0 ? 
+      Math.round(accessibleNotes.reduce((sum, n) => sum + (n.text?.length || 0), 0) / accessibleNotes.length) : 0
   };
 
   return stats;
 }
 
-/**
- * Esporta nota come Markdown
- */
-async function exportNoteAsMarkdown(userId, noteId) {
-  const note = await getNoteById(userId, noteId);
-  
-  const title = note.title || 'Untitled';
-  const content = note.text || '';
-  
-  return `# ${title}\n\n${content}`;
-}
-
-/**
- * Esporta nota come HTML
- */
-async function exportNoteAsHTML(userId, noteId) {
-  const note = await getNoteById(userId, noteId);
-  
-  const title = note.title || 'Untitled';
-  const content = note.text || '';
-  
-  // Conversione base Markdown -> HTML
-  let html = content
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-    .replace(/`(.*?)`/gim, '<code>$1</code>')
-    .replace(/\n\n/gim, '</p><p>')
-    .replace(/\n/gim, '<br>');
-
-  if (html && !html.startsWith('<h')) {
-    html = `<p>${html}</p>`;
-  }
-
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>${title}</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        h1, h2, h3 { color: #333; }
-        code { background-color: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
-    </style>
-</head>
-<body>
-    <h1>${title}</h1>
-    ${html}
-</body>
-</html>
-  `;
-}
-
-/**
- * Conta note per tipo di accessibilità
- */
 async function getNotesCountByAccessibility(userId) {
-  const { data: counts, error } = await supabase
-    .from('notes')
-    .select('accessibility')
-    .eq('creator', userId);
 
-  if (error) {
-    throw new Error(`Error counting notes: ${error.message}`);
-  }
+  const accessibleNotes = await filterAccessibleNotes(
+    (await supabase.from('notes').select('accessibility, creator')).data || [],
+    userId
+  );
 
   const result = {
     [ACCESSIBILITY_TYPES.PRIVATE]: 0,
@@ -548,18 +352,13 @@ async function getNotesCountByAccessibility(userId) {
     [ACCESSIBILITY_TYPES.GROUP]: 0
   };
 
-  counts.forEach(note => {
+  accessibleNotes.forEach(note => {
     result[note.accessibility] = (result[note.accessibility] || 0) + 1;
   });
 
   return result;
 }
 
-// ==================== FUNZIONI HELPER ====================
-
-/**
- * Filtra le note accessibili all'utente
- */
 async function filterAccessibleNotes(notes, userId) {
   const accessibleNotes = [];
 
@@ -573,21 +372,20 @@ async function filterAccessibleNotes(notes, userId) {
   return accessibleNotes;
 }
 
-/**
- * Verifica se l'utente ha accesso alla nota
- */
 async function checkNoteAccess(note, userId) {
-  // Il creatore può sempre accedere
+
   if (note.creator === userId) {
     return true;
   }
 
-  // Note pubbliche sono accessibili a tutti
   if (note.accessibility === ACCESSIBILITY_TYPES.PUBLIC) {
     return true;
   }
 
-  // Note di gruppo: verifica se l'utente è membro del gruppo
+  if (note.accessibility === ACCESSIBILITY_TYPES.PRIVATE) {
+    return false;
+  }
+
   if (note.accessibility === ACCESSIBILITY_TYPES.GROUP && note.group_name) {
     const { data: membership } = await supabase
       .from('group_users')
@@ -599,7 +397,6 @@ async function checkNoteAccess(note, userId) {
     return !!membership;
   }
 
-  // Note autorizzate: verifica se l'utente è nella lista degli autorizzati
   if (note.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED) {
     const { data: authorization } = await supabase
       .from('note_authorized_users')
@@ -614,9 +411,6 @@ async function checkNoteAccess(note, userId) {
   return false;
 }
 
-/**
- * Arricchisce una nota con metadati computati
- */
 function enrichNoteWithMetadata(note, userId) {
   const preview = generatePreview(note.text || '');
   const contentLength = (note.text || '').length;
@@ -625,29 +419,23 @@ function enrichNoteWithMetadata(note, userId) {
     ...note,
     preview,
     contentLength,
-    canEdit: note.creator === userId,
     canDelete: note.creator === userId,
-    createdAt: note.created_at,
-    lastModify: note.last_modify
+    createdAt: note.created_at
   };
 }
 
-/**
- * Genera anteprima del testo
- */
 function generatePreview(text) {
   if (!text) return '';
   
   const cleanText = text
-    .replace(/<[^>]*>/g, '') // Rimuove tag HTML
-    .replace(/[#*_`]/g, '') // Rimuove formattazione markdown
+    .replace(/<[^>]*>/g, '')
+    .replace(/[#*_`]/g, '') 
     .trim();
   
   if (cleanText.length <= PREVIEW_LENGTH) {
     return cleanText;
   }
-  
-  // Trova l'ultima parola completa entro il limite
+
   const truncated = cleanText.substring(0, PREVIEW_LENGTH);
   const lastSpaceIndex = truncated.lastIndexOf(' ');
   
@@ -658,40 +446,30 @@ function generatePreview(text) {
   return truncated + '...';
 }
 
-/**
- * Ottiene la colonna per l'ordinamento
- */
 function getOrderColumn(sortBy) {
   switch (sortBy) {
     case 'alphabetical':
       return 'title';
     case 'creation_date':
       return 'created_at';
-    case 'last_modify':
-      return 'last_modify';
     case 'content_length':
-      return 'text'; // Dovremo ordinare per lunghezza lato client
+      return 'text'; 
     default:
-      return 'last_modify';
+      return 'created_at';
   }
 }
 
-/**
- * Valida i dati della nota
- */
 async function validateNoteData(noteData, userId) {
-  // Validazione base
+
   if (!noteData.accessibility || !Object.values(ACCESSIBILITY_TYPES).includes(noteData.accessibility)) {
     throw new Error('Invalid accessibility type');
   }
 
-  // Validazione per note di gruppo
   if (noteData.accessibility === ACCESSIBILITY_TYPES.GROUP) {
     if (!noteData.groupName) {
       throw new Error('Group name is required for group notes');
     }
 
-    // Verifica che l'utente sia membro del gruppo
     const { data: membership } = await supabase
       .from('group_users')
       .select('group_name')
@@ -704,13 +482,11 @@ async function validateNoteData(noteData, userId) {
     }
   }
 
-  // Validazione per note autorizzate
   if (noteData.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED) {
     if (!noteData.authorizedUserIds || noteData.authorizedUserIds.length === 0) {
       throw new Error('At least one authorized user is required for authorized notes');
     }
 
-    // Verifica che tutti gli utenti autorizzati esistano
     const { data: users, error } = await supabase
       .from('profiles')
       .select('id')
@@ -725,7 +501,6 @@ async function validateNoteData(noteData, userId) {
     }
   }
 
-  // Validazione categoria
   if (noteData.category) {
     const { data: category } = await supabase
       .from('category')
@@ -739,9 +514,6 @@ async function validateNoteData(noteData, userId) {
   }
 }
 
-/**
- * Aggiunge utenti autorizzati a una nota
- */
 async function addAuthorizedUsers(noteId, userIds) {
   const authorizations = userIds.map(userId => ({
     note_id: noteId,
@@ -757,33 +529,16 @@ async function addAuthorizedUsers(noteId, userIds) {
   }
 }
 
-/**
- * Rimuove tutti gli utenti autorizzati da una nota
- */
-async function removeAllAuthorizedUsers(noteId) {
-  const { error } = await supabase
-    .from('note_authorized_users')
-    .delete()
-    .eq('note_id', noteId);
-
-  if (error) {
-    throw new Error(`Error removing authorized users: ${error.message}`);
-  }
-}
-
 module.exports = {
   getNotes,
   getNotePreviews,
   getNoteById,
   createNote,
-  updateNote,
   deleteNote,
   duplicateNote,
   shareNote,
   getNotePermissions,
   bulkOperation,
   getNotesStats,
-  exportNoteAsMarkdown,
-  exportNoteAsHTML,
   getNotesCountByAccessibility
 };

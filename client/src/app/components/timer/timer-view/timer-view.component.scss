@@ -5,7 +5,7 @@
   color: #000;
   display: flex;
   flex-direction: column;
-  background-color: #f6ecc8; 
+  background-color: var(--secondary-bg, #f6ecc8); 
 }
 
 .timer-view {
@@ -56,7 +56,7 @@
   background: #fff;
   border-radius: 0.75rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-left: 4px solid #fbd65a;
+  border-left: 4px solid var(--primary-bg, #fbd65a);
   padding: 1rem;
   animation: slideInRight 0.3s ease-out;
   display: flex;
@@ -70,7 +70,7 @@
   }
   
   &.notification-break-complete {
-    border-left-color: #fbd65a;
+    border-left-color: var(--primary-bg, #fbd65a);
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   }
   
@@ -118,7 +118,7 @@
 // ==================== TIMER DISPLAY ==================== 
 .timer-display {
   position: relative;
-  background-color: #fbd65a;
+  background-color: var(--primary-bg, #fbd65a);
   border-radius: 1rem;
   padding: 1.5rem 1rem 1rem 1rem; // Ridotto padding mobile
   margin-bottom: 1rem;
@@ -128,11 +128,16 @@
   overflow: hidden;
 
   &.study-mode {
-    background-color: #fbd65a;
+    background-color: var(--primary-bg, #fbd65a);
     
     &.running {
-      background-color: #fcf3b5;
+      background-color: var(--primary-hover-bg, #fcf3b5);
       animation: studyPulse 2s ease-in-out infinite;
+    }
+    
+    &.completed {
+      background-color: var(--primary-bg, #fbd65a);
+      animation: completedGlow 1.5s ease-in-out infinite alternate;
     }
   }
 
@@ -143,11 +148,11 @@
       background-color: #c8f7e0;
       animation: breakPulse 2s ease-in-out infinite;
     }
-  }
-
-  &.completed {
-    background-color: #ffd93d;
-    animation: completedGlow 1.5s ease-in-out infinite alternate;
+    
+    &.completed {
+      background-color: #a8e6cf;
+      animation: completedGlow 1.5s ease-in-out infinite alternate;
+    }
   }
 
   &:hover {
@@ -382,41 +387,9 @@
   }
 }
 
-// ==================== PULSE ANIMATION ==================== 
+// ==================== PULSE ANIMATION (RIMOSSA) ==================== 
 .pulse-animation {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 0;
-
-  &.active {
-    opacity: 0.1;
-    animation: pulseRing 2s ease-out infinite;
-  }
-
-  &.study-pulse {
-    background-color: #e74c3c;
-  }
-
-  &.break-pulse {
-    background-color: #27ae60;
-  }
-  
-  @media (min-width: 641px) {
-    width: 200px;
-    height: 200px;
-  }
-  
-  @media (min-width: 1024px) {
-    width: 250px;
-    height: 250px;
-  }
+  display: none; // Completamente disabilitata
 }
 
 // ==================== COMPLETION OVERLAY ==================== 
@@ -441,7 +414,7 @@
     width: 100%;
     max-width: 350px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background-color: #fbd65a;
+    background-color: var(--primary-bg, #fbd65a);
 
     .completion-icon {
       font-size: 3rem;
@@ -545,22 +518,7 @@
 
 @keyframes completedGlow {
   0% { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
-  100% { box-shadow: 0 4px 12px rgba(255, 217, 61, 0.4); }
-}
-
-@keyframes pulseRing {
-  0% {
-    transform: translate(-50%, -50%) scale(0.1);
-    opacity: 0.3;
-  }
-  80% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 0;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1.2);
-    opacity: 0;
-  }
+  100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 }
 
 @keyframes fadeIn {

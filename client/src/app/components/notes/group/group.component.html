@@ -1,4 +1,4 @@
-<!-- group.component.html - FIXED VERSION -->
+<!-- group.component.html - UPDATED WITH CSS VARIABLES -->
 
 <main class="min-h-screen bg-gray-50">
   <!-- Header Section -->
@@ -22,8 +22,7 @@
         <!-- Create Group Button -->
         <button 
           (click)="showCreateGroupForm()"
-          class="flex items-center gap-2 px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors duration-200 shadow-sm">
-          <span>➕</span>
+          class="flex items-center gap-2 px-6 py-2 bg-[var(--primary-bg)] hover:bg-[var(--primary-hover-bg)] text-black font-bold rounded-lg transition-colors duration-200 shadow-sm">
           <span>Create Group</span>
         </button>
       </div>
@@ -36,7 +35,6 @@
     <div *ngIf="successMessage" 
          class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
       <div class="flex items-center">
-        <span class="text-green-500 text-lg mr-2">✅</span>
         <span class="text-green-700">{{ successMessage }}</span>
       </div>
     </div>
@@ -45,7 +43,6 @@
     <div *ngIf="errorMessage" 
          class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
       <div class="flex items-center">
-        <span class="text-red-500 text-lg mr-2">❌</span>
         <span class="text-red-700">{{ errorMessage }}</span>
       </div>
     </div>
@@ -67,7 +64,7 @@
             [(ngModel)]="newGroupName"
             placeholder="Enter group name..."
             maxlength="100"
-            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#fbd65a] focus:border-transparent"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent"
             [class.border-red-300]="!isGroupNameValid() && newGroupName.length > 0">
           
           <div class="flex justify-between items-center mt-1">
@@ -84,7 +81,7 @@
           <button
             (click)="createGroup()"
             [disabled]="!isGroupNameValid() || creatingGroup"
-            class="flex items-center gap-2 px-4 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            class="flex items-center gap-2 px-4 py-2 bg-[var(--primary-bg)] hover:bg-[var(--primary-hover-bg)] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <span class="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" *ngIf="creatingGroup"></span>
             <span>{{ creatingGroup ? 'Creating...' : 'Create Group' }}</span>
           </button>
@@ -105,7 +102,7 @@
 
     <!-- Loading State -->
     <div *ngIf="isLoading" class="flex justify-center items-center py-12">
-      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#fbd65a]"></div>
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary-bg)]"></div>
       <span class="ml-3 text-gray-600">Loading groups...</span>
     </div>
 
@@ -113,12 +110,6 @@
     <div *ngIf="hasNoGroups()" class="text-center py-16">
       <div class="text-6xl mb-4">👥</div>
       <h3 class="text-xl font-semibold text-gray-700 mb-2">No groups found!</h3>
-      <p class="text-gray-500 mb-6">Create your first group to get started</p>
-      <button 
-        (click)="showCreateGroupForm()"
-        class="px-6 py-2 bg-[#fbd65a] hover:bg-[#fde289] text-black font-bold rounded-lg transition-colors">
-        Create Group
-      </button>
     </div>
 
     <!-- Groups List -->

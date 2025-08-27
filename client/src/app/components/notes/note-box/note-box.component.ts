@@ -12,7 +12,6 @@ import { Router } from '@angular/router';
 import { 
   NoteWithDetails, 
   AccessibilityType,
-  NOTE_CONSTANTS
 } from '../../../model/note.interface';
 import { NotesService } from '../../../service/notes.service';
 
@@ -37,12 +36,12 @@ export class NoteBoxComponent {
   feedbackType: 'success' | 'error' = 'success';
   
   // Constants
-  previewLength = NOTE_CONSTANTS.PREVIEW_LENGTH;
+  previewLength = 200;
 
   // Accessibility type definitions
   accessibilityTypes = [
     { value: AccessibilityType.PRIVATE, label: 'Private', icon: '🔒' },
-    { value: AccessibilityType.PUBLIC, label: 'Public', icon: '🌐' },
+    { value: AccessibilityType.PUBLIC, label: 'Public', icon: '🌍' },
     { value: AccessibilityType.AUTHORIZED, label: 'Authorized', icon: '👥' },
     { value: AccessibilityType.GROUP, label: 'Group', icon: '👨‍👩‍👧‍👦' }
   ];
@@ -228,10 +227,11 @@ export class NoteBoxComponent {
   }
 
   /**
-   * Get category name
+   * Get category name - FIXED to check both category and categoryDetails
    */
   getCategoryName(): string {
-    return this.note.categoryDetails?.name || 'Uncategorized';
+    // First try categoryDetails.name, then fallback to category string, then 'Uncategorized'
+    return this.note.categoryDetails?.name || this.note.category || 'Uncategorized';
   }
 
   /**
@@ -288,7 +288,7 @@ export class NoteBoxComponent {
    * Get preview text (ensuring it exists)
    */
   getPreviewText(): string {
-    return this.note.preview || this.note.text?.substring(0, NOTE_CONSTANTS.PREVIEW_LENGTH) || 'No content';
+    return this.note.preview || this.note.text?.substring(0, 200) || 'No content';
   }
 
   /**
@@ -393,16 +393,11 @@ export class NoteBoxComponent {
   }
 
   /**
-   * Get note card CSS classes based on state
+   * Get note card CSS classes based on state - UPDATED to use CSS variables
    */
   getNoteCardClasses(): string {
-    // UPDATED: Changed to lighter yellow background
-    const baseClasses = 'relative note-box bg-yellow-100 rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-yellow-200 group cursor-pointer';
-    
-    if (this.isRecentlyModified(this.note.lastModify)) {
-      return `${baseClasses} ring-2 ring-blue-200`;
-    }
-    
+    // UPDATED: Use CSS variable for background color that changes with time-machine
+    const baseClasses = 'relative note-box bg-[var(--today-bg)] rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-[var(--select-bg)] group cursor-pointer';
     return baseClasses;
   }
 }

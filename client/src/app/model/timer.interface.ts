@@ -35,6 +35,26 @@ export interface TimerSession {
   wasCompleted: boolean;
 }
 
+// Interfaccia per le notifiche
+export interface TimerNotification {
+  id: string;
+  message: string;
+  type: 'study-complete' | 'break-complete' | 'session-complete' | 'phase-skipped';
+  timestamp: Date;
+}
+
+export interface ConfigProposal {
+  id: number;
+  name: string;
+  studyMinutes: number;
+  breakMinutes: number;
+  totalCycles: number;
+  totalTime: number; // in minutes
+  studyTime: number; // total study time
+  breakTime: number; // total break time
+  details: string;
+}
+
 // Enums per maggiore type safety
 export enum TimerStatus {
   IDLE = 'idle',

@@ -1,0 +1,119 @@
+<!-- Floating Action Button - Solo se l'utente è loggato -->
+<button 
+  *ngIf="isUserLoggedIn"
+  class="chat-fab" 
+  (click)="openModal()"
+  aria-label="Apri chat AI">
+  <img src="/assets/sloth-ai.svg" alt="Chat AI" class="sloth-icon">
+</button>
+
+<!-- Modal Overlay -->
+<div 
+  class="modal-overlay" 
+  [class.show]="isModalOpen"
+  (click)="closeModal()">
+  
+  <!-- Modal Content -->
+  <div 
+    class="modal-content" 
+    (click)="$event.stopPropagation()"
+    [class.show]="isModalOpen">
+    
+    <!-- Header -->
+    <div class="modal-header">
+      <div class="header-info">
+        <img src="/assets/sloth-ai.svg" alt="AI Assistant" class="header-icon">
+        <div class="header-text">
+          <h3><strong>SELFIE AI Assistant</strong></h3>
+        </div>
+      </div>
+      <button class="close-btn" (click)="closeModal()" aria-label="Chiudi chat">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Messages Container -->
+    <div class="messages-container" #messagesContainer>
+      <div 
+        *ngFor="let message of messages; trackBy: trackByMessage" 
+        class="message"
+        [class.user-message]="message.isUser"
+        [class.ai-message]="!message.isUser">
+        
+        <div class="message-avatar">
+          <img 
+            *ngIf="!message.isUser" 
+            src="/assets/sloth-ai.svg" 
+            alt="AI" 
+            class="avatar-icon">
+          <div 
+            *ngIf="message.isUser" 
+            class="user-avatar">
+            U
+          </div>
+        </div>
+
+        <div class="message-content">
+          <div class="message-bubble">
+            <p [innerHTML]="formatMessage(message.content)"></p>
+          </div>
+          <div class="message-time">
+            {{ formatTime(message.timestamp) }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading indicator -->
+      <div *ngIf="isLoading" class="message ai-message loading-message">
+        <div class="message-avatar">
+          <img src="/assets/sloth-ai.svg" alt="AI" class="avatar-icon">
+        </div>
+        <div class="message-content">
+          <div class="message-bubble">
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-container">
+      <div class="input-wrapper">
+        <textarea 
+          [(ngModel)]="currentMessage"
+          (keydown)="onKeyPress($event)"
+          [disabled]="isLoading"
+          placeholder="Scrivi un messaggio..."
+          class="message-input"
+          rows="1"
+          #messageInput></textarea>
+        
+        <button 
+          (click)="sendMessage()"
+          [disabled]="!currentMessage.trim() || isLoading"
+          class="send-btn"
+          aria-label="Invia messaggio">
+          <svg 
+            *ngIf="!isLoading" 
+            width="20" 
+            height="20" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22,2 15,22 11,13 2,9"></polygon>
+          </svg>
+          <div *ngIf="isLoading" class="loading-spinner"></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -4,8 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 
-import { GroupsService, GroupWithDetails } from '../../../service/groups.service';
-import { CreateGroupRequest } from '../../../model/note.interface';
+import { GroupsService} from '../../../service/groups.service';
+import { CreateGroupRequest } from '../../../model/request/create-group-request.interface';
+import { GroupWithDetails } from '../../../model/entity/group.interface';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({
   selector: 'app-group',
@@ -17,6 +19,7 @@ export class GroupComponent implements OnInit, OnDestroy {
 
   // Groups data - single list, sorted
   groups: GroupWithDetails[] = [];
+  allGroupsFromServer: GroupWithDetails[] = [];
 
   // UI states
   isLoading = false;
@@ -33,11 +36,19 @@ export class GroupComponent implements OnInit, OnDestroy {
 
   constructor(
     private groupsService: GroupsService,
-    private router: Router
+    private router: Router,
+    private timeMachineService: TimeMachineService
   ) {}
 
   ngOnInit(): void {
     this.loadGroups();
+    
+    // Subscribe to time machine changes to filter groups by creation date
+    this.timeMachineService.virtualNow$().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.filterGroupsByTimeMachine();
+    });
   }
 
   ngOnDestroy(): void {
@@ -58,7 +69,8 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (response) => {
-        this.sortGroups(response.groups);
+        this.allGroupsFromServer = response.groups;
+        this.filterGroupsByTimeMachine();
         this.isLoading = false;
       },
       error: (error) => {
@@ -67,6 +79,32 @@ export class GroupComponent implements OnInit, OnDestroy {
         this.isLoading = false;
       }
     });
+  }
+
+  /**
+   * Filter groups based on time machine date - UPDATED WITH TIME MACHINE INTEGRATION
+   */
+  private filterGroupsByTimeMachine(): void {
+    if (!this.allGroupsFromServer.length) {
+      this.groups = [];
+      return;
+    }
+
+    // Get current time from time machine (could be virtual)
+    const currentTime = this.timeMachineService.getNow();
+    
+    // Filter groups: only show groups created before or at the current time machine date
+    const filteredGroups = this.allGroupsFromServer.filter(group => {
+      if (!group.createdAt) {
+        // If no creation date, assume it was created "now" for safety
+        return true;
+      }
+      
+      const groupCreationDate = new Date(group.createdAt);
+      return groupCreationDate <= currentTime;
+    });
+
+    this.sortGroups(filteredGroups);
   }
 
   /**
@@ -102,7 +140,7 @@ export class GroupComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Create new group
+   * Create new group - UPDATED WITH TIME MACHINE INTEGRATION
    */
   createGroup(): void {
     if (!this.isGroupNameValid()) {
@@ -111,17 +149,22 @@ export class GroupComponent implements OnInit, OnDestroy {
 
     this.creatingGroup = true;
 
+    // UPDATED: Use time machine date for group creation
+    const creationDate = this.timeMachineService.getNow();
+
     const createRequest: CreateGroupRequest = {
-      name: this.newGroupName.trim()
+      name: this.newGroupName.trim(),
+      // Pass the creation date from time machine to backend
+      createdAt: creationDate
     };
 
     this.groupsService.createGroup(createRequest).pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (newGroup) => {
-        // Add to groups and re-sort
-        this.groups.push(newGroup);
-        this.sortGroups(this.groups);
+        // Add to server data and re-filter
+        this.allGroupsFromServer.push(newGroup);
+        this.filterGroupsByTimeMachine();
 
         this.successMessage = `Group "${newGroup.name}" created successfully!`;
         this.hideCreateGroupForm();
@@ -154,17 +197,8 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        // Update group in list
-        const index = this.groups.findIndex(g => g.name === group.name);
-        if (index !== -1) {
-          this.groups[index] = {
-            ...group,
-            isMember: true,
-            memberCount: group.memberCount + 1
-          };
-          // Re-sort to move joined group to top
-          this.sortGroups(this.groups);
-        }
+        // Update group in lists
+        this.updateGroupInLists(group.name, { isMember: true, memberCount: group.memberCount + 1 });
 
         this.successMessage = `Successfully joined "${group.name}"!`;
         this.clearMessages();
@@ -189,17 +223,8 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        // Update group in list
-        const index = this.groups.findIndex(g => g.name === group.name);
-        if (index !== -1) {
-          this.groups[index] = {
-            ...group,
-            isMember: false,
-            memberCount: Math.max(0, group.memberCount - 1)
-          };
-          // Re-sort to move left group to bottom
-          this.sortGroups(this.groups);
-        }
+        // Update group in lists
+        this.updateGroupInLists(group.name, { isMember: false, memberCount: Math.max(0, group.memberCount - 1) });
 
         this.successMessage = `Left "${group.name}" successfully!`;
         this.clearMessages();
@@ -230,8 +255,10 @@ export class GroupComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: () => {
-        // Remove from groups list
+        // Remove from both lists
+        this.allGroupsFromServer = this.allGroupsFromServer.filter(g => g.name !== group.name);
         this.groups = this.groups.filter(g => g.name !== group.name);
+        
         this.successMessage = `Group "${group.name}" deleted successfully!`;
         this.clearMessages();
       },
@@ -251,6 +278,32 @@ export class GroupComponent implements OnInit, OnDestroy {
   }
 
   // ========== HELPER METHODS ==========
+
+  /**
+   * Update group in both lists (server and filtered)
+   */
+  private updateGroupInLists(groupName: string, updates: Partial<GroupWithDetails>): void {
+    // Update in server list
+    const serverIndex = this.allGroupsFromServer.findIndex(g => g.name === groupName);
+    if (serverIndex !== -1) {
+      this.allGroupsFromServer[serverIndex] = {
+        ...this.allGroupsFromServer[serverIndex],
+        ...updates
+      };
+    }
+
+    // Update in filtered list
+    const filteredIndex = this.groups.findIndex(g => g.name === groupName);
+    if (filteredIndex !== -1) {
+      this.groups[filteredIndex] = {
+        ...this.groups[filteredIndex],
+        ...updates
+      };
+    }
+
+    // Re-sort groups
+    this.sortGroups(this.groups);
+  }
 
   /**
    * Get button text for group action
@@ -345,9 +398,42 @@ export class GroupComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if there are no groups at all
+   * Check if there are no groups at all (considering time machine filter)
    */
   hasNoGroups(): boolean {
     return !this.isLoading && this.groups.length === 0;
+  }
+
+  /**
+   * Get current time from time machine for display purposes
+   */
+  getCurrentTimeMachineDate(): string {
+    const currentTime = this.timeMachineService.getNow();
+    return currentTime.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  /**
+   * Check if time machine is active (for debugging/display)
+   */
+  isTimeMachineActive(): boolean {
+    return this.timeMachineService.isActive();
+  }
+
+  /**
+   * Get filtered groups count message
+   */
+  getGroupsCountMessage(): string {
+    const visibleCount = this.groups.length;
+    const totalCount = this.allGroupsFromServer.length;
+    
+    if (this.isTimeMachineActive() && visibleCount < totalCount) {
+      return `Showing ${visibleCount} of ${totalCount} groups (filtered by time machine date)`;
+    } else {
+      return `${visibleCount} group${visibleCount !== 1 ? 's' : ''} available`;
+    }
   }
 }

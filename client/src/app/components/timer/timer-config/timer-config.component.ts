@@ -1,19 +1,7 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { TimerConfig } from '../../../model/timer.interface';
-
-interface ConfigProposal {
-  id: number;
-  name: string;
-  studyMinutes: number;
-  breakMinutes: number;
-  totalCycles: number;
-  totalTime: number; // in minutes
-  studyTime: number; // total study time
-  breakTime: number; // total break time
-  details: string;
-}
+import { TimerConfig, ConfigProposal } from '../../../model/timer.interface';
 
 @Component({
   selector: 'app-timer-config',

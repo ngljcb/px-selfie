@@ -1,12 +1,5 @@
 const supabase = require('../persistence/supabase');
 
-/**
- * Service per la gestione degli utenti
- */
-
-/**
- * Cerca utenti per username
- */
 async function searchUsersByUsername(searchQuery) {
   const { data: users, error } = await supabase
     .from('profiles')
@@ -26,9 +19,6 @@ async function searchUsersByUsername(searchQuery) {
   }));
 }
 
-/**
- * Ottiene utente per ID
- */
 async function getUserById(userId) {
   const { data: user, error } = await supabase
     .from('profiles')
@@ -50,9 +40,6 @@ async function getUserById(userId) {
   };
 }
 
-/**
- * Ottiene più utenti per array di ID
- */
 async function getUsersByIds(userIds) {
   if (!userIds || userIds.length === 0) {
     return [];
@@ -74,9 +61,6 @@ async function getUsersByIds(userIds) {
   }));
 }
 
-/**
- * Verifica se un username esiste
- */
 async function checkUsernameExists(username) {
   const { data: user, error } = await supabase
     .from('profiles')

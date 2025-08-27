@@ -1,10 +1,5 @@
 const notesService = require('../service/notesService');
 
-/**
- * Controller per la gestione delle note
- */
-
-// GET /api/notes - Lista note con filtri e paginazione
 async function getNotes(req, res) {
   try {
     const userId = req.user.id;
@@ -22,12 +17,10 @@ async function getNotes(req, res) {
     const result = await notesService.getNotes(userId, filters);
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error getting notes:', error);
     res.status(500).json({ error: error.message });
   }
 }
 
-// GET /api/notes/previews - Note preview per home page
 async function getNotePreviews(req, res) {
   try {
     const userId = req.user.id;
@@ -37,12 +30,10 @@ async function getNotePreviews(req, res) {
     const previews = await notesService.getNotePreviews(userId, sortBy, limit);
     res.status(200).json(previews);
   } catch (error) {
-    console.error('Error getting note previews:', error);
     res.status(500).json({ error: error.message });
   }
 }
 
-// GET /api/notes/:id - Singola nota
 async function getNoteById(req, res) {
   try {
     const userId = req.user.id;
@@ -55,7 +46,6 @@ async function getNoteById(req, res) {
 
     res.status(200).json(note);
   } catch (error) {
-    console.error('Error getting note by ID:', error);
     if (error.message === 'Access denied') {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -63,20 +53,29 @@ async function getNoteById(req, res) {
   }
 }
 
-// POST /api/notes - Crea nuova nota
 async function createNote(req, res) {
   try {
     const userId = req.user.id;
+    const { 
+      title, 
+      text, 
+      category, 
+      accessibility, 
+      groupName, 
+      authorizedUserIds,
+      createdAt 
+    } = req.body;
+
     const noteData = {
-      title: req.body.title,
-      text: req.body.text,
-      category: req.body.category,
-      accessibility: req.body.accessibility,
-      groupName: req.body.groupName,
-      authorizedUserIds: req.body.authorizedUserIds
+      title,
+      text,
+      category,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined 
     };
 
-    // Validazione base
     if (!noteData.accessibility) {
       return res.status(400).json({ error: 'Accessibility type is required' });
     }
@@ -84,12 +83,10 @@ async function createNote(req, res) {
     const note = await notesService.createNote(userId, noteData);
     res.status(201).json(note);
   } catch (error) {
-    console.error('Error creating note:', error);
     res.status(400).json({ error: error.message });
   }
 }
 
-// PUT /api/notes/:id - Aggiorna nota esistente
 async function updateNote(req, res) {
   try {
     const userId = req.user.id;
@@ -106,7 +103,6 @@ async function updateNote(req, res) {
     const note = await notesService.updateNote(userId, noteId, updateData);
     res.status(200).json(note);
   } catch (error) {
-    console.error('Error updating note:', error);
     if (error.message === 'Note not found') {
       return res.status(404).json({ error: 'Note not found' });
     }
@@ -117,7 +113,6 @@ async function updateNote(req, res) {
   }
 }
 
-// DELETE /api/notes/:id - Elimina nota
 async function deleteNote(req, res) {
   try {
     const userId = req.user.id;
@@ -126,7 +121,6 @@ async function deleteNote(req, res) {
     await notesService.deleteNote(userId, noteId);
     res.status(200).json({ message: 'Note deleted successfully' });
   } catch (error) {
-    console.error('Error deleting note:', error);
     if (error.message === 'Note not found') {
       return res.status(404).json({ error: 'Note not found' });
     }
@@ -137,22 +131,29 @@ async function deleteNote(req, res) {
   }
 }
 
-// POST /api/notes/:id/duplicate - Duplica nota
 async function duplicateNote(req, res) {
   try {
     const userId = req.user.id;
     const sourceNoteId = req.params.id;
+    const { 
+      newTitle, 
+      accessibility, 
+      groupName, 
+      authorizedUserIds,
+      createdAt 
+    } = req.body;
+
     const duplicateData = {
-      newTitle: req.body.newTitle,
-      accessibility: req.body.accessibility,
-      groupName: req.body.groupName,
-      authorizedUserIds: req.body.authorizedUserIds
+      newTitle,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined 
     };
 
     const duplicatedNote = await notesService.duplicateNote(userId, sourceNoteId, duplicateData);
     res.status(201).json(duplicatedNote);
   } catch (error) {
-    console.error('Error duplicating note:', error);
     if (error.message === 'Note not found') {
       return res.status(404).json({ error: 'Note not found' });
     }
@@ -163,7 +164,6 @@ async function duplicateNote(req, res) {
   }
 }
 
-// POST /api/notes/:id/share - Condividi nota con utenti
 async function shareNote(req, res) {
   try {
     const userId = req.user.id;
@@ -177,7 +177,6 @@ async function shareNote(req, res) {
     await notesService.shareNote(userId, noteId, userIds);
     res.status(200).json({ message: 'Note shared successfully' });
   } catch (error) {
-    console.error('Error sharing note:', error);
     if (error.message === 'Note not found') {
       return res.status(404).json({ error: 'Note not found' });
     }
@@ -188,7 +187,6 @@ async function shareNote(req, res) {
   }
 }
 
-// GET /api/notes/:id/permissions - Permessi nota per utente corrente
 async function getNotePermissions(req, res) {
   try {
     const userId = req.user.id;
@@ -197,7 +195,6 @@ async function getNotePermissions(req, res) {
     const permissions = await notesService.getNotePermissions(userId, noteId);
     res.status(200).json(permissions);
   } catch (error) {
-    console.error('Error getting note permissions:', error);
     if (error.message === 'Note not found') {
       return res.status(404).json({ error: 'Note not found' });
     }
@@ -205,7 +202,6 @@ async function getNotePermissions(req, res) {
   }
 }
 
-// POST /api/notes/bulk - Operazioni bulk sulle note
 async function bulkOperation(req, res) {
   try {
     const userId = req.user.id;
@@ -225,12 +221,10 @@ async function bulkOperation(req, res) {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error performing bulk operation:', error);
     res.status(400).json({ error: error.message });
   }
 }
 
-// GET /api/notes/stats - Statistiche note dell'utente
 async function getNotesStats(req, res) {
   try {
     const userId = req.user.id;
@@ -238,58 +232,10 @@ async function getNotesStats(req, res) {
     const stats = await notesService.getNotesStats(userId);
     res.status(200).json(stats);
   } catch (error) {
-    console.error('Error getting notes stats:', error);
     res.status(500).json({ error: error.message });
   }
 }
 
-// GET /api/notes/:id/export/markdown - Esporta nota come Markdown
-async function exportNoteAsMarkdown(req, res) {
-  try {
-    const userId = req.user.id;
-    const noteId = req.params.id;
-
-    const markdownContent = await notesService.exportNoteAsMarkdown(userId, noteId);
-    
-    res.setHeader('Content-Type', 'text/markdown');
-    res.setHeader('Content-Disposition', `attachment; filename="note-${noteId}.md"`);
-    res.status(200).send(markdownContent);
-  } catch (error) {
-    console.error('Error exporting note as markdown:', error);
-    if (error.message === 'Note not found') {
-      return res.status(404).json({ error: 'Note not found' });
-    }
-    if (error.message === 'Access denied') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/notes/:id/export/html - Esporta nota come HTML
-async function exportNoteAsHTML(req, res) {
-  try {
-    const userId = req.user.id;
-    const noteId = req.params.id;
-
-    const htmlContent = await notesService.exportNoteAsHTML(userId, noteId);
-    
-    res.setHeader('Content-Type', 'text/html');
-    res.setHeader('Content-Disposition', `attachment; filename="note-${noteId}.html"`);
-    res.status(200).send(htmlContent);
-  } catch (error) {
-    console.error('Error exporting note as HTML:', error);
-    if (error.message === 'Note not found') {
-      return res.status(404).json({ error: 'Note not found' });
-    }
-    if (error.message === 'Access denied') {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-    res.status(500).json({ error: error.message });
-  }
-}
-
-// GET /api/notes/count-by-accessibility - Conta note per tipo di accessibilità
 async function getNotesCountByAccessibility(req, res) {
   try {
     const userId = req.user.id;
@@ -297,7 +243,6 @@ async function getNotesCountByAccessibility(req, res) {
     const counts = await notesService.getNotesCountByAccessibility(userId);
     res.status(200).json(counts);
   } catch (error) {
-    console.error('Error getting notes count by accessibility:', error);
     res.status(500).json({ error: error.message });
   }
 }
@@ -314,7 +259,5 @@ module.exports = {
   getNotePermissions,
   bulkOperation,
   getNotesStats,
-  exportNoteAsMarkdown,
-  exportNoteAsHTML,
   getNotesCountByAccessibility
 };

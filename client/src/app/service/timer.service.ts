@@ -7,8 +7,6 @@ import {
   TimerState, 
   TimeProposal, 
   TimerSession,
-  TimerStatus,
-  TimerPhase,
   DEFAULT_TIMER_CONFIG 
 } from '../model/timer.interface';
 
@@ -19,7 +17,6 @@ export class TimerService {
   private timerSubscription?: Subscription;
   private currentSession?: TimerSession;
 
-  // State management con BehaviorSubject
   private timerStateSubject = new BehaviorSubject<TimerState>({
     config: DEFAULT_TIMER_CONFIG,
     currentCycle: 1,
@@ -30,29 +27,26 @@ export class TimerService {
     canRestart: true
   });
 
-  // Observable pubblico per i componenti
   public timerState$: Observable<TimerState> = this.timerStateSubject.asObservable();
 
   constructor(
     private audioService: AudioService,
-    private statisticsService: StatisticsService // NUOVO SERVIZIO INIETTATO
+    private statisticsService: StatisticsService
   ) {
-    // Carica configurazione salvata (localStorage)
     this.loadSavedConfig();
-  }
 
-  // ==================== CONTROLLI TIMER ====================
+    this.statisticsService.refreshStatistics().subscribe({
+      next: () => console.log('Statistiche iniziali caricate'),
+      error: (error) => console.error('Errore caricamento statistiche iniziali:', error)
+    });
+  }
 
   startTimer(): void {
     const currentState = this.timerStateSubject.value;
     
     if (currentState.status === 'idle') {
-      // Nuova sessione
       this.startNewSession();
     }
-
-    // Resume AudioContext se necessario (per policy browser)
-    this.audioService.resumeAudioContext();
 
     this.updateTimerState({ 
       status: 'running',
@@ -69,24 +63,20 @@ export class TimerService {
   resetTimer(): void {
     this.stopCountdown();
     const currentState = this.timerStateSubject.value;
-    
-    // Ricomincia il ciclo corrente = torna all'inizio dello studio del ciclo corrente
+
     const studySeconds = currentState.config.studyMinutes * 60;
-    
-    // Calcola il tempo totale che dovrebbe essere già trascorso fino all'inizio di questo ciclo
+
     const completedCycles = currentState.currentCycle - 1;
     const studySecondsPerCycle = currentState.config.studyMinutes * 60;
     const breakSecondsPerCycle = currentState.config.breakMinutes * 60;
     const secondsPerCompleteCycle = studySecondsPerCycle + breakSecondsPerCycle;
-    
-    // Tempo trascorso fino all'inizio del ciclo corrente
+
     const elapsedUntilCurrentCycle = completedCycles * secondsPerCompleteCycle;
 
-    // Determina lo stato: se era idle mantieni idle, altrimenti metti paused
     const newStatus = currentState.status === 'idle' ? 'idle' : 'paused';
 
     this.updateTimerState({
-      currentPhase: 'study', // Torna sempre allo studio
+      currentPhase: 'study', 
       remainingSeconds: studySeconds,
       status: newStatus,
       totalElapsedSeconds: elapsedUntilCurrentCycle,
@@ -96,22 +86,19 @@ export class TimerService {
 
   stopTimer(): void {
     this.stopCountdown();
-    this.endCurrentSession(false); // Non completata
+    this.endCurrentSession(false); 
     this.resetToInitialState();
   }
 
   skipCurrentPhase(): void {
     const currentState = this.timerStateSubject.value;
-    
-    // Solo se il timer è in esecuzione
+
     if (currentState.status !== 'running') {
       return;
     }
 
-    // Ferma il countdown corrente
     this.stopCountdown();
     
-    // Aggiorna il tempo di studio totale se stiamo saltando una fase di studio
     if (currentState.currentPhase === 'study') {
       const elapsedStudyTime = (currentState.config.studyMinutes * 60) - currentState.remainingSeconds;
       this.updateTimerState({
@@ -119,17 +106,12 @@ export class TimerService {
       });
     }
     
-    // Simula il completamento della fase corrente
     this.onPhaseCompleted();
-    
-    // Notifica il salto
+
     this.notifyPhaseSkipped(currentState.currentPhase);
-    
-    // Riavvia il countdown per la nuova fase
+
     this.startCountdown();
   }
-
-  // ==================== CONFIGURAZIONE ====================
 
   updateConfig(newConfig: TimerConfig): void {
     this.saveConfig(newConfig);
@@ -140,12 +122,9 @@ export class TimerService {
     return this.timerStateSubject.value.config;
   }
 
-  // ==================== PROPOSTE SMART ====================
-
   generateTimeProposals(availableMinutes: number): TimeProposal[] {
     const proposals: TimeProposal[] = [];
 
-    // Proposta 1: Pomodoro classico (25+5)
     if (availableMinutes >= 30) {
       const cycles = Math.floor(availableMinutes / 30);
       proposals.push({
@@ -158,7 +137,6 @@ export class TimerService {
       });
     }
 
-    // Proposta 2: Sessioni standard progetto (30+5)
     if (availableMinutes >= 35) {
       const cycles = Math.floor(availableMinutes / 35);
       proposals.push({
@@ -171,7 +149,6 @@ export class TimerService {
       });
     }
 
-    // Proposta 3: Studio intensivo (45+10)
     if (availableMinutes >= 55) {
       const cycles = Math.floor(availableMinutes / 55);
       proposals.push({
@@ -184,7 +161,6 @@ export class TimerService {
       });
     }
 
-    // Proposta 4: Ottimizzata per tempo disponibile
     if (availableMinutes >= 20 && proposals.length === 0) {
       const optimalStudy = Math.floor(availableMinutes * 0.85);
       const optimalBreak = Math.floor(availableMinutes * 0.15);
@@ -201,20 +177,16 @@ export class TimerService {
     return proposals.sort((a, b) => b.efficiency - a.efficiency);
   }
 
-  // ==================== METODI PRIVATI ====================
-
   private startCountdown(): void {
     this.timerSubscription = interval(1000).subscribe(() => {
       const currentState = this.timerStateSubject.value;
       
       if (currentState.remainingSeconds > 0) {
-        // Continua countdown
         this.updateTimerState({
           remainingSeconds: currentState.remainingSeconds - 1,
           totalElapsedSeconds: currentState.totalElapsedSeconds + 1
         });
       } else {
-        // Fase completata
         this.onPhaseCompleted();
       }
     });
@@ -231,11 +203,9 @@ export class TimerService {
     const currentState = this.timerStateSubject.value;
     
     if (currentState.currentPhase === 'study') {
-      // Studio completato → Pausa
       this.startBreakPhase();
       this.notifyStudyPhaseComplete();
     } else {
-      // Pausa completata → Prossimo ciclo o fine
       this.completeCurrentCycle();
       this.notifyBreakPhaseComplete();
     }
@@ -253,10 +223,8 @@ export class TimerService {
     const currentState = this.timerStateSubject.value;
     
     if (currentState.currentCycle >= currentState.config.totalCycles) {
-      // Sessione completata!
       this.completeSession();
     } else {
-      // Prossimo ciclo
       this.startNextCycle();
     }
   }
@@ -272,14 +240,11 @@ export class TimerService {
 
   private completeSession(): void {
     this.stopCountdown();
-    this.endCurrentSession(true); // Completata con successo
-    this.updateTimerState({ status: 'completed' });
-    
-    // Notifica completamento
-    this.notifySessionComplete();
-    
-    // ==================== NUOVO: AGGIORNA STATISTICHE ====================
+
     this.updateStatisticsOnCompletion();
+    
+    this.endCurrentSession(true);
+    this.updateTimerState({ status: 'completed' });
   }
 
   private resetToInitialState(config?: TimerConfig): void {
@@ -301,37 +266,78 @@ export class TimerService {
     this.timerStateSubject.next({ ...currentState, ...updates });
   }
 
-  // ==================== NUOVO: AGGIORNAMENTO STATISTICHE ====================
-
-  /**
-   * Aggiorna le statistiche quando una sessione viene completata
-   */
   private updateStatisticsOnCompletion(): void {
+
+    if (this.statisticsUpdateInProgress) {
+      console.log('Aggiornamento statistiche già in corso, skipping...');
+      return;
+    }
+    
+    this.statisticsUpdateInProgress = true;
+
     if (!this.currentSession) {
-      console.warn('Nessuna sessione corrente trovata per aggiornare le statistiche');
+      console.warn('Nessuna sessione corrente trovata, calcolo manuale dei minuti di studio');
+
+      const currentState = this.timerStateSubject.value;
+      const totalStudySeconds = this.calculateStudyTimeFromState(currentState);
+      const studyTimeMinutes = Math.floor(totalStudySeconds / 60);
+      
+      if (studyTimeMinutes > 0) {
+        this.updateStatsWithMinutes(studyTimeMinutes);
+      } else {
+        console.warn('Nessun tempo di studio valido da registrare');
+        this.statisticsUpdateInProgress = false;
+      }
       return;
     }
 
-    // Calcola i minuti di studio della sessione completata
+    this.currentSession.totalStudyTime = this.calculateStudyTime();
+
     const studyTimeMinutes = Math.floor(this.currentSession.totalStudyTime / 60);
     
+    console.log('Sessione completata:', {
+      id: this.currentSession.id,
+      totalStudySeconds: this.currentSession.totalStudyTime,
+      studyTimeMinutes
+    });
+    
     if (studyTimeMinutes > 0) {
-      this.statisticsService.updateSessionStats(studyTimeMinutes) // CORRETTO
-        .subscribe({
-          next: (updatedStats) => {
-            console.log('Statistiche aggiornate:', updatedStats);
-          },
-          error: (error) => {
-            console.error('Errore nell\'aggiornamento delle statistiche:', error);
-            // Non bloccare l'esperienza utente se le statistiche falliscono
-          }
-        });
+      this.updateStatsWithMinutes(studyTimeMinutes);
+    } else {
+      console.warn('Sessione completata ma nessun tempo di studio valido');
+      this.statisticsUpdateInProgress = false;
     }
   }
-  /**
-   * Metodo pubblico per controllare lo streak al login
-   * Da chiamare dal componente di autenticazione
-   */
+
+  private statisticsUpdateInProgress = false;
+
+  private updateStatsWithMinutes(studyTimeMinutes: number): void {
+    this.statisticsService.updateSessionStats(studyTimeMinutes)
+      .subscribe({
+        next: (updatedStats) => {
+          console.log('Statistiche aggiornate con successo:', updatedStats);
+          this.statisticsUpdateInProgress = false; 
+        },
+        error: (error) => {
+          console.error('Errore nell\'aggiornamento delle statistiche:', error);
+          this.statisticsUpdateInProgress = false;
+        }
+      });
+  }
+
+  private calculateStudyTimeFromState(state: TimerState): number {
+    const completedCycles = state.currentCycle - 1;
+    const studySecondsPerCycle = state.config.studyMinutes * 60;
+
+    let totalStudyTime = completedCycles * studySecondsPerCycle;
+
+    if (state.status === 'completed' || state.currentPhase === 'break') {
+      totalStudyTime += studySecondsPerCycle;
+    }
+    
+    return totalStudyTime;
+  }
+
   public checkLoginStreak(): void {
     this.statisticsService.checkLoginStreak()
       .subscribe({
@@ -347,8 +353,6 @@ export class TimerService {
       });
   }
 
-  // ==================== SESSIONI E PERSISTENZA ====================
-
   private startNewSession(): void {
     const currentState = this.timerStateSubject.value;
     this.currentSession = {
@@ -359,6 +363,8 @@ export class TimerService {
       totalStudyTime: 0,
       wasCompleted: false
     };
+    
+    console.log('Nuova sessione avviata:', this.currentSession.id);
   }
 
   private endCurrentSession(completed: boolean): void {
@@ -369,8 +375,12 @@ export class TimerService {
       this.currentSession.wasCompleted = completed;
       this.currentSession.totalStudyTime = this.calculateStudyTime();
       
-      // Salva la sessione in localStorage per backup/debug
-      this.saveSession(this.currentSession);
+      console.log('Sessione terminata:', {
+        id: this.currentSession.id,
+        completed,
+        totalStudyTime: this.currentSession.totalStudyTime
+      });
+
       this.currentSession = undefined;
     }
   }
@@ -381,8 +391,7 @@ export class TimerService {
     const studySecondsPerCycle = currentState.config.studyMinutes * 60;
     
     let totalStudyTime = completedCycles * studySecondsPerCycle;
-    
-    // Aggiungi tempo della fase corrente se è studio
+
     if (currentState.currentPhase === 'study') {
       const currentPhaseElapsed = (currentState.config.studyMinutes * 60) - currentState.remainingSeconds;
       totalStudyTime += currentPhaseElapsed;
@@ -407,91 +416,48 @@ export class TimerService {
     }
   }
 
-  private saveSession(session: TimerSession): void {
-    // Manteniamo il salvataggio in localStorage per backup
-    const sessions = this.getSavedSessions();
-    sessions.push(session);
-    localStorage.setItem('timer-sessions', JSON.stringify(sessions));
-  }
-
-  private getSavedSessions(): TimerSession[] {
-    const saved = localStorage.getItem('timer-sessions');
-    return saved ? JSON.parse(saved) : [];
-  }
-
   private generateSessionId(): string {
     return Date.now().toString() + Math.random().toString(36).substr(2, 9);
   }
 
-  // ==================== NOTIFICHE CON AUDIO ====================
-
   private notifyStudyPhaseComplete(): void {
-    const message = '🎉 Tempo di pausa!';
+    const message = 'Tempo di pausa!';
     
     this.audioService.playStudyCompleteSound();
-    
+
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
         icon: '/assets/icons/timer-icon.png'
       });
     }
-    
-    console.log(message);
   }
 
   private notifyBreakPhaseComplete(): void {
-    const message = '📚 Torniamo a studiare!';
+    const message = 'Torniamo a studiare!';
     
     this.audioService.playBreakCompleteSound();
-    
-    if (Notification.permission === 'granted') {
-      new Notification('Timer SELFIE', { 
-        body: message,
-        icon: '/assets/icons/timer-icon.png'
-      });
-    }
-    
-    console.log(message);
-  }
 
-  private notifySessionComplete(): void {
-    const message = '🎊 Sessione completata! Ottimo lavoro!';
-    
-    this.audioService.playSessionCompleteSound();
-    
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
         icon: '/assets/icons/timer-icon.png'
       });
     }
-    
-    console.log(message);
   }
 
   private notifyPhaseSkipped(skippedPhase: 'study' | 'break'): void {
     const message = skippedPhase === 'study' 
-      ? '⏭️ Fase di studio saltata!' 
-      : '⏭️ Pausa saltata!';
+      ? 'Fase di studio saltata!' 
+      : 'Pausa saltata!';
     
     this.audioService.playPhaseSkippedSound();
-    
+
     if (Notification.permission === 'granted') {
       new Notification('Timer SELFIE', { 
         body: message,
         icon: '/assets/icons/timer-icon.png'
       });
-    }
-    
-    console.log(message);
-  }
-
-  // ==================== UTILITY PUBBLICHE ====================
-
-  requestNotificationPermission(): void {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
     }
   }
 
