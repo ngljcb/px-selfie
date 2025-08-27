@@ -8,9 +8,6 @@ export class ErrorHandlerService {
 
   constructor() {}
 
-  /**
-   * Handle HTTP errors globally
-   */
   handleError = (error: any): Observable<never> => {
     console.error('HTTP Error:', error);
     

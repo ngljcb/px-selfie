@@ -24,20 +24,15 @@ import { StatisticsService } from '../../../service/statistics.service';
 export class TimerViewComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   
-  // State
   timerState: TimerState | null = null;
   showConfig = false;
   
-  // Notifiche
   notifications: TimerNotification[] = [];
   
-  // NUOVO: Flag per sapere se la sessione è completata
   private sessionCompleted = false;
   
-  // Utility per template
-  Math = Math; // Per usare Math.round nel template
+  Math = Math; 
 
-  // Enums per template
   readonly TimerStatus = TimerStatus;
   readonly TimerPhase = TimerPhase;
 
@@ -47,21 +42,18 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Subscribe al timer state
+
     this.timerService.timerState$
       .pipe(takeUntil(this.destroy$))
       .subscribe(state => {
         const previousState = this.timerState;
         this.timerState = state;
         
-        // Controlla se c'è stata una transizione di fase o fine timer
         this.checkForPhaseTransition(previousState, state);
       });
     
-    // Inizializza AudioContext con la prima interazione utente
     this.initializeAudioOnFirstInteraction();
 
-    // Controlla il login streak all'avvio
     this.checkLoginStreak();
   }
 
@@ -70,7 +62,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // Controlla il login streak
   private checkLoginStreak(): void {
     this.statisticsService.checkLoginStreak()
       .pipe(takeUntil(this.destroy$))
@@ -95,43 +86,32 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ==================== GESTIONE NOTIFICHE ====================
-
   private checkForPhaseTransition(previousState: TimerState | null, currentState: TimerState): void {
     if (!previousState) return;
 
-    // Controlla se la sessione è stata completata PRIMA di tutto
     if (previousState.status !== TimerStatus.COMPLETED && 
         currentState.status === TimerStatus.COMPLETED) {
       
-      // NUOVO: Segna che la sessione è completata e ferma il timer
       this.sessionCompleted = true;
       
-      // Aggiorna le statistiche quando la sessione è completata
       this.updateSessionStatistics(currentState);
-      
-      this.showNotification('Sessione completata! Ottimo lavoro!', 'session-complete');
-      return; // Esci subito, non fare altre operazioni
+      return; 
     }
 
-    // Controlla se una fase è appena terminata (timer arriva a 0 mentre era in running)
     if (previousState.status === TimerStatus.RUNNING && 
         previousState.remainingSeconds > 0 &&
         currentState.remainingSeconds === 0 &&
         currentState.status === TimerStatus.RUNNING) {
       
-      // Verifica se siamo nell'ultima pausa dell'ultimo ciclo
       if (currentState.currentPhase === TimerPhase.BREAK && 
           currentState.currentCycle >= currentState.config.totalCycles) {
-        // Sessione completata - non pausare, lascia che vada a COMPLETED
-        return; // Non fare nulla, lascia che il timer completi naturalmente
+
+        return; 
       }
       
-      // Pausa immediatamente il timer per tutte le altre fasi
       this.timerService.pauseTimer();
       
-      // Mostra notifica appropriata
-      if (currentState.currentPhase === TimerPhase.STUDY) {
+      if (currentState.currentPhase === TimerPhase.STUDY && currentState.config.breakMinutes === 0) {
         this.showNotification('Tempo di pausa!', 'study-complete');
       } else {
         this.showNotification('Torniamo a studiare!', 'break-complete');
@@ -139,9 +119,8 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Aggiorna le statistiche quando una sessione è completata
   private updateSessionStatistics(timerState: TimerState): void {
-    // Calcola il tempo totale di studio effettivo (solo fasi di studio, non pause)
+
     const studyTimePerCycle = timerState.config.studyMinutes;
     const completedCycles = timerState.config.totalCycles;
     const totalStudyMinutes = completedCycles * studyTimePerCycle;
@@ -151,10 +130,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (updatedStats) => {
           console.log('Statistiche aggiornate:', updatedStats);
-          this.showNotification(
-            `Statistiche aggiornate! Sessioni: ${updatedStats.totalCompletedSessions}, Tempo totale: ${updatedStats.totalStudyTimeFormatted}`, 
-            'session-complete'
-          );
         },
         error: (error) => {
           console.error('Errore nell\'aggiornamento delle statistiche:', error);
@@ -172,7 +147,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
 
     this.notifications.unshift(notification);
 
-    // Rimuovi automaticamente la notifica dopo 4 secondi
     setTimeout(() => {
       this.dismissNotification(notification.id);
     }, 4000);
@@ -186,12 +160,9 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     this.notifications = [];
   }
 
-  // ==================== INIZIALIZZAZIONE AUDIO ====================
-
   private initializeAudioOnFirstInteraction(): void {
-    // AudioContext richiede interazione utente per essere attivato
+
     const enableAudio = () => {
-      // Riprova ad attivare l'audio context con la prima interazione
       if (this.timerService.isAudioEnabled()) {
         document.removeEventListener('click', enableAudio);
         document.removeEventListener('keydown', enableAudio);
@@ -202,8 +173,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     document.addEventListener('keydown', enableAudio, { once: true });
   }
 
-  // ==================== CONTROLLI TIMER ====================
-
   startTimer(): void {
     this.timerService.startTimer();
   }
@@ -213,13 +182,12 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   }
 
   resetTimer(): void {
-    // NUOVO: Reset anche del flag di completamento
     this.sessionCompleted = false;
     this.timerService.resetTimer();
   }
 
   stopTimer(): void {
-    // NUOVO: Reset del flag di completamento quando si ferma/termina
+
     this.sessionCompleted = false;
     this.timerService.stopTimer();
   }
@@ -227,24 +195,20 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   skipCurrentPhase(): void {
     const currentState = this.timerState;
     
-    // Mostra notifica per il salto
     if (currentState && currentState.status === TimerStatus.RUNNING) {
       const skippedPhase = currentState.currentPhase === TimerPhase.STUDY ? 'studio' : 'pausa';
       
-      // Verifica se siamo nell'ultima pausa dell'ultimo ciclo
       if (currentState.currentPhase === TimerPhase.BREAK && 
           currentState.currentCycle >= currentState.config.totalCycles) {
-        // Ultima pausa saltata = sessione completata
-        this.timerService.skipCurrentPhase(); // Questo dovrebbe portare a COMPLETED
+
+        this.timerService.skipCurrentPhase(); 
         return;
       }
       
       this.showNotification(`Fase di ${skippedPhase} saltata!`, 'phase-skipped');
-      
-      // Prima salta la fase, poi pausa
+
       this.timerService.skipCurrentPhase();
-      
-      // Pausa il timer dopo lo skip (solo se non è l'ultima pausa)
+
       setTimeout(() => {
         this.timerService.pauseTimer();
       }, 100);
@@ -259,17 +223,13 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     this.showConfig = false;
   }
 
-  // ==================== CONTROLLO SPECIFICO PER NUOVA SESSIONE ====================
-
   startNewSession(): void {
-    // NUOVO: Reset del flag di completamento
     this.sessionCompleted = false;
     
-    // Forza il reset completo del timer allo stato iniziale
     this.timerService.resetTimer();
-    // Assicurati che il timer torni allo stato IDLE con fase STUDY
+
     setTimeout(() => {
-      // Se necessario, fai un secondo reset per assicurarti che tutto torni allo stato iniziale
+
       if (this.timerState?.status !== TimerStatus.IDLE || 
           this.timerState?.currentPhase !== TimerPhase.STUDY ||
           this.timerState?.currentCycle !== 1) {
@@ -278,14 +238,10 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     }, 100);
   }
 
-  // ==================== CONFIGURAZIONE ====================
-
   onConfigSave(newConfig: TimerConfig): void {
     this.timerService.updateConfig(newConfig);
     this.showConfig = false;
   }
-
-  // ==================== UTILITY PER TEMPLATE ====================
 
   formatTime(seconds: number): string {
     return this.timerService.formatTime(seconds);
@@ -352,8 +308,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     return this.timerState?.canRestart ?? true;
   }
 
-  // ==================== ANIMAZIONI E STYLING ====================
-
   getTimerDisplayClass(): string {
     const classes = ['timer-display'];
     
@@ -376,44 +330,30 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     return `${this.getSessionProgress()}%`;
   }
 
-  // ==================== NUOVO: METODO PER IL TEMPO VISUALIZZATO ====================
-
-  /**
-   * Ritorna il tempo da visualizzare nel timer principale
-   * Se la sessione è completata, mostra 0:00, altrimenti mostra il tempo rimanente
-   */
   getDisplayTime(): number {
     if (this.sessionCompleted && this.isCompleted()) {
-      return 0; // Mostra 0:00 quando la sessione è completata
+      return 0; 
     }
     return this.timerState?.remainingSeconds || 0;
   }
 
-  // ==================== METODO PER CALCOLARE IL TEMPO TOTALE EFFETTIVO ====================
-
   getTotalEffectiveTime(): number {
     if (!this.timerState) return 0;
-    
-    // Se la sessione è completata, mostra solo il tempo effettivamente trascorso
+
     if (this.timerState.status === TimerStatus.COMPLETED) {
-      // Calcola il tempo totale basandosi sui cicli completati
+
       const completedCycles = this.timerState.config.totalCycles;
       const studyTimePerCycle = this.timerState.config.studyMinutes * 60;
       const breakTimePerCycle = this.timerState.config.breakMinutes * 60;
-      
-      // Tempo totale = (cicli completati * tempo studio) + ((cicli completati - 1) * tempo pausa)
-      // L'ultimo ciclo non ha pausa
+
       const totalStudyTime = completedCycles * studyTimePerCycle;
       const totalBreakTime = Math.max(0, completedCycles) * breakTimePerCycle;
       
       return totalStudyTime + totalBreakTime;
     }
     
-    // Se non è completata, usa il tempo elapsed normale
     return this.timerState.totalElapsedSeconds;
   }
-
-  // ==================== SAFE GETTERS PER TEMPLATE ====================
 
   get safeTimerState(): TimerState {
     return this.timerState || {
@@ -426,8 +366,6 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       canRestart: true
     };
   }
-
-  // ==================== INFO AUDIO STATUS ====================
 
   isAudioEnabled(): boolean {
     return this.timerService.isAudioEnabled();

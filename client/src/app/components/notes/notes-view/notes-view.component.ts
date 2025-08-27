@@ -4,30 +4,21 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject, takeUntil, debounceTime, distinctUntilChanged, combineLatest } from 'rxjs';
 
-// Import components
 import { NoteBoxComponent } from '../note-box/note-box.component';
 import { NoteViewerComponent } from '../note-viewer/note-viewer.component';
 
-// Import models and services
 import { 
   NoteWithDetails, 
   Category, 
   AccessibilityType,
   NoteSortType,
   NoteFilterParams,
+  SORT_OPTIONS
 } from '../../../model/note.interface';
 import { NotesService } from '../../../service/notes.service';
 import { CategoriesService } from '../../../service/categories.service';
 import { GroupsService } from '../../../service/groups.service';
 import { TimeMachineService } from '../../../service/time-machine.service';
-
-// Type definitions for component
-type SortOption = {
-  value: string;
-  label: string;
-  sortBy: NoteSortType;
-  sortOrder: 'asc' | 'desc';
-};
 
 @Component({
   selector: 'app-notes-view',
@@ -41,30 +32,27 @@ type SortOption = {
   templateUrl: './notes-view.component.html'
 })
 export class NotesViewComponent implements OnInit, OnDestroy {
-  
-  // Notes data
+
   allNotes: NoteWithDetails[] = [];
-  allNotesFromServer: NoteWithDetails[] = []; // Store all notes from server for time machine filtering
+  allNotesFromServer: NoteWithDetails[] = []; 
   filteredNotes: NoteWithDetails[] = [];
   categories: Category[] = [];
   totalNotes = 0;
 
-  // Note viewer state
   selectedNote: NoteWithDetails | null = null;
   isViewerOpen = false;
 
-  // UI states
   isLoading = false;
   errorMessage = '';
   showSuccessMessage = '';
 
-  // Filters
   searchQuery = '';
   selectedCategoryName = '';
   selectedAccessibilityType: AccessibilityType | '' = '';
-  selectedSortOption = 'creation_date-desc'; // Default to newest first
+  selectedSortOption = 'creation_date-desc'; 
 
-  // Constants for template
+  sortOptions = SORT_OPTIONS;
+
   accessibilityTypes = [
     { value: AccessibilityType.PRIVATE, label: 'Private'},
     { value: AccessibilityType.PUBLIC, label: 'Public'},
@@ -72,57 +60,16 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     { value: AccessibilityType.GROUP, label: 'Group'}
   ];
 
-  sortOptions: SortOption[] = [
-    { 
-      value: 'alphabetical-asc', 
-      label: 'A-Z', 
-      sortBy: NoteSortType.ALPHABETICAL, 
-      sortOrder: 'asc' 
-    },
-    { 
-      value: 'alphabetical-desc', 
-      label: 'Z-A', 
-      sortBy: NoteSortType.ALPHABETICAL, 
-      sortOrder: 'desc' 
-    },
-    { 
-      value: 'creation_date-desc', 
-      label: 'Newest First', 
-      sortBy: NoteSortType.CREATION_DATE, 
-      sortOrder: 'desc' 
-    },
-    { 
-      value: 'creation_date-asc', 
-      label: 'Oldest First', 
-      sortBy: NoteSortType.CREATION_DATE, 
-      sortOrder: 'asc' 
-    },
-    { 
-      value: 'content_length-asc', 
-      label: 'Shortest First', 
-      sortBy: NoteSortType.CONTENT_LENGTH, 
-      sortOrder: 'asc' 
-    },
-    { 
-      value: 'content_length-desc', 
-      label: 'Longest First', 
-      sortBy: NoteSortType.CONTENT_LENGTH, 
-      sortOrder: 'desc' 
-    }
-  ];
-
-  // Subject for cleanup
   private destroy$ = new Subject<void>();
   private searchSubject = new Subject<string>();
 
   constructor(
     private notesService: NotesService,
     private categoriesService: CategoriesService,
-    private groupsService: GroupsService,
-    private timeMachineService: TimeMachineService, // UPDATED: Added TimeMachineService
+    private timeMachineService: TimeMachineService, 
     private router: Router
   ) {
-    // Setup search debouncing
+
     this.searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -135,22 +82,19 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadInitialData();
     
-    // Subscribe to reactive state changes
     this.notesService.notes$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(notes => {
-      this.allNotesFromServer = notes; // Store all notes from server
-      this.filterNotesByTimeMachine(); // Apply time machine filtering
+      this.allNotesFromServer = notes; 
+      this.filterNotesByTimeMachine(); 
     });
 
-    // Subscribe to total notes count changes
     this.notesService.totalNotes$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(total => {
       this.totalNotes = total;
     });
 
-    // UPDATED: Subscribe to time machine changes to filter notes by creation date
     this.timeMachineService.virtualNow$().pipe(
       takeUntil(this.destroy$)
     ).subscribe(() => {
@@ -163,16 +107,10 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ========== DATA LOADING ==========
-
-  /**
-   * Load initial data (notes and categories)
-   */
   private loadInitialData(): void {
     this.isLoading = true;
     this.errorMessage = '';
 
-    // Load both notes and categories in parallel
     combineLatest([
       this.notesService.getNotes(this.buildCurrentFilter()),
       this.categoriesService.getCategories()
@@ -191,9 +129,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * UPDATED: Filter notes based on time machine date
-   */
   private filterNotesByTimeMachine(): void {
     if (!this.allNotesFromServer.length) {
       this.allNotes = [];
@@ -201,13 +136,11 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Get current time from time machine (could be virtual)
     const currentTime = this.timeMachineService.getNow();
-    
-    // Filter notes: only show notes created before or at the current time machine date
+
     const filteredNotes = this.allNotesFromServer.filter(note => {
       if (!note.createdAt) {
-        // If no creation date, assume it was created "now" for safety
+
         return true;
       }
       
@@ -219,18 +152,10 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  /**
-   * Retry loading in case of error
-   */
   retryLoadNotes(): void {
     this.loadInitialData();
   }
 
-  // ========== NOTE VIEWER MANAGEMENT ==========
-
-  /**
-   * View note in modal
-   */
   viewNote(noteId: string): void {
     this.notesService.getNoteById(noteId).pipe(
       takeUntil(this.destroy$)
@@ -247,44 +172,25 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Close note viewer
-   */
   closeNoteViewer(): void {
     this.isViewerOpen = false;
     this.selectedNote = null;
   }
 
-  // ========== FILTER MANAGEMENT ==========
-
-  /**
-   * Handle search input change with debouncing
-   */
   onSearchChange(): void {
     this.searchSubject.next(this.searchQuery);
   }
 
-  /**
-   * Handle filter changes
-   */
   onFiltersChange(): void {
     this.applyFilters();
   }
 
-  /**
-   * Handle sort option change
-   */
   onSortChange(): void {
     this.applyFilters();
   }
 
-  /**
-   * Apply all filters and sorting locally - UPDATED to search only in title
-   */
   private applyFilters(): void {
-    let filtered = [...this.allNotes]; // Use time machine filtered notes
-
-    // Apply search filter - UPDATED: search only in title
+    let filtered = [...this.allNotes]; 
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase().trim();
       filtered = filtered.filter(note => 
@@ -292,25 +198,19 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Apply category filter
     if (this.selectedCategoryName) {
       filtered = filtered.filter(note => note.category === this.selectedCategoryName);
     }
 
-    // Apply accessibility type filter
     if (this.selectedAccessibilityType) {
       filtered = filtered.filter(note => note.accessibility === this.selectedAccessibilityType);
     }
 
-    // Apply sorting
     filtered = this.applySorting(filtered);
 
     this.filteredNotes = filtered;
   }
 
-  /**
-   * Apply sorting to notes
-   */
   private applySorting(notes: NoteWithDetails[]): NoteWithDetails[] {
     if (!this.selectedSortOption) {
       return notes;
@@ -324,9 +224,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     return this.notesService.sortNotesLocally(notes, selectedOption.sortBy, selectedOption.sortOrder);
   }
 
-  /**
-   * Build current filter for server queries
-   */
   private buildCurrentFilter(): NoteFilterParams {
     const selectedOption = this.sortOptions.find(opt => opt.value === this.selectedSortOption);
     
@@ -340,24 +237,15 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     };
   }
 
-  /**
-   * Check if there are active filters
-   */
   hasActiveFilters(): boolean {
     return !!(this.searchQuery || this.selectedCategoryName || this.selectedAccessibilityType);
   }
 
-  /**
-   * Clear search
-   */
   clearSearch(): void {
     this.searchQuery = '';
     this.applyFilters();
   }
 
-  /**
-   * Reset all filters
-   */
   clearAllFilters(): void {
     this.searchQuery = '';
     this.selectedCategoryName = '';
@@ -366,39 +254,24 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  // ========== NOTE ACTIONS ==========
-
-  /**
-   * Navigate to create new note - UPDATED with Time Machine integration
-   */
   createNewNote(): void {
-    // Get current time from time machine for the new note
     const currentTime = this.timeMachineService.getNow();
     
     this.router.navigate(['/notes/create'], {
       queryParams: {
-        timeMachineDate: currentTime.toISOString() // Pass time machine date as query param
+        timeMachineDate: currentTime.toISOString() 
       }
     });
   }
 
-  /**
-   * Create a new group
-   */
   createGroup(): void {
     this.router.navigate(['/groups']);
   }
 
-  /**
-   * Edit an existing note
-   */
   editNote(noteId: string): void {
     this.router.navigate(['/notes', noteId, 'edit']);
   }
 
-  /**
-   * Delete a note
-   */
   deleteNote(noteId: string): void {
     const note = this.allNotes.find(n => n.id === noteId);
     if (!note) return;
@@ -412,7 +285,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
         this.showSuccessMessage = 'Note deleted successfully!';
         this.isLoading = false;
         this.clearMessages();
-        // Close viewer if the deleted note was being viewed
         if (this.selectedNote?.id === noteId) {
           this.closeNoteViewer();
         }
@@ -426,34 +298,20 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ========== UTILITY METHODS ==========
-
-  /**
-   * Get label for accessibility type
-   */
   getAccessibilityTypeLabel(type: AccessibilityType): string {
     const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
     return accessibilityType?.label || 'Unknown';
   }
 
-  /**
-   * TrackBy function to optimize list rendering
-   */
   trackByNoteId(index: number, note: NoteWithDetails): string {
     return note.id;
   }
 
-  /**
-   * Get label for selected sort option
-   */
   getSortOptionLabel(): string {
     const selectedOption = this.sortOptions.find(opt => opt.value === this.selectedSortOption);
     return selectedOption?.label || 'Newest First';
   }
 
-  /**
-   * Format notes count for display - UPDATED to show time machine filtering info
-   */
   getNotesCountText(): string {
     const count = this.filteredNotes.length;
     const timeFilteredCount = this.allNotes.length;
@@ -474,18 +332,12 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Get category name by name
-   */
   getCategoryName(categoryName: string | null): string {
     if (!categoryName) return 'Uncategorized';
     const category = this.categories.find(c => c.name === categoryName);
     return category?.name || 'Unknown Category';
   }
 
-  /**
-   * Format date for display
-   */
   formatDate(date: Date): string {
     const now = new Date();
     const noteDate = new Date(date);
@@ -516,9 +368,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Hide messages after delay
-   */
   private clearMessages(): void {
     setTimeout(() => {
       this.showSuccessMessage = '';
@@ -526,19 +375,11 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     }, 3000);
   }
 
-  // ========== NAVIGATION HELPERS ==========
-
-  /**
-   * Refresh data from server
-   */
   refreshData(): void {
     console.log('Refreshing data...');
     this.loadInitialData();
   }
 
-  /**
-   * Force refresh with debug info
-   */
   forceRefresh(): void {
     console.log('Current component state:', {
       allNotesFromServer: this.allNotesFromServer.length,
@@ -554,26 +395,15 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Debug: Force update totals
-   */
   debugUpdateTotal(): void {
     console.log('Forcing total notes update...');
     this.notesService.refreshNotes().subscribe();
   }
 
-  // ========== TIME MACHINE HELPERS ==========
-
-  /**
-   * UPDATED: Check if time machine is active (for debugging/display)
-   */
   isTimeMachineActive(): boolean {
     return this.timeMachineService.isActive();
   }
 
-  /**
-   * UPDATED: Get current time from time machine for display purposes
-   */
   getCurrentTimeMachineDate(): string {
     const currentTime = this.timeMachineService.getNow();
     return currentTime.toLocaleDateString('en-US', {
@@ -583,9 +413,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * UPDATED: Get filtered notes count message with time machine info
-   */
   getNotesCountMessage(): string {
     const visibleCount = this.filteredNotes.length;
     const timeFilteredCount = this.allNotes.length;
@@ -598,11 +425,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ========== FILTER UTILITIES ==========
-
-  /**
-   * Get filter summary text
-   */
   getFilterSummary(): string {
     const filters: string[] = [];
     
@@ -620,7 +442,6 @@ export class NotesViewComponent implements OnInit, OnDestroy {
       filters.push(`Type: ${typeName}`);
     }
 
-    // UPDATED: Add time machine filter info
     if (this.isTimeMachineActive()) {
       filters.push(`Time: Before ${this.getCurrentTimeMachineDate()}`);
     }
@@ -628,37 +449,22 @@ export class NotesViewComponent implements OnInit, OnDestroy {
     return filters.join(', ');
   }
 
-  /**
-   * Get placeholder text for search input - UPDATED to reflect title-only search
-   */
   getSearchPlaceholder(): string {
     return 'Search in note titles...';
   }
 
-  /**
-   * Check if there are no notes at all
-   */
   hasNoNotes(): boolean {
     return !this.isLoading && !this.errorMessage && this.totalNotes === 0;
   }
 
-  /**
-   * Check if filters are active but no results
-   */
   hasNoFilterResults(): boolean {
     return !this.isLoading && !this.errorMessage && this.filteredNotes.length === 0 && this.allNotes.length > 0;
   }
 
-  /**
-   * UPDATED: Check if time machine filtering is hiding notes
-   */
   hasNoTimeMachineResults(): boolean {
     return !this.isLoading && !this.errorMessage && this.allNotes.length === 0 && this.totalNotes > 0;
   }
 
-  /**
-   * Check if there are results to display
-   */
   hasResults(): boolean {
     return !this.isLoading && !this.errorMessage && this.filteredNotes.length > 0;
   }

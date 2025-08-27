@@ -35,8 +35,7 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
   ngOnInit(): void {
     this.checkAuthenticationStatus();
     this.initializeChat();
-    
-    // Controlla periodicamente lo stato di autenticazione
+
     interval(2000)
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => {
@@ -63,12 +62,10 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
     
     this.isUserLoggedIn = !!(username && userid);
     
-    // Se l'utente si è appena loggato, inizializza la chat
     if (this.isUserLoggedIn && !wasLoggedIn) {
       this.initializeChat();
     }
     
-    // Se l'utente si è disconnesso, chiudi il modal e resetta la chat
     if (!this.isUserLoggedIn && wasLoggedIn) {
       this.closeModal();
       this.resetChat();
@@ -100,7 +97,6 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
     
     this.isModalOpen = true;
-    // Focus sull'input dopo che il modal è aperto
     setTimeout(() => {
       if (this.messageInput) {
         this.messageInput.nativeElement.focus();
@@ -131,7 +127,6 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.currentMessage = '';
     this.isLoading = true;
 
-    // Auto-resize textarea
     this.resetTextareaHeight();
 
     this.chatService.sendMessage(messageToSend)
@@ -154,7 +149,6 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
         error: (error: Error) => {
           console.error('Errore nella comunicazione con il server:', error);
           
-          // Se l'errore è di autenticazione, aggiorna lo stato
           if (error.message.includes('401') || error.message.includes('Sessione scaduta')) {
             this.checkAuthenticationStatus();
             this.addErrorMessage('Sessione scaduta. Effettua il login di nuovo.');
@@ -182,10 +176,8 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
       event.preventDefault();
       this.sendMessage();
     } else if (event.key === 'Enter' && event.shiftKey) {
-      // Permetti nuova linea con Shift+Enter
       this.autoResizeTextarea();
     } else {
-      // Auto-resize durante la digitazione
       setTimeout(() => this.autoResizeTextarea(), 0);
     }
   }
@@ -211,7 +203,6 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // Template helper methods
   formatMessage(content: string): string {
     return this.chatService.formatMessage(content);
   }

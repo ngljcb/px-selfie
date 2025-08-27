@@ -1,5 +1,3 @@
-// src/app/features/timer/models/timer.models.ts
-
 export interface TimerConfig {
   studyMinutes: number;
   breakMinutes: number;
@@ -20,9 +18,9 @@ export interface TimeProposal {
   studyMinutes: number;
   breakMinutes: number;
   cycles: number;
-  totalTime: number; // in minutes
+  totalTime: number; 
   description: string;
-  efficiency: number; // 0-100, per ordinare le proposte
+  efficiency: number; 
 }
 
 export interface TimerSession {
@@ -31,11 +29,9 @@ export interface TimerSession {
   endTime?: Date;
   config: TimerConfig;
   completedCycles: number;
-  totalStudyTime: number; // seconds
+  totalStudyTime: number; 
   wasCompleted: boolean;
 }
-
-// Interfaccia per le notifiche
 export interface TimerNotification {
   id: string;
   message: string;
@@ -49,13 +45,12 @@ export interface ConfigProposal {
   studyMinutes: number;
   breakMinutes: number;
   totalCycles: number;
-  totalTime: number; // in minutes
-  studyTime: number; // total study time
-  breakTime: number; // total break time
+  totalTime: number; 
+  studyTime: number; 
+  breakTime: number; 
   details: string;
 }
 
-// Enums per maggiore type safety
 export enum TimerStatus {
   IDLE = 'idle',
   RUNNING = 'running',
@@ -68,7 +63,6 @@ export enum TimerPhase {
   BREAK = 'break'
 }
 
-// Configurazione di default
 export const DEFAULT_TIMER_CONFIG: TimerConfig = {
   studyMinutes: 30,
   breakMinutes: 5,

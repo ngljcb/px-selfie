@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { TimeMachineService } from './time-machine.service'; // Import del servizio Time Machine
+import { TimeMachineService } from './time-machine.service'; 
 import { 
   UpdateSessionStatsDTO, 
   StatisticsResponse, 
@@ -16,25 +16,17 @@ import {
 export class StatisticsService {
   private readonly apiUrl = `${environment.API_BASE_URL}/api`;
   
-  // Subject per mantenere le statistiche in cache
   private statisticsSubject = new BehaviorSubject<StatisticsResponse | null>(null);
   public statistics$ = this.statisticsSubject.asObservable();
 
   constructor(
     private http: HttpClient,
-    private timeMachineService: TimeMachineService // Iniettato per gestire il tempo virtuale
+    private timeMachineService: TimeMachineService 
   ) {}
 
-  // ==================== RECUPERO STATISTICHE ====================
-
-  /**
-   * Recupera le statistiche dell'utente corrente
-   * Utilizza automaticamente il tempo virtuale se attivo
-   */
   getUserStatistics(): Observable<StatisticsResponse> {
     const virtualTime = this.timeMachineService.getVirtualNow();
-    
-    // Prepara parametri e headers
+
     let params: any = {};
     let headers = new HttpHeaders();
     
@@ -50,7 +42,7 @@ export class StatisticsService {
     })
       .pipe(
         tap(stats => {
-          // Aggiorna il subject per condividere i dati
+
           this.statisticsSubject.next(stats);
           console.log('Statistiche recuperate:', stats, 
                      virtualTime ? `(Time Machine attiva: ${virtualTime.toISOString()})` : '(tempo reale)');
@@ -62,13 +54,6 @@ export class StatisticsService {
       );
   }
 
-  // ==================== AGGIORNAMENTO STATISTICHE SESSIONE ====================
-
-  /**
-   * Aggiorna le statistiche quando una sessione viene completata
-   * Utilizza automaticamente il tempo virtuale se attivo
-   * @param studyTimeMinutes Tempo di studio in minuti della sessione completata
-   */
   updateSessionStats(studyTimeMinutes: number): Observable<StatisticsResponse> {
     const virtualTime = this.timeMachineService.getVirtualNow();
     
@@ -89,7 +74,7 @@ export class StatisticsService {
     })
       .pipe(
         tap(updatedStats => {
-          // Aggiorna il subject con i nuovi dati
+
           this.statisticsSubject.next(updatedStats);
           console.log('Statistiche sessione aggiornate:', updatedStats,
                      virtualTime ? `(Time Machine attiva: ${virtualTime.toISOString()})` : '(tempo reale)');
@@ -101,12 +86,6 @@ export class StatisticsService {
       );
   }
 
-  // ==================== CONTROLLO STREAK AL LOGIN ====================
-
-  /**
-   * Controlla e aggiorna lo streak consecutivo al login dell'utente
-   * Utilizza automaticamente il tempo virtuale se attivo
-   */
   checkLoginStreak(): Observable<LoginStreakCheckDTO> {
     const virtualTime = this.timeMachineService.getVirtualNow();
     
@@ -126,9 +105,9 @@ export class StatisticsService {
         tap(streakInfo => {
           console.log('Streak info:', streakInfo,
                      virtualTime ? `(Time Machine attiva: ${virtualTime.toISOString()})` : '(tempo reale)');
-          // Se lo streak è stato resettato, potremmo voler ricaricare le statistiche
+
           if (streakInfo.streakWasReset) {
-            this.getUserStatistics().subscribe(); // Ricarica le statistiche aggiornate
+            this.getUserStatistics().subscribe(); 
           }
         }),
         catchError(error => {
@@ -138,50 +117,26 @@ export class StatisticsService {
       );
   }
 
-  // ==================== UTILITY METHODS ====================
-
-  /**
-   * Ottiene le statistiche correnti dal subject (cache)
-   */
   getCurrentStatistics(): StatisticsResponse | null {
     return this.statisticsSubject.value;
   }
 
-  /**
-   * Forza il refresh delle statistiche dal server
-   */
   refreshStatistics(): Observable<StatisticsResponse> {
     return this.getUserStatistics();
   }
 
-  /**
-   * Pulisce la cache delle statistiche (utile per logout)
-   */
   clearStatistics(): void {
     this.statisticsSubject.next(null);
   }
 
-   /**
-   * Controlla se la Time Machine è attiva
-   */
   isTimeMachineActive(): boolean {
     return this.timeMachineService.getVirtualNow() !== null;
   }
 
-    /**
-   * Ottiene il tempo corrente (virtuale o reale)
-   */
   getCurrentTime(): Date {
     return this.timeMachineService.getNow();
   }
 
-  // ==================== HELPER METHODS ====================
-
-  /**
-   * Formatta il tempo di studio in formato leggibile
-   * @param minutes Minuti totali
-   * @returns Stringa formattata (es. "2h 30m", "45m")
-   */
   formatStudyTime(minutes: number): string {
     if (minutes < 60) {
       return `${minutes}m`;
@@ -197,12 +152,6 @@ export class StatisticsService {
     return `${hours}h ${remainingMinutes}m`;
   }
 
-  /**
-   * Calcola la media giornaliera di studio (se disponibili dati sufficienti)
-   * @param totalMinutes Minuti totali studiati
-   * @param consecutiveDays Giorni consecutivi di studio
-   * @returns Media giornaliera in minuti
-   */
   calculateDailyAverage(totalMinutes: number, consecutiveDays: number): number {
     if (consecutiveDays === 0) return 0;
     return Math.round(totalMinutes / consecutiveDays);

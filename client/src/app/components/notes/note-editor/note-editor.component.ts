@@ -1,5 +1,3 @@
-// note-editor.component.ts - CREATE ONLY VERSION WITH TIME MACHINE INTEGRATION
-
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -18,7 +16,7 @@ import { CategoriesService } from '../../../service/categories.service';
 import { GroupsService } from '../../../service/groups.service';
 import { UsersService } from '../../../service/users.service';
 import { AuthService } from '../../../service/auth.service';
-import { TimeMachineService } from '../../../service/time-machine.service'; // UPDATED: Added TimeMachineService
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 interface NoteFormData {
   title: string;
@@ -43,13 +41,10 @@ interface SelectedUser {
 })
 export class NoteEditorComponent implements OnInit, OnDestroy {
 
-  // Current user ID to filter from search
   currentUserId: string | null = null;
 
-  // UPDATED: Time Machine date for note creation
   timeMachineDate: Date | null = null;
 
-  // Note data
   noteData: NoteFormData = {
     title: '',
     content: '',
@@ -58,25 +53,21 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     groupName: '',
     authorizedUserIds: []
   };
-  
-  // Form state
+
   hasChanges = false;
   showValidationErrors = false;
   isSaving = false;
   isLoading = false;
 
-  // Categories and groups
   categories: Category[] = [];
   groups: Group[] = [];
 
-  // User search and selection
   userSearchQuery = '';
   userSearchResults: User[] = [];
   selectedUsers: SelectedUser[] = [];
   isSearchingUsers = false;
   userSearchError = '';
 
-  // Constants for template
   accessibilityTypes = [
     { 
       value: AccessibilityType.PRIVATE, 
@@ -100,7 +91,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }
   ];
 
-  // User search management
   private userSearchSubject = new Subject<string>();
   private destroy$ = new Subject<void>();
   private initialFormState: string = '';
@@ -113,9 +103,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     private groupsService: GroupsService,
     private usersService: UsersService,
     private authService: AuthService,
-    private timeMachineService: TimeMachineService // UPDATED: Added TimeMachineService
+    private timeMachineService: TimeMachineService 
   ) {
-    // Setup user search with debouncing
     this.userSearchSubject.pipe(
       debounceTime(500),
       distinctUntilChanged(),
@@ -126,16 +115,13 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // UPDATED: Get time machine date from query params if available
     const queryParams = this.route.snapshot.queryParams;
     if (queryParams['timeMachineDate']) {
       this.timeMachineDate = new Date(queryParams['timeMachineDate']);
     } else {
-      // Fallback to current time machine date
       this.timeMachineDate = this.timeMachineService.getNow();
     }
 
-    // Get current user ID from auth service
     this.getCurrentUserId();
   }
 
@@ -144,9 +130,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  /**
-   * Prevent accidental close with unsaved changes
-   */
   @HostListener('window:beforeunload', ['$event'])
   unloadNotification(event: any): void {
     if (this.hasChanges) {
@@ -154,36 +137,25 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ========== INITIALIZATION ==========
-
-  /**
-   * Get current user ID from auth service
-   */
   private getCurrentUserId(): void {
     this.authService.me().pipe(
       takeUntil(this.destroy$)
     ).subscribe({
       next: (user) => {
         this.currentUserId = user.id;
-        // Now that we have the user ID, initialize the editor
         this.initializeEditor();
         this.loadSupportingData();
       },
       error: (error) => {
         console.error('Error getting current user:', error);
-        // Redirect to login if auth fails
         this.router.navigate(['/login']);
       }
     });
   }
 
-  /**
-   * Initialize editor for creating new note
-   */
   private initializeEditor(): void {
     this.isLoading = true;
 
-    // Check for duplicate parameters
     const queryParams = this.route.snapshot.queryParams;
     const isDuplicate = queryParams['duplicate'] === 'true';
 
@@ -194,9 +166,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Initialize new note
-   */
   private initializeNewNote(): void {
     this.noteData = {
       title: '',
@@ -212,11 +181,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.isLoading = false;
   }
 
-  /**
-   * Initialize new note from duplicate parameters
-   */
   private initializeNoteFromDuplicate(queryParams: any): void {
-    // Get the original title and add "Copy of" prefix
+
     const originalTitle = queryParams['title'] || '';
     const duplicatedTitle = originalTitle ? `Copy of ${originalTitle}` : '';
 
@@ -226,14 +192,13 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
       categoryName: queryParams['category'] || '',
       accessibility: queryParams['accessibility'] || AccessibilityType.PRIVATE,
       groupName: queryParams['groupName'] || '',
-      authorizedUserIds: [] // Reset authorized users for new note
+      authorizedUserIds: [] 
     };
     
-    this.selectedUsers = []; // Reset selected users for security
+    this.selectedUsers = []; 
     this.setInitialFormState();
     this.isLoading = false;
-    
-    // Clear query parameters from URL after loading
+
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {},
@@ -241,9 +206,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Load supporting data (categories and groups)
-   */
   private loadSupportingData(): void {
     combineLatest([
       this.categoriesService.getCategories(),
@@ -261,25 +223,16 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ========== USER SEARCH AND MANAGEMENT ==========
-
-  /**
-   * Handle user search input
-   */
   onUserSearchInput(): void {
     this.userSearchSubject.next(this.userSearchQuery);
   }
 
-  /**
-   * Perform user search excluding current user
-   */
   private performUserSearch(query: string): void {
     if (!query.trim()) {
       this.userSearchResults = [];
       return;
     }
 
-    // Don't search if we don't have current user ID yet
     if (!this.currentUserId) {
       this.userSearchError = 'Please wait while we load your profile...';
       return;
@@ -292,10 +245,9 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
       takeUntil(this.destroy$)
     ).subscribe({
       next: (users) => {
-        // Filter out current user and already selected users
         this.userSearchResults = users.filter(user => 
-          user.id !== this.currentUserId && // Exclude current user
-          !this.selectedUsers.some(selected => selected.id === user.id) // Exclude already selected
+          user.id !== this.currentUserId && 
+          !this.selectedUsers.some(selected => selected.id === user.id) 
         );
         this.isSearchingUsers = false;
       },
@@ -308,11 +260,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Add user to authorized list
-   */
   addUserToAuthorized(user: User): void {
-    // Double-check that we're not adding current user
+
     if (user.id === this.currentUserId) {
       this.userSearchError = 'You cannot add yourself as an authorized user. You automatically have access to your own notes.';
       setTimeout(() => this.userSearchError = '', 4000);
@@ -327,40 +276,27 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
 
     this.selectedUsers.push(selectedUser);
     this.noteData.authorizedUserIds.push(user.id);
-    
-    // Remove from search results
+
     this.userSearchResults = this.userSearchResults.filter(u => u.id !== user.id);
-    
-    // Clear search
+
     this.userSearchQuery = '';
     this.userSearchResults = [];
     
     this.onFormChange();
   }
 
-  /**
-   * Remove user from authorized list
-   */
   removeUserFromAuthorized(userId: string): void {
     this.selectedUsers = this.selectedUsers.filter(user => user.id !== userId);
     this.noteData.authorizedUserIds = this.noteData.authorizedUserIds.filter(id => id !== userId);
     this.onFormChange();
   }
 
-  /**
-   * Clear user search
-   */
   clearUserSearch(): void {
     this.userSearchQuery = '';
     this.userSearchResults = [];
     this.userSearchError = '';
   }
 
-  // ========== FORM MANAGEMENT ==========
-
-  /**
-   * Set initial form state
-   */
   private setInitialFormState(): void {
     this.initialFormState = JSON.stringify({
       ...this.noteData,
@@ -369,25 +305,16 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.hasChanges = false;
   }
 
-  /**
-   * Handle form changes
-   */
   onFormChange(): void {
     this.checkForChanges();
   }
 
-  /**
-   * Handle content changes
-   */
   onContentChange(): void {
     this.checkForChanges();
   }
 
-  /**
-   * Handle accessibility type change
-   */
   onAccessibilityChange(): void {
-    // Reset related fields when changing accessibility type
+
     if (this.noteData.accessibility !== AccessibilityType.GROUP) {
       this.noteData.groupName = '';
     }
@@ -399,9 +326,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.onFormChange();
   }
 
-  /**
-   * Check for changes compared to initial state
-   */
   private checkForChanges(): void {
     const currentState = JSON.stringify({
       ...this.noteData,
@@ -410,9 +334,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     this.hasChanges = currentState !== this.initialFormState;
   }
 
-  /**
-   * Validate form
-   */
   isFormValid(): boolean {
     return !!(
       this.noteData.title.trim() &&
@@ -421,9 +342,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     );
   }
 
-  /**
-   * Validate accessibility-specific requirements
-   */
   private isAccessibilityValid(): boolean {
     switch (this.noteData.accessibility) {
       case AccessibilityType.GROUP:
@@ -435,18 +353,10 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Get final category (handles empty category)
-   */
   private getFinalCategoryName(): string | undefined {
     return this.noteData.categoryName || undefined;
   }
 
-  // ========== EDITOR ACTIONS ==========
-
-  /**
-   * Create note - UPDATED WITH TIME MACHINE INTEGRATION
-   */
   async createNote(): Promise<void> {
     if (!this.isFormValid()) {
       this.showValidationErrors = true;
@@ -464,67 +374,36 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
         accessibility: this.noteData.accessibility,
         groupName: this.noteData.groupName || undefined,
         authorizedUserIds: this.noteData.authorizedUserIds.length > 0 ? this.noteData.authorizedUserIds : undefined,
-        createdAt: this.timeMachineDate || undefined // UPDATED: Pass Time Machine date
+        createdAt: this.timeMachineDate || undefined 
       };
 
       const createdNote = await this.notesService.createNote(createRequest).toPromise();
       
       if (createdNote) {
         console.log('Note created successfully:', createdNote.id);
-        // Clear form state to prevent unsaved changes warning
         this.setInitialFormState();
-        // Navigate back to notes list
         this.router.navigate(['/notes']);
       }
 
     } catch (error) {
       console.error('Error creating note:', error);
-      // Don't navigate on error, let user try again
     } finally {
       this.isSaving = false;
     }
   }
 
-  /**
-   * Discard changes
-   */
-  discardChanges(): void {
-    if (this.hasChanges) {
-      const confirmMessage = 'You have unsaved changes. Are you sure you want to discard them?';
-      if (!confirm(confirmMessage)) {
-        return;
-      }
-    }
-
-    this.goBack();
-  }
-
-  /**
-   * Go back
-   */
   goBack(): void {
     this.router.navigate(['/notes']);
   }
 
-  // ========== UTILITY METHODS ==========
-
-  /**
-   * Get save button text
-   */
   getSaveButtonText(): string {
     return this.isSaving ? 'Creating...' : 'Create Note';
   }
 
-  /**
-   * Get loading message
-   */
   getLoadingMessage(): string {
     return 'Loading...';
   }
 
-  /**
-   * UPDATED: Get creation date display with Time Machine info
-   */
   getCreationDateDisplay(): string {
     if (!this.timeMachineDate) {
       return 'Now';
@@ -542,54 +421,37 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     return isTimeMachineActive ? `${dateStr} (Time Machine)` : dateStr;
   }
 
-  /**
-   * UPDATED: Check if Time Machine is active
-   */
   isTimeMachineActive(): boolean {
     return this.timeMachineService.isActive();
   }
 
-  /**
-   * Get accessibility type description
-   */
   getAccessibilityDescription(type: AccessibilityType): string {
     const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
     return accessibilityType?.description || '';
   }
 
-  /**
-   * Generate Markdown preview (simplified)
-   */
   getMarkdownPreview(): string {
     if (!this.noteData.content) return '<p class="text-gray-400">No content to preview</p>';
 
     let html = this.noteData.content;
 
-    // Basic Markdown conversions
-    // Headers
     html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mt-4 mb-2">$1</h3>');
     html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mt-4 mb-2">$1</h2>');
     html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold mt-4 mb-3">$1</h1>');
 
-    // Bold and italic
     html = html.replace(/\*\*(.*?)\*\*/gim, '<strong class="font-semibold">$1</strong>');
     html = html.replace(/\*(.*?)\*/gim, '<em class="italic">$1</em>');
 
-    // Inline code
     html = html.replace(/`(.*?)`/gim, '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono">$1</code>');
 
-    // Links
     html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/gim, '<a href="$2" target="_blank" rel="noopener" class="text-blue-600 hover:underline">$1</a>');
 
-    // Lists
     html = html.replace(/^\- (.+$)/gim, '<li class="ml-4">• $1</li>');
     html = html.replace(/^\d+\. (.+$)/gim, '<li class="ml-4">$1</li>');
 
-    // Line breaks
     html = html.replace(/\n\n/gim, '</p><p class="mb-3">');
     html = html.replace(/\n/gim, '<br>');
 
-    // Wrap in paragraphs
     if (html && !html.startsWith('<h') && !html.startsWith('<li')) {
       html = '<p class="mb-3">' + html + '</p>';
     }
@@ -597,13 +459,8 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     return html;
   }
 
-  // ========== VALIDATION HELPERS ==========
-
-  /**
-   * Scroll to first error field
-   */
   private scrollToFirstError(): void {
-    // Scroll to first field with error
+
     setTimeout(() => {
       const firstError = document.querySelector('.border-red-300');
       if (firstError) {
@@ -612,9 +469,6 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     }, 100);
   }
 
-  /**
-   * Get validation errors
-   */
   getValidationErrors(): string[] {
     const errors: string[] = [];
     
@@ -637,29 +491,16 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     return errors;
   }
 
-  // ========== CATEGORY AND GROUP HELPERS ==========
-
-  /**
-   * Get category display name
-   */
   getCategoryDisplayName(categoryName: string): string {
     const category = this.categories.find(c => c.name === categoryName);
     return category?.name || 'Unknown';
   }
 
-  /**
-   * Get group display name
-   */
   getGroupDisplayName(groupName: string): string {
     const group = this.groups.find(g => g.name === groupName);
     return group ? group.name : groupName;
   }
 
-  // ========== USER SEARCH HELPERS ==========
-
-  /**
-   * Get user display text for search results
-   */
   getUserDisplayText(user: User): string {
     if (user.displayName) {
       return user.email ? `${user.displayName} (${user.email})` : user.displayName;
@@ -667,31 +508,19 @@ export class NoteEditorComponent implements OnInit, OnDestroy {
     return user.email || user.id;
   }
 
-  /**
-   * Check if user search has results
-   */
   hasUserSearchResults(): boolean {
     return this.userSearchResults.length > 0;
   }
 
-  /**
-   * Check if any users are selected
-   */
   hasSelectedUsers(): boolean {
     return this.selectedUsers.length > 0;
   }
 
-  /**
-   * Get selected users count text
-   */
   getSelectedUsersCountText(): string {
     const count = this.selectedUsers.length;
     return `${count} user${count !== 1 ? 's' : ''} selected`;
   }
 
-  /**
-   * Get helper text for authorized users section
-   */
   getAuthorizedUsersHelperText(): string {
     return 'Search and select users who should have access to this note. You are automatically included and do not need to add yourself.';
   }

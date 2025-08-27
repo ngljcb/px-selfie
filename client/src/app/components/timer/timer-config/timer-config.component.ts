@@ -19,8 +19,7 @@ export class TimerConfigComponent implements OnInit {
   
   // Modalità form
   isManualMode = true;
-  
-  // Proposte generate
+
   proposals: ConfigProposal[] = [];
   selectedProposal: ConfigProposal | null = null;
 
@@ -53,8 +52,6 @@ export class TimerConfigComponent implements OnInit {
     });
   }
 
-  // ==================== MODALITÀ SWITCH ====================
-
   switchToManual(): void {
     this.isManualMode = true;
     this.selectedProposal = null;
@@ -65,8 +62,6 @@ export class TimerConfigComponent implements OnInit {
     this.isManualMode = false;
     this.generateProposals();
   }
-
-  // ==================== UTILITY PER TEMPO ====================
 
   getTotalTimeInMinutes(): number {
     const hours = this.configForm.get('totalTimeHours')?.value || 0;
@@ -104,8 +99,6 @@ export class TimerConfigComponent implements OnInit {
     return `${totalMinutes} minuti`;
   }
 
-  // ==================== NUOVA LOGICA GENERAZIONE PROPOSTE ====================
-
   generateProposals(): void {
     const TT = this.getTotalTimeInMinutes(); // Tempo Totale
     this.proposals = [];
@@ -136,7 +129,7 @@ export class TimerConfigComponent implements OnInit {
   }
 
   private generateCycleProposals(TT: number): void {
-    // Configurazioni base da testare: [studio, pausa]
+
     const baseConfigs = [
       { study: 25, break: 5, name: 'Pomodoro Classico(25+5)'},
       { study: 30, break: 5, name: 'Pomodoro Medio(30+5)'},
@@ -201,8 +194,8 @@ export class TimerConfigComponent implements OnInit {
     return {
       id: id,
       name: name,
-      studyMinutes: TS, // Tempo studio base per i cicli normali
-      breakMinutes: TP, // Tempo pausa base per i cicli normali
+      studyMinutes: TS, // Tempo studio
+      breakMinutes: TP, // Tempo pausa
       totalCycles: totalCycles,
       totalTime: TT,
       studyTime: actualTotalStudyTime,
@@ -229,20 +222,15 @@ export class TimerConfigComponent implements OnInit {
     return details.length > 0 ? details.join(', ') : `${finalStudy} min studio`;
   }
 
-  // ==================== SELEZIONE PROPOSTA ====================
-
   selectProposal(proposal: ConfigProposal): void {
     this.selectedProposal = proposal;
     
-    // Per la preview, usiamo i valori base del ciclo
     this.configForm.patchValue({
       studyMinutes: proposal.studyMinutes,
       breakMinutes: proposal.breakMinutes,
       totalCycles: proposal.totalCycles
     });
   }
-
-  // ==================== VALIDAZIONE E SALVATAGGIO ====================
 
   onTotalTimeChange(): void {
     if (!this.isManualMode) {
@@ -288,8 +276,6 @@ export class TimerConfigComponent implements OnInit {
   cancel(): void {
     this.onClose.emit();
   }
-
-  // ==================== UTILITY ====================
 
   private calculateTotalTime(config: TimerConfig): number {
     return (config.studyMinutes + config.breakMinutes) * config.totalCycles;

@@ -404,7 +404,7 @@ export class NotesService {
   resetState(): void {
     this.notesSubject.next([]);
     this.selectedNoteSubject.next(null);
-    this.totalNotesSubject.next(0); // FIXED: Reset total count
+    this.totalNotesSubject.next(0); 
   }
 
   loadNotesForView(viewType: 'home' | 'list' | 'category' | 'group', identifier?: string): Observable<NoteWithDetails[]> {

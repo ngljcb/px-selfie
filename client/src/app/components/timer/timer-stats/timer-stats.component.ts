@@ -26,7 +26,7 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // MIGLIORAMENTO: Sottoscrivi separatamente ai cambiamenti della Time Machine
+
     this.timeMachineService.virtualNow$()
       .pipe(
         takeUntil(this.destroy$),
@@ -45,12 +45,10 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
           currentStats: this.statistics
         });
         
-        // SEMPRE ricarica le statistiche quando la Time Machine cambia
         console.log('Ricaricando statistiche per cambio Time Machine...');
         this.loadStatistics();
       });
 
-    // Sottoscrivi alle statistiche dal service
     this.statisticsService.statistics$
       .pipe(takeUntil(this.destroy$))
       .subscribe((stats) => {
@@ -58,7 +56,6 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
         this.statistics = stats;
       });
 
-    // Carica le statistiche all'inizializzazione
     this.loadStatistics();
   }
 
@@ -67,13 +64,10 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ==================== CARICAMENTO DATI ====================
-
   loadStatistics(): void {
     this.isLoading = true;
     this.error = null;
 
-    // NUOVO: Usa refreshStatistics invece di getUserStatistics per forzare il refresh
     this.statisticsService.refreshStatistics()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -91,22 +85,9 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
       });
   }
 
-  /**
-   * NUOVO: Metodo per refresh automatico tramite direttiva
-   */
-  onTimeMachineChange = (): void => {
-    console.log('TimeMachine change detected, refreshing stats...');
-    this.loadStatistics();
-  }
-
-  /**
-   * Forza il refresh delle statistiche (utile quando si cambia il tempo virtuale)
-   */
   refreshStats(): void {
     this.loadStatistics();
   }
-
-  // ==================== GETTERS PER TEMPLATE ====================
 
   get totalSessions(): number {
     return this.statistics?.totalCompletedSessions || 0;
@@ -127,8 +108,6 @@ export class TimerStatsComponent implements OnInit, OnDestroy {
   get currentTime(): Date {
     return this.statisticsService.getCurrentTime();
   }
-
-  // ==================== SAFE GETTERS ====================
 
   get safeStatistics(): StatisticsResponse {
     return this.statistics || {
