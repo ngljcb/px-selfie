@@ -23,7 +23,7 @@ export class CalendarCreateComponent implements OnChanges {
   @Output() eventCreated = new EventEmitter<void>(); // facoltativo per chi ascolta
 
   type: '' | 'event' | 'activity' = '';
-  tipoRipetizione: '' | 'numeroFisso' | 'scadenza' | 'indeterminato' = 'indeterminato';
+  tipoRipetizione: '' | 'numeroFisso' | 'scadenza' | 'indeterminato' = '';
 
   title: string = '';
   scadenza: string = '';
@@ -139,7 +139,7 @@ export class CalendarCreateComponent implements OnChanges {
         start_time: normTime(this.oraInizio),
         end_time: normTime(this.oraFine),
         days_recurrence: this.isRecurring && giorniAttivi.length ? giorniAttivi.join(',') : '',
-        recurrence_type: this.isRecurring ? (this.tipoRipetizione || 'indeterminato') : 'indeterminato',
+        recurrence_type: this.isRecurring ? (this.tipoRipetizione || 'indeterminato') : undefined,
         number_recurrence: this.isRecurring && this.tipoRipetizione === 'numeroFisso' ? (this.ripetizioni ?? 0) : 0,
         due_date: this.isRecurring && this.tipoRipetizione === 'scadenza' ? (this.fineRicorrenza || '') : ''
       };
