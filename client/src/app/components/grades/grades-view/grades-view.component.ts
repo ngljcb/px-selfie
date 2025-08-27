@@ -1,6 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 import { GradesService } from '../../../service/grades.service';
 import { Grade } from '../../../model/entity/grade.model';
 
@@ -11,8 +12,10 @@ import { Grade } from '../../../model/entity/grade.model';
   templateUrl: './grades-view.component.html',
   styleUrl: './grades-view.component.scss',
 })
-export class GradesViewComponent implements OnInit {
+export class GradesViewComponent implements OnInit, OnDestroy {
   private gradesService = inject(GradesService);
+  private router = inject(Router);
+  private navSub?: Subscription;
 
   grades: Grade[] = [];
   loading = false;
@@ -36,6 +39,20 @@ export class GradesViewComponent implements OnInit {
 
   ngOnInit(): void {
     this.fetch();
+
+    // Quando si torna dalla route di delete (o da qualunque altra navigazione verso /grades),
+    // ricarica la lista e ricalcola le statistiche SENZA refresh di pagina.
+    this.navSub = this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => {
+        if (e.urlAfterRedirects.startsWith('/grades')) {
+          this.fetch();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.navSub?.unsubscribe();
   }
 
   fetch(): void {

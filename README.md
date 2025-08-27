@@ -7,6 +7,8 @@ To start a local development server for the frontend, run:
 
 ```bash
 cd client
+npm install
+ng build
 ng serve
 ```
 
@@ -18,6 +20,7 @@ To start a local development server for the backend, run:
 
 ```bash
 cd server
+npm install
 npm run dev
 ```
 

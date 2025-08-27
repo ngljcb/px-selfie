@@ -9,6 +9,9 @@ import { AuthGuard } from './components/auth/guard/auth.guard';
 import { TimerViewComponent } from './components/timer/timer-view/timer-view.component';
 import { GroupComponent } from './components/notes/group/group.component';
 import { GradesViewComponent } from './components/grades/grades-view/grades-view.component';
+import { GradesDeleteComponent } from './components/grades/grades-delete/grades-delete.component';
+import { GradesCreateComponent } from './components/grades/grades-create/grades-create.component';
+import { GradesModifyComponent } from './components/grades/grades-modify/grades-modify.component';
 
 export const routes: Routes = [
   {
@@ -67,6 +70,21 @@ export const routes: Routes = [
   {
     path: 'grades',
     component: GradesViewComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'grades/:id/delete',
+    component: GradesDeleteComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'grades/new',
+    component: GradesCreateComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'grades/:id/edit',
+    component: GradesModifyComponent,
     canActivate: [AuthGuard]
   }
 ];
