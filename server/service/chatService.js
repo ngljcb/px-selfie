@@ -12,11 +12,11 @@ async function createChatSession(userId) {
       history: [
         {
           role: 'user',
-          parts: [{ text: 'Ciao, sono uno studente universitario che usa l\'applicazione SELFIE per organizzare i miei studi. Puoi aiutarmi con domande di studio, pianificazione del tempo e consigli generali?' }]
+          parts: [{ text: 'Hi, I\'m a university student using the SELFIE app to organize my studies. Can you help me with study questions, time planning and general advice?' }]
         },
         {
           role: 'model',
-          parts: [{ text: 'Ciao! Sono il tuo assistente AI per SELFIE. Sono qui per aiutarti con i tuoi studi, la pianificazione del tempo, organizzazione delle attività e qualsiasi domanda tu possa avere. Chiedi pure!' }]
+          parts: [{ text: 'Hi! I\'m your AI assistant for SELFIE. I\'m here to help you with your studies, time planning, activity organization and any questions you might have. Feel free to ask!' }]
         }
       ],
       generationConfig: {
@@ -33,7 +33,7 @@ async function createChatSession(userId) {
 
     return true;
   } catch (error) {
-    throw new Error('Impossibile creare la sessione chat');
+    throw new Error('Unable to create chat session');
   }
 }
 
@@ -58,7 +58,7 @@ async function sendMessage(userId, message) {
       messageCount: userSession.messageCount
     };
   } catch (error) {
-    throw new Error('Errore nella comunicazione con l\'AI');
+    throw new Error('Error communicating with AI');
   }
 }
 

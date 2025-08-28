@@ -1,7 +1,7 @@
 <div class="config-container">
 
   <div class="config-header">
-    <h2>Configurazione</h2>
+    <h2>Configuration</h2>
     <button class="close-btn" (click)="cancel()">
       <span>✕</span>
     </button>
@@ -13,26 +13,25 @@
       [class.active]="isManualMode"
       (click)="switchToManual()">
       <span class="mode-icon">⚙️</span>
-      <span class="mode-text">Configurazione Manuale</span>
+      <span class="mode-text">Manual</span>
     </button>
     <button 
       class="mode-btn" 
       [class.active]="!isManualMode"
       (click)="switchToAutomatic()">
       <span class="mode-icon">🎯</span>
-      <span class="mode-text">Suggerimenti Automatici</span>
+      <span class="mode-text">Automatic</span>
     </button>
   </div>
 
   <form [formGroup]="configForm" class="config-form">
 
     <div class="manual-mode" *ngIf="isManualMode">
-      <div class="form-section">
-        <h3>Imposta i parametri</h3>
+
         
         <div class="form-grid">
           <div class="form-group">
-            <label for="studyMinutes">Studio (minuti)</label>
+            <label for="studyMinutes">Study (minutes)</label>
             <input 
               type="number" 
               id="studyMinutes"
@@ -42,12 +41,12 @@
               class="form-input">
             <div class="input-error" 
                  *ngIf="configForm.get('studyMinutes')?.invalid && configForm.get('studyMinutes')?.touched">
-              Inserisci un valore tra 1 e 120 minuti
+              Insert a value between 1 and 120 minutes
             </div>
           </div>
 
           <div class="form-group">
-            <label for="breakMinutes">Pausa (minuti)</label>
+            <label for="breakMinutes">Pause (minutes)</label>
             <input 
               type="number" 
               id="breakMinutes"
@@ -57,12 +56,12 @@
               class="form-input">
             <div class="input-error" 
                  *ngIf="configForm.get('breakMinutes')?.invalid && configForm.get('breakMinutes')?.touched">
-              Inserisci un valore tra 1 e 30 minuti
+              Insert a value between 1 and 30 minutes
             </div>
           </div>
 
           <div class="form-group">
-            <label for="totalCycles">Cicli</label>
+            <label for="totalCycles">Cycles</label>
             <input 
               type="number" 
               id="totalCycles"
@@ -72,21 +71,20 @@
               class="form-input">
             <div class="input-error" 
                  *ngIf="configForm.get('totalCycles')?.invalid && configForm.get('totalCycles')?.touched">
-              Inserisci un valore tra 1 e 20 cicli
+              Insert a value between 1 and 20
             </div>
           </div>
         </div>
 
         <div class="config-preview">
-          <div class="preview-title">Anteprima:</div>
+          <div class="preview-title">Preview:</div>
           <div class="preview-text">{{ getPreviewText() }}</div>
         </div>
       </div>
-    </div>
 
     <div class="automatic-mode" *ngIf="!isManualMode">
       <div class="form-section">
-        <h3>Quanto tempo hai a disposizione?</h3>
+        <h3>How much time do you have?</h3>
         
         <div class="time-input-group">
 
@@ -101,7 +99,7 @@
                 (input)="onTotalTimeChange()"
                 class="form-input time-input"
                 placeholder="0">
-              <label for="totalTimeHours" class="time-label">ore</label>
+              <label for="totalTimeHours" class="time-label">Hours</label>
             </div>
             
             <div class="time-separator"></div>
@@ -116,7 +114,7 @@
                 (input)="onTotalTimeChange()"
                 class="form-input time-input"
                 placeholder="0">
-              <label for="totalTimeMinutes" class="time-label">minuti</label>
+              <label for="totalTimeMinutes" class="time-label">Minutes</label>
             </div>
           </div>
           
@@ -127,17 +125,17 @@
           <div class="input-error" 
                *ngIf="(configForm.get('totalTimeHours')?.invalid && configForm.get('totalTimeHours')?.touched) || 
                       (configForm.get('totalTimeMinutes')?.invalid && configForm.get('totalTimeMinutes')?.touched)">
-            Inserisci un tempo valido (massimo 8 ore)
+            Insert a valid time (max 8 hours)
           </div>
           
           <div class="input-error" 
                *ngIf="getTotalTimeInMinutes() < 10 && getTotalTimeInMinutes() > 0">
-            Tempo minimo: 10 minuti
+            Minumum 10 minutes required to see proposals
           </div>
         </div>
 
         <div class="proposals-section" *ngIf="proposals.length > 0">
-          <h4>Proposte consigliate:</h4>
+          <h4>Suggested proposals:</h4>
           
           <div class="proposals-grid">
             <div 
@@ -154,15 +152,15 @@
               <div class="proposal-details">
                 <div class="proposal-stats">
                   <div class="stat">
-                    <span class="stat-label">Studio:</span>
+                    <span class="stat-label">Study:</span>
                     <span class="stat-value">{{ formatTime(proposal.studyTime) }}</span>
                   </div>
                   <div class="stat" *ngIf="proposal.breakTime > 0">
-                    <span class="stat-label">Pausa:</span>
+                    <span class="stat-label">Pause:</span>
                     <span class="stat-value">{{ formatTime(proposal.breakTime) }}</span>
                   </div>
                   <div class="stat">
-                    <span class="stat-label">Cicli:</span>
+                    <span class="stat-label">Cycles:</span>
                     <span class="stat-value">{{ proposal.totalCycles }}</span>
                   </div>
                 </div>
@@ -173,11 +171,11 @@
         </div>
 
         <div class="no-proposals" *ngIf="proposals.length === 0 && getTotalTimeInMinutes() >= 10">
-          <p>Nessuna proposta disponibile per questo tempo</p>
+          <p>No proposals available for this time</p>
         </div>
         
         <div class="no-proposals" *ngIf="getTotalTimeInMinutes() < 10 && getTotalTimeInMinutes() > 0">
-          <p>Inserisci almeno 10 minuti per vedere le proposte</p>
+          <p>Please insert at least 10 minutes to view the proposals.</p>
         </div>
       </div>
     </div>
@@ -189,13 +187,13 @@
       class="action-btn save-btn" 
       [disabled]="!isFormValid()"
       (click)="saveConfig()">
-      {{ isManualMode ? 'Salva' : 'Conferma' }}
+      {{ isManualMode ? 'Save' : 'Confirm' }}
     </button>
     <button 
       type="button" 
       class="action-btn cancel-btn" 
       (click)="cancel()">
-      Annulla
+      Cancel
     </button>
   </div>
 

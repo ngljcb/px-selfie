@@ -77,7 +77,7 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
     
     this.messages = [
       {
-        content: 'Ciao! Sono il tuo assistente AI per SELFIE. Come posso aiutarti oggi?',
+        content: 'Hi! I\'m your AI assistant for SELFIE. How can I help you today?',
         isUser: false,
         timestamp: new Date()
       }
@@ -92,7 +92,7 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   openModal(): void {
     if (!this.isUserLoggedIn) {
-      console.log('Utente non autenticato, impossibile aprire la chat');
+      console.log('User not authenticated, cannot open chat');
       return;
     }
     
@@ -141,19 +141,19 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
             };
             this.messages.push(aiMessage);
           } else {
-            this.addErrorMessage('Risposta non valida dal server');
+            this.addErrorMessage('Invalid response from server');
           }
           this.isLoading = false;
           this.shouldScrollToBottom = true;
         },
         error: (error: Error) => {
-          console.error('Errore nella comunicazione con il server:', error);
+          console.error('Error communicating with server:', error);
           
-          if (error.message.includes('401') || error.message.includes('Sessione scaduta')) {
+          if (error.message.includes('401') || error.message.includes('Session expired')) {
             this.checkAuthenticationStatus();
-            this.addErrorMessage('Sessione scaduta. Effettua il login di nuovo.');
+            this.addErrorMessage('Session expired. Please log in again.');
           } else {
-            this.addErrorMessage(error.message || 'Errore di comunicazione');
+            this.addErrorMessage(error.message || 'Communication error');
           }
           
           this.isLoading = false;
@@ -164,7 +164,7 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   private addErrorMessage(errorText: string): void {
     const errorMessage: ChatMessage = {
-      content: `Scusa, ${errorText}. Riprova più tardi.`,
+      content: `Sorry, ${errorText}. Please try again later.`,
       isUser: false,
       timestamp: new Date()
     };

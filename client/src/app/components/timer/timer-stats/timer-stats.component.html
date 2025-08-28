@@ -3,7 +3,7 @@
   @if (isLoading) {
     <div class="stats-loading">
       <div class="loading-spinner"></div>
-      <span>Caricamento statistiche...</span>
+      <span>Loading...</span>
     </div>
   }
 
@@ -11,7 +11,7 @@
     <div class="stats-container">
 
       <div class="stats-header">
-        <h3 class="stats-title">Le tue statistiche</h3>
+        <h3 class="stats-title">My statistics</h3>
       </div>
 
       <div class="stats-compact">
@@ -20,7 +20,7 @@
           <div class="stat-icon">✅</div>
           <div class="stat-content">
             <div class="stat-value">{{ totalSessions }}</div>
-            <div class="stat-label">sessioni completate</div>
+            <div class="stat-label">completed sessions</div>
           </div>
         </div>
 
@@ -28,7 +28,7 @@
           <div class="stat-icon">⏱️</div>
           <div class="stat-content">
             <div class="stat-value">{{ totalStudyTimeFormatted }}</div>
-            <div class="stat-label">tempo totale di studio</div>
+            <div class="stat-label">total study time</div>
           </div>
         </div>
 
@@ -36,7 +36,7 @@
           <div class="stat-icon">🔥</div>
           <div class="stat-content">
             <div class="stat-value">{{ consecutiveDays }}</div>
-            <div class="stat-label">giorni di studio consecutivi</div>
+            <div class="stat-label">consecutive study days</div>
           </div>
         </div>
 

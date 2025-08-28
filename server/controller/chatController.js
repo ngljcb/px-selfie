@@ -8,7 +8,7 @@ async function sendMessage(req, res) {
     if (!message || message.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: 'Il messaggio non può essere vuoto'
+        message: 'Message cannot be empty'
       });
     }
 
@@ -22,7 +22,7 @@ async function sendMessage(req, res) {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error.message || 'Errore interno del server'
+      message: error.message || 'Internal server error'
     });
   }
 }

@@ -260,7 +260,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
   getCycleText(): string {
     if (!this.timerState) return '';
     
-    return `Ciclo ${this.timerState.currentCycle} di ${this.timerState.config.totalCycles}`;
+    return `Cycle ${this.timerState.currentCycle} of ${this.timerState.config.totalCycles}`;
   }
 
   getStatusText(): string {
@@ -270,7 +270,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       case TimerStatus.IDLE:
         return 'Pronto per iniziare';
       case TimerStatus.RUNNING:
-        return this.timerState.currentPhase === TimerPhase.STUDY ? 'In studio...' : 'In pausa...';
+        return this.timerState.currentPhase === TimerPhase.STUDY ? 'Studying...' : 'Resting...';
       case TimerStatus.PAUSED:
         return 'In pausa';
       case TimerStatus.COMPLETED:

@@ -35,35 +35,35 @@
           <div class="progress-bar">
             <div class="progress-fill" [style.width]="getProgressBarWidth()"></div>
           </div>
-          <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completato</span>
+          <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completed</span>
         </div>
 
         <div class="controls">
 
           @if (!isRunning()) {
             <button class="btn btn-primary" (click)="startTimer()">
-              {{ isPaused() ? 'Riprendi' : 'Inizia' }}
+              {{ isPaused() ? 'Resume' : 'Start' }}
             </button>
           }
 
           @if (!isIdle()) {
             <div class="secondary-controls">
               <button class="btn btn-pause" (click)="pauseTimer()" [disabled]="!isRunning()">
-                Pausa
+                Pause
               </button>
 
               @if (isRunning()) {
                 <button class="btn btn-skip" (click)="skipCurrentPhase()">
-                  Salta
+                  Skip
                 </button>
               }
 
               <button class="btn btn-reset" (click)="resetTimer()" [disabled]="!canRestart()">
-                Ricomincia
+                Reset
               </button>
 
               <button class="btn btn-stop" (click)="stopTimer()">
-                Fine
+                Stop
               </button>
             </div>
           }
@@ -80,10 +80,10 @@
         <div class="completion-overlay">
           <div class="completion-content">
             <div class="completion-icon">🎉</div>
-            <h2>Sessione Completata!</h2>
-            <p class="study-time">Tempo totale: {{ formatTime(getTotalEffectiveTime()) }}</p>
+            <h2>Session completed!</h2>
+            <p class="study-time">Total time: {{ formatTime(getTotalEffectiveTime()) }}</p>
             <button class="btn btn-primary" (click)="stopTimer()">
-              Nuova Sessione
+              New Session
             </button>
           </div>
         </div>
@@ -109,7 +109,7 @@
 
     @if (!timerState) {
       <div class="loading">
-        <p>Caricamento in corso...</p>
+        <p>Loading...</p>
       </div>
     }
     

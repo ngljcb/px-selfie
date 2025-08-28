@@ -2,8 +2,8 @@
   *ngIf="isUserLoggedIn"
   class="chat-fab" 
   (click)="openModal()"
-  aria-label="Apri chat AI">
-  <img src="/assets/sloth-ai.svg" alt="Chat AI" class="sloth-icon">
+  aria-label="Open AI chat">
+  <img src="/assets/sloth-ai.svg" alt="AI Chat" class="sloth-icon">
 </button>
 
 <div 
@@ -23,7 +23,7 @@
           <h3><strong>SELFIE AI Assistant</strong></h3>
         </div>
       </div>
-      <button class="close-btn" (click)="closeModal()" aria-label="Chiudi chat">
+      <button class="close-btn" (click)="closeModal()" aria-label="Close chat">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>
           <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -83,7 +83,7 @@
           [(ngModel)]="currentMessage"
           (keydown)="onKeyPress($event)"
           [disabled]="isLoading"
-          placeholder="Scrivi un messaggio..."
+          placeholder="Write a message..."
           class="message-input"
           rows="1"
           #messageInput></textarea>
@@ -92,7 +92,7 @@
           (click)="sendMessage()"
           [disabled]="!currentMessage.trim() || isLoading"
           class="send-btn"
-          aria-label="Invia messaggio">
+          aria-label="Send message">
           <svg 
             *ngIf="!isLoading" 
             width="20" 
