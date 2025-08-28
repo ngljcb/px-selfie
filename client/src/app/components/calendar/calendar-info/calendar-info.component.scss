@@ -1,141 +1,219 @@
-.calendar-info-wrapper {
+/* src/app/components/calendar/calendar-info/calendar-info.component.scss */
+/* Copiato dallo stile di calendar-create con minime aggiunte per i pulsanti Modify/Delete */
+
+.calendar-create-wrapper {
   display: flex;
+  margin-top: 1rem;
+  padding: 1rem;
   flex-direction: column;
   align-items: center;
-  padding: 1rem;
-  background-color: var(--secondary-bg);
-  border-radius: 1rem;
-  max-width: 700px;
-  width: 100%;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-  gap: 1rem;
+  justify-content: center;
 
-  .header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-
-    h2 {
-      flex: 1;
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #5c3b00;
-      margin: 0;
-      text-align: center; // centro visivamente il titolo
-    }
-
-    .btn-close {
-      background: none;
-      border: none;
-      font-size: 1.6rem;
-      font-weight: bold;
-      cursor: pointer;
-      color: #444;
-      padding: 0.3rem;
-      line-height: 1;
-      transition: color 0.2s;
-
-      &:hover {
-        color: #e53935;
-      }
-    }
-  }
-
-  .info-grid {
+  form {
+    width: 700px;
+    min-height: 300px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background-color: var(--secondary-bg);
+    max-width: 1000px;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.1rem;
+    text-align: center;
+    color: #5c3b00;
+  }
+
+  .form-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #444;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  input,
+  select,
+  textarea {
     width: 100%;
+    max-width: 100%;
+    padding: 0.45rem 0.7rem;
+    border-radius: 0.5rem;
+    border: 1px solid #ccc;
+    font-size: 1rem;
+    background-color: white;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
 
-    label {
-      font-weight: 600;
-      font-size: 0.95rem;
-      color: #444;
-      display: block;
-      margin-bottom: 0.3rem;
-    }
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
+    outline: none;
+  }
 
-    input {
-      width: 100%;
-      padding: 0.45rem 0.7rem;
-      border-radius: 0.5rem;
-      border: 1px solid #ccc;
-      background-color: #f9f9f9;
-      font-size: 1rem;
-      color: #333;
-      box-sizing: border-box;
+  /* readonly */
+  input[readonly],
+  textarea[readonly],
+  select[disabled] {
+    background: #fdfaf0;
+    color: #3f3a34;
+  }
+
+  .row-group {
+    display: flex;
+    gap: 1rem;
+
+    div {
+      flex: 1;
     }
+  }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: #444;
+    justify-content: flex-start;
+    margin-top: 0.5rem;
+  }
+
+  .checkbox-row input {
+    width: auto;
+    margin: 0;
+  }
+
+  .checkbox-row label {
+    flex: 1;
   }
 
   .button-row {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    margin-top: 0.5rem;
-    width: 100%;
+    margin-top: 1rem;
 
     button {
-      padding: 0.6rem 1.5rem;
+      padding: 0.6rem 2rem;
       border-radius: 0.5rem;
       font-weight: bold;
       font-size: 1rem;
-      cursor: pointer;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-      border: none;
+      cursor: pointer;
       transition: background 0.3s, transform 0.1s;
-      display: flex;
-      align-items: center;
-      justify-content: center; // testo e icona centrati orizzontalmente
-      gap: 0.4rem;
-      min-width: 140px;
+      border: none;
+      min-width: 120px;
     }
 
+    /* default "action" look (come Save del create) */
+    button[type='submit'],
     .btn-modify {
       background: linear-gradient(to bottom, #ffa94d, #e65c00);
       color: white;
-
-      &:hover {
-        background: linear-gradient(to bottom, #ffb366, #ff6f1a);
-      }
+    }
+    button[type='submit']:hover,
+    .btn-modify:hover {
+      background: linear-gradient(to bottom, #ffb366, #ff6f1a);
     }
 
+    /* Secondary (come Cancel del create) */
+    button[type='button'] {
+      background: linear-gradient(to bottom, #ffd0a2, #f79a64);
+      color: #5c3b00;
+    }
+    button[type='button']:hover {
+      background: linear-gradient(to bottom, #ffc386, #ff9b37);
+    }
+
+    /* Delete rosso */
     .btn-delete {
       background: linear-gradient(to bottom, #ff6b6b, #e53935);
-      color: white;
+      color: #fff;
+    }
+    .btn-delete:hover {
+      filter: brightness(1.05);
+    }
+  }
 
-      &:hover {
-        background: linear-gradient(to bottom, #ff7f7f, #ff4444);
+  .giorni-frequenza {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    label {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #444;
+      margin-bottom: 0.3rem;
+    }
+
+    .checkbox-giorni {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      input[type='checkbox'] {
+        margin: 0;
+        width: auto;
       }
     }
   }
 }
 
-/* Overlay centrato come calendar-create */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.modal-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  padding: 1rem;
+.error-msg {
+  color: #e53935;
+  font-weight: bold;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
-  .calendar-info-wrapper {
-    width: 90vw;
+  .calendar-create-wrapper {
+    form {
+      width: 90vw;
+      min-height: 30vh;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
 
     h2 {
       font-size: 1.3rem;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 0.75rem;
+      color: #444;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .row-group {
+      flex-direction: column;
     }
 
     .button-row {
@@ -145,6 +223,30 @@
       button {
         width: 100%;
       }
+    }
+
+    .checkbox-row {
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-row input {
+      width: auto;
+      margin-right: 0.5rem;
+    }
+
+    .checkbox-row label {
+      flex: unset;
+      width: auto;
+    }
+
+    select {
+      max-width: 100%;
+    }
+
+    .giorni-frequenza .checkbox-giorni {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 }

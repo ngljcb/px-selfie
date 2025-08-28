@@ -205,7 +205,7 @@ export class CalendarViewComponent implements OnDestroy {
     this.showInfo = false;
     this.selectedActivity = null;
     this.selectedEvent = null;
-    this.loadActivitiesAndRender();
+    //this.loadActivitiesAndRender();
   }
 
   deleteActivity(id: number): void {
