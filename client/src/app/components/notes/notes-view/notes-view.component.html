@@ -42,7 +42,7 @@
               *ngIf="searchQuery"
               (click)="clearSearch()"
               class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              ✕
+              <span class="text-lg font-bold">×</span>
             </button>
           </div>
         </div>
@@ -137,19 +137,13 @@
       <div class="text-6xl mb-4">🔍</div>
       <h3 class="text-xl font-semibold text-gray-700 mb-2">No notes found!</h3>
       <p class="text-gray-500 mb-6">Try adjusting your search or filters</p>
-      <button 
-        (click)="clearAllFilters()"
-        class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-        Clear Filters
-      </button>
     </div>
 
     <div *ngIf="hasResults()">
 
       <div class="mb-6 flex justify-between items-center">
         <p class="text-sm text-gray-600">
-          Showing {{ filteredNotes.length }} of {{ totalNotes }} notes
-          <span *ngIf="hasActiveFilters()"> (filtered)</span>
+          {{ getNotesCountMessage() }}
         </p>
       </div>
 

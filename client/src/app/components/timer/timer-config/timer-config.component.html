@@ -186,16 +186,16 @@
   <div class="config-actions">
     <button 
       type="button" 
-      class="action-btn cancel-btn" 
-      (click)="cancel()">
-      Annulla
-    </button>
-    <button 
-      type="button" 
       class="action-btn save-btn" 
       [disabled]="!isFormValid()"
       (click)="saveConfig()">
       {{ isManualMode ? 'Salva' : 'Conferma' }}
+    </button>
+    <button 
+      type="button" 
+      class="action-btn cancel-btn" 
+      (click)="cancel()">
+      Annulla
     </button>
   </div>
 

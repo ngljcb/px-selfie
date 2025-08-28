@@ -414,13 +414,12 @@ export class NotesViewComponent implements OnInit, OnDestroy {
 
   getNotesCountMessage(): string {
     const visibleCount = this.filteredNotes.length;
-    const timeFilteredCount = this.allNotes.length;
-    const totalCount = this.totalNotes;
+    const totalAvailable = this.allNotes.length;
     
-    if (this.isTimeMachineActive() && timeFilteredCount < totalCount) {
-      return `Showing ${visibleCount} of ${timeFilteredCount} notes (${totalCount} total, filtered by time machine date)`;
+    if (this.hasActiveFilters() && visibleCount < totalAvailable) {
+      return `Showing ${visibleCount} of ${totalAvailable} notes`;
     } else {
-      return `${visibleCount} note${visibleCount !== 1 ? 's' : ''} available`;
+      return `Showing ${totalAvailable} of ${totalAvailable} notes`;
     }
   }
 
@@ -453,7 +452,7 @@ export class NotesViewComponent implements OnInit, OnDestroy {
   }
 
   hasNoNotes(): boolean {
-    return !this.isLoading && !this.errorMessage && this.totalNotes === 0;
+    return !this.isLoading && !this.errorMessage && this.allNotes.length === 0;
   }
 
   hasNoFilterResults(): boolean {
