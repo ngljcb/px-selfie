@@ -17,7 +17,6 @@ import {
 } from '../../../model/note.interface';
 import { NotesService } from '../../../service/notes.service';
 import { CategoriesService } from '../../../service/categories.service';
-import { GroupsService } from '../../../service/groups.service';
 import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({

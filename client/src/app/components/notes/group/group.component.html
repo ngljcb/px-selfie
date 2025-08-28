@@ -1,11 +1,8 @@
-<!-- group.component.html - UPDATED WITH CSS VARIABLES -->
-
 <main class="min-h-screen bg-gray-50">
-  <!-- Header Section -->
+
   <div class="bg-white shadow-sm border-b">
     <div class="max-w-4xl mx-auto px-4 py-6">
       <div class="flex justify-between items-center">
-        <!-- Navigation and Title -->
         <div class="flex items-center">
           <button 
             (click)="goBack()"
@@ -19,7 +16,6 @@
           <h1 class="text-2xl font-bold text-gray-900">Groups</h1>
         </div>
 
-        <!-- Create Group Button -->
         <button 
           (click)="showCreateGroupForm()"
           class="flex items-center gap-2 px-6 py-2 bg-[var(--primary-bg)] hover:bg-[var(--primary-hover-bg)] text-black font-bold rounded-lg transition-colors duration-200 shadow-sm">
@@ -29,9 +25,7 @@
     </div>
   </div>
 
-  <!-- Feedback Messages -->
   <div class="max-w-4xl mx-auto px-4 mt-4">
-    <!-- Success message -->
     <div *ngIf="successMessage" 
          class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
       <div class="flex items-center">
@@ -39,7 +33,6 @@
       </div>
     </div>
 
-    <!-- Error message -->
     <div *ngIf="errorMessage" 
          class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
       <div class="flex items-center">
@@ -48,7 +41,6 @@
     </div>
   </div>
 
-  <!-- Create Group Form -->
   <div *ngIf="showCreateForm" class="max-w-4xl mx-auto px-4 mb-6">
     <div class="bg-white rounded-lg shadow-sm p-6">
       <h2 class="text-lg font-semibold text-gray-900 mb-4">Create New Group</h2>
@@ -97,36 +89,31 @@
     </div>
   </div>
 
-  <!-- Main Content -->
   <div class="max-w-4xl mx-auto px-4 pb-8">
 
-    <!-- Loading State -->
     <div *ngIf="isLoading" class="flex justify-center items-center py-12">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary-bg)]"></div>
       <span class="ml-3 text-gray-600">Loading groups...</span>
     </div>
 
-    <!-- Empty State -->
     <div *ngIf="hasNoGroups()" class="text-center py-16">
       <div class="text-6xl mb-4">👥</div>
       <h3 class="text-xl font-semibold text-gray-700 mb-2">No groups found!</h3>
     </div>
 
-    <!-- Groups List -->
     <div *ngIf="!isLoading && !hasNoGroups()" class="space-y-3">
       
       <div *ngFor="let group of groups; trackBy: trackByGroupName" 
            class="bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow duration-200">
         
         <div class="flex items-center justify-between">
-          <!-- Group Info -->
+
           <div class="flex items-center gap-3">
-            <!-- Group Name -->
+
             <h3 class="text-lg font-semibold text-gray-900">
               {{ group.name }}
             </h3>
-            
-            <!-- Status Badge -->
+
             <span *ngIf="isMemberOfGroup(group)" 
                   class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
                   [ngClass]="{
@@ -137,10 +124,8 @@
             </span>
           </div>
 
-          <!-- Actions -->
           <div class="flex items-center gap-2">
-            
-            <!-- Delete Button (only for owners) -->
+
             <button
               *ngIf="canDeleteGroup(group)"
               (click)="deleteGroup(group)"
@@ -149,7 +134,6 @@
               Delete
             </button>
 
-            <!-- Join/Leave Button (FIXED: only show if not owner) -->
             <button
               *ngIf="shouldShowActionButton(group)"
               (click)="handleGroupAction(group)"

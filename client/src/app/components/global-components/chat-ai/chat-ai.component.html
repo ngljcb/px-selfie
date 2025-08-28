@@ -1,4 +1,3 @@
-<!-- Floating Action Button - Solo se l'utente è loggato -->
 <button 
   *ngIf="isUserLoggedIn"
   class="chat-fab" 
@@ -7,19 +6,16 @@
   <img src="/assets/sloth-ai.svg" alt="Chat AI" class="sloth-icon">
 </button>
 
-<!-- Modal Overlay -->
 <div 
   class="modal-overlay" 
   [class.show]="isModalOpen"
   (click)="closeModal()">
-  
-  <!-- Modal Content -->
+
   <div 
     class="modal-content" 
     (click)="$event.stopPropagation()"
     [class.show]="isModalOpen">
-    
-    <!-- Header -->
+
     <div class="modal-header">
       <div class="header-info">
         <img src="/assets/sloth-ai.svg" alt="AI Assistant" class="header-icon">
@@ -35,7 +31,6 @@
       </button>
     </div>
 
-    <!-- Messages Container -->
     <div class="messages-container" #messagesContainer>
       <div 
         *ngFor="let message of messages; trackBy: trackByMessage" 
@@ -66,7 +61,6 @@
         </div>
       </div>
 
-      <!-- Loading indicator -->
       <div *ngIf="isLoading" class="message ai-message loading-message">
         <div class="message-avatar">
           <img src="/assets/sloth-ai.svg" alt="AI" class="avatar-icon">
@@ -83,7 +77,6 @@
       </div>
     </div>
 
-    <!-- Input Area -->
     <div class="input-container">
       <div class="input-wrapper">
         <textarea 

@@ -1,8 +1,5 @@
-<!-- src/app/features/timer/timer-stats/timer-stats.component.html -->
-
 <div class="timer-stats">
-  
-  <!-- LOADING STATE -->
+
   @if (isLoading) {
     <div class="stats-loading">
       <div class="loading-spinner"></div>
@@ -10,19 +7,15 @@
     </div>
   }
 
-  <!-- STATISTICHE PRINCIPALI -->
   @if (statistics && !isLoading && !error) {
     <div class="stats-container">
-      
-      <!-- HEADER -->
+
       <div class="stats-header">
         <h3 class="stats-title">Le tue statistiche</h3>
       </div>
 
-      <!-- STATS COMPATTE -->
       <div class="stats-compact">
-        
-        <!-- SESSIONI COMPLETATE -->
+
         <div class="stat-item">
           <div class="stat-icon">✅</div>
           <div class="stat-content">
@@ -31,7 +24,6 @@
           </div>
         </div>
 
-        <!-- TEMPO TOTALE -->
         <div class="stat-item">
           <div class="stat-icon">⏱️</div>
           <div class="stat-content">
@@ -40,7 +32,6 @@
           </div>
         </div>
 
-        <!-- GIORNI CONSECUTIVI -->
         <div class="stat-item">
           <div class="stat-icon">🔥</div>
           <div class="stat-content">

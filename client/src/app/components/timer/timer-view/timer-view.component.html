@@ -1,10 +1,8 @@
-<!-- CONTAINER PRINCIPALE -->
 <div class="timer-app-container">
     
     @if (timerState) {
       <div class="timer-view">
-        
-        <!-- NOTIFICHE -->
+
         @if (notifications.length > 0) {
           <div class="notifications-container">
             @for (notification of notifications; track notification.id) {
@@ -15,11 +13,9 @@
             }
           </div>
         }
-        
-        <!-- MAIN TIMER DISPLAY -->
+
         <div [class]="getTimerDisplayClass()">
-          
-          <!-- Icona configurazione -->
+
           <button 
             class="config-btn" 
             (click)="openConfig()"
@@ -27,17 +23,14 @@
             <img src="https://pomofocus.io/icons/config-white.png" alt="Config">
           </button>
 
-        <!-- Countdown principale -->
         <div class="time-display">
           <span class="time-number">{{ formatTime(getDisplayTime()) }}</span>
         </div>
 
-        <!-- Info fase corrente -->
         <div class="phase-info">
           <div class="cycle-info">{{ getCycleText() }}</div>
         </div>
 
-        <!-- Progress bar sessione -->
         <div class="progress-container">
           <div class="progress-bar">
             <div class="progress-fill" [style.width]="getProgressBarWidth()"></div>
@@ -45,17 +38,14 @@
           <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completato</span>
         </div>
 
-        <!-- CONTROLLI -->
         <div class="controls">
-          
-          <!-- Bottone Start/Resume -->
+
           @if (!isRunning()) {
             <button class="btn btn-primary" (click)="startTimer()">
               {{ isPaused() ? 'Riprendi' : 'Inizia' }}
             </button>
           }
 
-          <!-- Controlli secondari -->
           @if (!isIdle()) {
             <div class="secondary-controls">
               <button class="btn btn-pause" (click)="pauseTimer()" [disabled]="!isRunning()">
@@ -79,7 +69,6 @@
           }
         </div>
 
-        <!-- Animazione pulsante (disabilitata) -->
         <div class="pulse-animation" 
             [class.active]="isRunning()" 
             [class.study-pulse]="isStudyPhase()" 
@@ -87,7 +76,6 @@
         </div>
       </div>
 
-      <!-- MESSAGGIO COMPLETAMENTO -->
       @if (isCompleted()) {
         <div class="completion-overlay">
           <div class="completion-content">
@@ -103,12 +91,10 @@
     </div>
   }
 
-  <!-- TIMER STATISTICS - SEMPRE VISIBILE FUORI DAL TIMER-VIEW -->
   <div class="timer-stats-container">
     <app-timer-stats></app-timer-stats>
   </div>
 
-  <!-- MODAL CONFIGURAZIONE -->
   @if (showConfig) {
     <div class="modal-overlay" (click)="closeConfig()">
       <div class="modal-content" (click)="$event.stopPropagation()">
@@ -121,7 +107,6 @@
     </div>
   }
 
-    <!-- LOADING STATE -->
     @if (!timerState) {
       <div class="loading">
         <p>Caricamento in corso...</p>

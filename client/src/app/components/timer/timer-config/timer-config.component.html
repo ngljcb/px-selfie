@@ -1,8 +1,5 @@
-<!-- src/app/features/timer/components/timer-config/timer-config.component.html -->
-
 <div class="config-container">
-  
-  <!-- HEADER -->
+
   <div class="config-header">
     <h2>Configurazione</h2>
     <button class="close-btn" (click)="cancel()">
@@ -10,7 +7,6 @@
     </button>
   </div>
 
-  <!-- MODE SWITCH -->
   <div class="mode-switch">
     <button 
       class="mode-btn" 
@@ -30,13 +26,11 @@
 
   <form [formGroup]="configForm" class="config-form">
 
-    <!-- MODALITÀ MANUALE -->
     <div class="manual-mode" *ngIf="isManualMode">
       <div class="form-section">
         <h3>Imposta i parametri</h3>
         
         <div class="form-grid">
-          <!-- Tempo Studio -->
           <div class="form-group">
             <label for="studyMinutes">Studio (minuti)</label>
             <input 
@@ -52,7 +46,6 @@
             </div>
           </div>
 
-          <!-- Tempo Pausa -->
           <div class="form-group">
             <label for="breakMinutes">Pausa (minuti)</label>
             <input 
@@ -68,7 +61,6 @@
             </div>
           </div>
 
-          <!-- Numero Cicli -->
           <div class="form-group">
             <label for="totalCycles">Cicli</label>
             <input 
@@ -85,7 +77,6 @@
           </div>
         </div>
 
-        <!-- PREVIEW MANUALE -->
         <div class="config-preview">
           <div class="preview-title">Anteprima:</div>
           <div class="preview-text">{{ getPreviewText() }}</div>
@@ -93,14 +84,12 @@
       </div>
     </div>
 
-    <!-- MODALITÀ AUTOMATICA -->
     <div class="automatic-mode" *ngIf="!isManualMode">
       <div class="form-section">
         <h3>Quanto tempo hai a disposizione?</h3>
         
         <div class="time-input-group">
-          
-          <!-- Input separati per ore e minuti -->
+
           <div class="time-inputs-container">
             <div class="time-input-wrapper">
               <input 
@@ -147,7 +136,6 @@
           </div>
         </div>
 
-        <!-- PROPOSTE -->
         <div class="proposals-section" *ngIf="proposals.length > 0">
           <h4>Proposte consigliate:</h4>
           
@@ -184,7 +172,6 @@
           </div>
         </div>
 
-        <!-- NESSUNA PROPOSTA -->
         <div class="no-proposals" *ngIf="proposals.length === 0 && getTotalTimeInMinutes() >= 10">
           <p>Nessuna proposta disponibile per questo tempo</p>
         </div>
@@ -196,7 +183,6 @@
     </div>
   </form>
 
-  <!-- AZIONI -->
   <div class="config-actions">
     <button 
       type="button" 

@@ -1,13 +1,9 @@
-<!-- note-editor.component.html - UPDATED WITH CSS VARIABLES -->
-
 <main class="min-h-screen bg-gray-50">
-  
-  <!-- Editor Header -->
+
   <header class="bg-white shadow-sm border-b sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-4">
       <div class="flex items-center justify-between">
-        
-        <!-- Navigation and Title -->
+
         <div class="flex items-center gap-4">
           <button 
             (click)="goBack()"
@@ -21,9 +17,7 @@
           <h1 class="text-2xl font-bold text-gray-900">Create Note</h1>
         </div>
 
-        <!-- Main Actions -->
         <div class="flex items-center gap-3">
-          <!-- Create Note -->
           <button 
             (click)="createNote()"
             [disabled]="!isFormValid() || isSaving"
@@ -36,14 +30,11 @@
     </div>
   </header>
 
-  <!-- Editor Content -->
   <div class="max-w-7xl mx-auto px-4 py-6">
-    
-    <!-- Metadata Form -->
+
     <section class="bg-white rounded-lg shadow-sm p-6 mb-6">
       <div class="space-y-4">
-        
-        <!-- Title -->
+
         <div>
           <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
             Title <span class="text-red-500">*</span>
@@ -58,8 +49,7 @@
             class="w-full px-4 py-3 text-lg font-semibold border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent placeholder-gray-400"
             [class.border-red-300]="!noteData.title && showValidationErrors"
             required>
-          
-          <!-- Character counter -->
+
           <div class="flex justify-between items-center mt-1">
             <span *ngIf="!noteData.title && showValidationErrors" class="text-sm text-red-600">
               Title is required
@@ -70,10 +60,8 @@
           </div>
         </div>
 
-        <!-- Category and Accessibility Type -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
-          <!-- Category -->
+
           <div>
             <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
               Category
@@ -92,7 +80,6 @@
             </div>
           </div>
 
-          <!-- Accessibility Type -->
           <div>
             <label for="accessibility" class="block text-sm font-medium text-gray-700 mb-2">
               Accessibility <span class="text-red-500">*</span>
@@ -109,14 +96,12 @@
               </option>
             </select>
 
-            <!-- Accessibility description -->
             <p *ngIf="noteData.accessibility" class="mt-1 text-xs text-gray-600">
               {{ getAccessibilityDescription(noteData.accessibility) }}
             </p>
           </div>
         </div>
 
-        <!-- Conditional fields based on accessibility type -->
         <div *ngIf="noteData.accessibility === 'group'" class="space-y-4">
           <div>
             <label for="group" class="block text-sm font-medium text-gray-700 mb-2">
@@ -140,14 +125,12 @@
           </div>
         </div>
 
-        <!-- Authorized Users Section -->
         <div *ngIf="noteData.accessibility === 'authorized'" class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Authorized Users <span class="text-red-500">*</span>
             </label>
 
-            <!-- User Search -->
             <div class="space-y-3">
               <div class="relative">
                 <input
@@ -156,8 +139,7 @@
                   (input)="onUserSearchInput()"
                   placeholder="Search users by username..."
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary-bg)] focus:border-transparent">
-                
-                <!-- Clear search button -->
+
                 <button 
                   *ngIf="userSearchQuery"
                   (click)="clearUserSearch()"
@@ -165,18 +147,15 @@
                   ✕
                 </button>
 
-                <!-- Search loading indicator -->
                 <div *ngIf="isSearchingUsers" class="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <div class="animate-spin w-4 h-4 border-2 border-[var(--primary-bg)] border-t-transparent rounded-full"></div>
                 </div>
               </div>
 
-              <!-- Search Error -->
               <div *ngIf="userSearchError" class="text-sm text-red-600 bg-red-50 p-2 rounded">
                 {{ userSearchError }}
               </div>
 
-              <!-- Search Results -->
               <div *ngIf="hasUserSearchResults()" class="border border-gray-200 rounded-lg max-h-40 overflow-y-auto">
                 <button
                   *ngFor="let user of userSearchResults"
@@ -191,14 +170,12 @@
                 </button>
               </div>
 
-              <!-- No results message -->
               <div *ngIf="userSearchQuery && !isSearchingUsers && !hasUserSearchResults() && !userSearchError" 
                    class="text-sm text-gray-500 text-center py-2">
                 No users found for "{{ userSearchQuery }}"
               </div>
             </div>
 
-            <!-- Selected Users -->
             <div *ngIf="hasSelectedUsers()" class="mt-4">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-sm font-medium text-gray-700">Selected Users:</span>
@@ -227,7 +204,6 @@
               </div>
             </div>
 
-            <!-- Validation error for authorized users -->
             <span *ngIf="noteData.authorizedUserIds.length === 0 && showValidationErrors" class="text-sm text-red-600">
               At least one authorized user is required
             </span>
@@ -236,12 +212,10 @@
       </div>
     </section>
 
-    <!-- Content Editor - Always in Split Mode -->
     <section class="bg-white rounded-lg shadow-sm overflow-hidden">
-      
-      <!-- Split Mode Editor -->
+
       <div class="h-96 flex">
-        <!-- Write panel -->
+
         <div class="flex-1 border-r border-gray-200">
           <div class="h-full flex flex-col">
             <div class="bg-gray-50 px-4 py-2 border-b border-gray-200">
@@ -266,8 +240,7 @@ You can use Markdown for formatting:
             </textarea>
           </div>
         </div>
-        
-        <!-- Preview panel -->
+ 
         <div class="flex-1 overflow-y-auto bg-gray-50">
           <div class="bg-gray-100 px-4 py-2 border-b border-gray-200">
             <span class="text-sm font-medium text-gray-700">Preview</span>
@@ -284,14 +257,12 @@ You can use Markdown for formatting:
           </div>
         </div>
       </div>
-      
-      <!-- Content validation error -->
+
       <div *ngIf="!noteData.content && showValidationErrors" class="px-4 py-2 bg-red-50 border-t border-red-200">
         <span class="text-sm text-red-600">Content is required</span>
       </div>
     </section>
 
-    <!-- Validation Errors -->
     <div *ngIf="showValidationErrors && getValidationErrors().length > 0" 
          class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
       <div class="flex items-start">
@@ -306,7 +277,6 @@ You can use Markdown for formatting:
     </div>
   </div>
 
-  <!-- Loading Overlay -->
   <div *ngIf="isLoading" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
     <div class="bg-white rounded-lg p-6 shadow-xl">
       <div class="flex items-center gap-3">
