@@ -1,44 +1,123 @@
+<!-- src/app/components/calendar/calendar-info/calendar-info.component.html -->
 <div class="modal-overlay">
   <div class="modal-container">
-    <div class="calendar-info-wrapper">
-      <div class="header-row">
-        <h2>Activity details</h2>
-        <button type="button" class="btn-close" (click)="onClose()" aria-label="Close">×</button>
-      </div>
+    <div class="calendar-create-wrapper">
+      <!-- Same shell/structure used by calendar-create -->
+      <form>
+        <h2>Details: {{ activity ? 'Activity' : 'Event' }}</h2>
 
-      <div class="info-grid" *ngIf="activity">
-        <div>
-          <label>Title</label>
-          <input [value]="activity.title" readonly />
+        <div class="form-grid">
+          <!-- ===== ACTIVITY DETAILS ===== -->
+          <ng-container *ngIf="activity && !calendarEvent">
+            <div>
+              <label>Title *</label>
+              <input [value]="activity.title" readonly />
+            </div>
+
+            <div>
+              <label>Due date *</label>
+              <input type="date" [value]="activity.due_date" readonly />
+            </div>
+
+            <div>
+              <label>Status</label>
+              <input [value]="activity.status || 'pending'" readonly />
+            </div>
+
+            <div *ngIf="activity.finished_at">
+              <label>Finished at</label>
+              <input [value]="activity.finished_at" readonly />
+            </div>
+          </ng-container>
+
+          <!-- ===== EVENT DETAILS ===== -->
+          <ng-container *ngIf="calendarEvent && !activity">
+
+            <div>
+              <label>Title *</label>
+              <input [value]="calendarEvent.title" readonly />
+            </div>
+
+            <div>
+              <label>Place</label>
+              <input [value]="calendarEvent.place || ''" readonly />
+            </div>
+
+            <div class="row-group">
+              <div>
+                <label>Start date *</label>
+                <input type="date" [value]="calendarEvent.start_date" readonly />
+              </div>
+              <div>
+                <label>End date</label>
+                <input type="date" [value]="calendarEvent.end_date" readonly />
+              </div>
+            </div>
+
+            <div class="row-group">
+              <div>
+                <label>Start time *</label>
+                <input type="time" [value]="calendarEvent.start_time" readonly />
+              </div>
+              <div>
+                <label>End time</label>
+                <input type="time" [value]="calendarEvent.end_time" readonly />
+              </div>
+            </div>
+
+            <div class="checkbox-row">
+              <input type="checkbox" [checked]="!!calendarEvent.recurrence_type" disabled />
+              <label>Recurring event</label>
+            </div>
+
+            <div class="giorni-frequenza" *ngIf="calendarEvent.recurrence_type">
+              <label>Day of the week:</label>
+              <div class="checkbox-giorni">
+                <label *ngFor="let d of (calendarEvent.days_recurrence || '').split(',')">
+                  <input type="checkbox" checked disabled />
+                  {{ d }}
+                </label>
+              </div>
+            </div>
+
+            <div class="row-group" *ngIf="calendarEvent.recurrence_type">
+              <div>
+                <label>Recurrence type *</label>
+                <select disabled>
+                  <option [selected]="calendarEvent.recurrence_type==='numeroFisso'">Fixed number of recurrence</option>
+                  <option [selected]="calendarEvent.recurrence_type==='scadenza'">Due date</option>
+                  <option [selected]="calendarEvent.recurrence_type==='indeterminato'">Indefinite recurrence</option>
+                </select>
+              </div>
+
+              <div *ngIf="calendarEvent.recurrence_type==='numeroFisso'">
+                <label>Number of recurrence</label>
+                <input type="number" [value]="calendarEvent.number_recurrence" readonly />
+              </div>
+
+              <div *ngIf="calendarEvent.recurrence_type==='scadenza'">
+                <label>Due date</label>
+                <input type="date" [value]="calendarEvent.due_date" readonly />
+              </div>
+            </div>
+          </ng-container>
         </div>
 
-        <div>
-          <label>Due date</label>
-          <input [value]="activity.due_date" readonly />
+        <div class="button-row">
+          <!-- Keep Modify/Delete always visible as requested -->
+          <button type="button" class="btn-modify" (click)="onModify()">
+            <em class="fa fa-pen"></em> Modify
+          </button>
+          <button type="button" class="btn-delete" (click)="onDelete()">
+            <em class="fa fa-trash"></em> Delete
+          </button>
         </div>
-
-        <div>
-          <label>Status</label>
-          <input [value]="activity.status || 'pending'" readonly />
-        </div>
-
-        <div *ngIf="activity.finished_at">
-          <label>Finished at</label>
-          <input [value]="activity.finished_at" readonly />
-        </div>
-      </div>
-
-      <div class="button-row">
-        <button type="button" class="btn-modify" (click)="onModify()">
-          <em class="fa fa-pen"></em> Modify
-        </button>
-        <button type="button" class="btn-delete" (click)="onDelete()">
-          <em class="fa fa-trash"></em> Delete
-        </button>
-      </div>
+      </form>
     </div>
   </div>
 </div>
 
-<app-calendar-delete *ngIf="showDeleteConfirm" [activity]="activity" (deleted)="onConfirmDelete($event)" (cancel)="onCancelDelete()" />
-<app-calendar-modify *ngIf="showModify" [activity]="activity" (close)="onCancelModify()" (saved)="onSaved($event)" />
+<!-- Keep existing nested modals for activity actions -->
+<app-calendar-delete *ngIf="showDeleteConfirm" [activity]="activity" (deleted)="onConfirmDelete($event)" (cancel)="onCancelDelete()"></app-calendar-delete>
+
+<app-calendar-modify *ngIf="showModify" [activity]="activity" (close)="onCancelModify()" (saved)="onSaved($event)"></app-calendar-modify>
