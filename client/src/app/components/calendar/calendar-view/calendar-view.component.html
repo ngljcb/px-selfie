@@ -13,7 +13,7 @@
   <div class="calendar-overlay" *ngIf="showInfo">
     <div class="calendar-create-wrapper">
       <button class="close-button" (click)="closeInfo()">×</button>
-      <app-calendar-info [activity]="selectedActivity" (close)="closeInfo()" (delete)="deleteActivity($event)" (modify)="modifyActivity($event)"></app-calendar-info>
+      <app-calendar-info [activity]="selectedActivity" [calendarEvent]="selectedEvent" (close)="closeInfo()" (delete)="deleteActivity($event)" (modify)="modifyActivity($event)"></app-calendar-info>
     </div>
   </div>
 </main>

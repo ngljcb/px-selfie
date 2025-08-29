@@ -37,6 +37,7 @@ export class CalendarViewComponent implements OnDestroy {
   showInfo = false;
   selectedDate = '';
   selectedActivity: Activity | null = null;
+  selectedEvent: AppEvent | null = null;
 
   private lastMonthStart?: string;
   private lastMonthEnd?: string;
@@ -146,8 +147,9 @@ export class CalendarViewComponent implements OnDestroy {
   }
 
   private handleEventClick(arg: EventClickArg): void {
-    if (String(arg.event.id).startsWith('A:')) {
-      const id = Number(String(arg.event.id).split(':')[1]);
+    const idStr = String(arg.event.id);
+    if (idStr.startsWith('A:')) {
+      const id = Number(idStr.split(':')[1]);
       this.activitiesService.get(id).subscribe({
         next: (act) => {
           this.selectedActivity = act;
@@ -155,6 +157,20 @@ export class CalendarViewComponent implements OnDestroy {
           this.cdr.markForCheck();
         },
         error: (err) => console.error('Errore caricando activity:', err)
+      });
+      return;
+    }
+
+    if (idStr.startsWith('E:')) {
+      const id = Number(idStr.split(':')[1]);
+      this.eventsService.get(id).subscribe({
+        next: (ev) => {
+          this.selectedEvent = ev;
+          this.selectedActivity = null;
+          this.showInfo = true;
+          this.cdr.markForCheck();
+        },
+        error: (err) => console.error('Errore caricando event:', err)
       });
     }
   }
@@ -188,7 +204,8 @@ export class CalendarViewComponent implements OnDestroy {
   closeInfo(): void {
     this.showInfo = false;
     this.selectedActivity = null;
-    this.loadActivitiesAndRender();
+    this.selectedEvent = null;
+    //this.loadActivitiesAndRender();
   }
 
   deleteActivity(id: number): void {
