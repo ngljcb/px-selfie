@@ -45,14 +45,14 @@ export class ChatService {
     const diffInMinutes = Math.floor((now.getTime() - messageTime.getTime()) / (1000 * 60));
 
     if (diffInMinutes < 1) {
-      return 'Ora';
+      return 'Now';
     } else if (diffInMinutes < 60) {
-      return `${diffInMinutes}m fa`;
+      return `${diffInMinutes}m ago`;
     } else if (diffInMinutes < 1440) { 
       const hours = Math.floor(diffInMinutes / 60);
-      return `${hours}h fa`;
+      return `${hours}h ago`;
     } else {
-      return messageTime.toLocaleDateString('it-IT', {
+      return messageTime.toLocaleDateString('en-US', {
         day: '2-digit',
         month: '2-digit',
         hour: '2-digit',

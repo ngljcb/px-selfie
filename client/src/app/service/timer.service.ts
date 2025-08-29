@@ -304,7 +304,6 @@ export class TimerService {
     if (studyTimeMinutes > 0) {
       this.updateStatsWithMinutes(studyTimeMinutes);
     } else {
-      console.warn('Sessione completata ma nessun tempo di studio valido');
       this.statisticsUpdateInProgress = false;
     }
   }

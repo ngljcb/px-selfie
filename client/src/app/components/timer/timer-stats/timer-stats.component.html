@@ -1,51 +1,42 @@
-<!-- src/app/features/timer/timer-stats/timer-stats.component.html -->
-
 <div class="timer-stats">
-  
-  <!-- LOADING STATE -->
+
   @if (isLoading) {
     <div class="stats-loading">
       <div class="loading-spinner"></div>
-      <span>Caricamento statistiche...</span>
+      <span>Loading...</span>
     </div>
   }
 
-  <!-- STATISTICHE PRINCIPALI -->
   @if (statistics && !isLoading && !error) {
     <div class="stats-container">
-      
-      <!-- HEADER -->
+
       <div class="stats-header">
-        <h3 class="stats-title">Le tue statistiche</h3>
+        <h3 class="stats-title">My statistics</h3>
       </div>
 
-      <!-- STATS COMPATTE -->
       <div class="stats-compact">
-        
-        <!-- SESSIONI COMPLETATE -->
+
         <div class="stat-item">
           <div class="stat-icon">✅</div>
           <div class="stat-content">
             <div class="stat-value">{{ totalSessions }}</div>
-            <div class="stat-label">sessioni completate</div>
+            <div class="stat-label">completed sessions</div>
           </div>
         </div>
 
-        <!-- TEMPO TOTALE -->
         <div class="stat-item">
           <div class="stat-icon">⏱️</div>
           <div class="stat-content">
             <div class="stat-value">{{ totalStudyTimeFormatted }}</div>
-            <div class="stat-label">tempo totale di studio</div>
+            <div class="stat-label">total study time</div>
           </div>
         </div>
 
-        <!-- GIORNI CONSECUTIVI -->
         <div class="stat-item">
           <div class="stat-icon">🔥</div>
           <div class="stat-content">
             <div class="stat-value">{{ consecutiveDays }}</div>
-            <div class="stat-label">giorni di studio consecutivi</div>
+            <div class="stat-label">consecutive study days</div>
           </div>
         </div>
 

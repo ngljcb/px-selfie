@@ -1,10 +1,7 @@
-<!-- note-box.component.html - UPDATED WITH CSS VARIABLES -->
-
 <article 
   (click)="onCardClick()"
   [class]="getNoteCardClasses()">
-  
-  <!-- Header with title and type -->
+
   <header class="flex items-start justify-between mb-3">
     <div class="flex-1 min-w-0">
       <h3 class="font-bold text-gray-800 text-lg leading-tight truncate" 
@@ -12,8 +9,7 @@
         {{ getDisplayTitle() }}
       </h3>
     </div>
-    
-    <!-- Accessibility type badge -->
+
     <div class="ml-2 flex-shrink-0">
       <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium"
             [ngClass]="getAccessibilityBadgeClass(note.accessibility)">
@@ -22,12 +18,10 @@
     </div>
   </header>
 
-  <!-- Content preview -->
   <div class="flex-1 mb-4">
     <div class="text-gray-700 text-sm leading-relaxed">
       <p class="mb-2">{{ getPreviewText() }}</p>
-      
-      <!-- "read more" indicator if content is truncated -->
+
       <span *ngIf="isContentTruncated()" 
             class="text-xs text-gray-600 italic font-medium">
         ... read more ({{ getTruncatedLength() }}+ more characters)
@@ -35,18 +29,15 @@
     </div>
   </div>
 
-  <!-- Metadata -->
   <div class="space-y-2 mb-4">
-    <!-- Category -->
     <div class="flex items-center text-xs text-gray-600">
       <span class="font-medium truncate" [title]="getCategoryName()">
         📁 {{ getCategoryName() }}
       </span>
     </div>
 
-    <!-- Actions - moved here -->
     <div class="flex items-center justify-end">
-      <!-- Only dropdown menu -->
+
       <div class="relative" #menuContainer>
         <button
           (click)="toggleMenu($event)"
@@ -55,7 +46,6 @@
           <span class="text-base font-bold">⋮</span>
         </button>
 
-        <!-- Dropdown menu -->
         <div *ngIf="showMenu" 
              class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-in slide-in-from-bottom-2 duration-200">
           
@@ -81,13 +71,11 @@
       </div>
     </div>
 
-    <!-- Group/sharing info if applicable -->
     <div *ngIf="getAdditionalInfo()" class="text-xs text-gray-500">
       {{ getAdditionalInfo() }}
     </div>
   </div>
 
-  <!-- Action feedback -->
   <footer class="mt-auto">
     <div *ngIf="feedbackMessage" 
          class="mt-2 text-xs text-center p-2 rounded animate-in fade-in duration-300"
@@ -97,7 +85,6 @@
   </footer>
 </article>
 
-<!-- CSS for animations and effects -->
 <style>
   .pulse {
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -144,7 +131,6 @@
     }
   }
 
-  /* Hover effect for note priority */
   .ring-2 {
     box-shadow: 0 0 0 2px var(--tw-ring-color);
   }

@@ -1,10 +1,8 @@
-<!-- CONTAINER PRINCIPALE -->
 <div class="timer-app-container">
     
     @if (timerState) {
       <div class="timer-view">
-        
-        <!-- NOTIFICHE -->
+
         @if (notifications.length > 0) {
           <div class="notifications-container">
             @for (notification of notifications; track notification.id) {
@@ -15,11 +13,9 @@
             }
           </div>
         }
-        
-        <!-- MAIN TIMER DISPLAY -->
+
         <div [class]="getTimerDisplayClass()">
-          
-          <!-- Icona configurazione -->
+
           <button 
             class="config-btn" 
             (click)="openConfig()"
@@ -27,59 +23,52 @@
             <img src="https://pomofocus.io/icons/config-white.png" alt="Config">
           </button>
 
-        <!-- Countdown principale -->
         <div class="time-display">
           <span class="time-number">{{ formatTime(getDisplayTime()) }}</span>
         </div>
 
-        <!-- Info fase corrente -->
         <div class="phase-info">
           <div class="cycle-info">{{ getCycleText() }}</div>
         </div>
 
-        <!-- Progress bar sessione -->
         <div class="progress-container">
           <div class="progress-bar">
             <div class="progress-fill" [style.width]="getProgressBarWidth()"></div>
           </div>
-          <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completato</span>
+          <span class="progress-text">{{ Math.round(getSessionProgress()) }}% completed</span>
         </div>
 
-        <!-- CONTROLLI -->
         <div class="controls">
-          
-          <!-- Bottone Start/Resume -->
+
           @if (!isRunning()) {
             <button class="btn btn-primary" (click)="startTimer()">
-              {{ isPaused() ? 'Riprendi' : 'Inizia' }}
+              {{ isPaused() ? 'Resume' : 'Start' }}
             </button>
           }
 
-          <!-- Controlli secondari -->
           @if (!isIdle()) {
             <div class="secondary-controls">
               <button class="btn btn-pause" (click)="pauseTimer()" [disabled]="!isRunning()">
-                Pausa
+                Pause
               </button>
 
               @if (isRunning()) {
                 <button class="btn btn-skip" (click)="skipCurrentPhase()">
-                  Salta
+                  Skip
                 </button>
               }
 
               <button class="btn btn-reset" (click)="resetTimer()" [disabled]="!canRestart()">
-                Ricomincia
+                Reset
               </button>
 
               <button class="btn btn-stop" (click)="stopTimer()">
-                Fine
+                Stop
               </button>
             </div>
           }
         </div>
 
-        <!-- Animazione pulsante (disabilitata) -->
         <div class="pulse-animation" 
             [class.active]="isRunning()" 
             [class.study-pulse]="isStudyPhase()" 
@@ -87,15 +76,14 @@
         </div>
       </div>
 
-      <!-- MESSAGGIO COMPLETAMENTO -->
       @if (isCompleted()) {
         <div class="completion-overlay">
           <div class="completion-content">
             <div class="completion-icon">🎉</div>
-            <h2>Sessione Completata!</h2>
-            <p class="study-time">Tempo totale: {{ formatTime(getTotalEffectiveTime()) }}</p>
+            <h2>Session completed!</h2>
+            <p class="study-time">Total time: {{ formatTime(getTotalEffectiveTime()) }}</p>
             <button class="btn btn-primary" (click)="stopTimer()">
-              Nuova Sessione
+              New Session
             </button>
           </div>
         </div>
@@ -103,12 +91,10 @@
     </div>
   }
 
-  <!-- TIMER STATISTICS - SEMPRE VISIBILE FUORI DAL TIMER-VIEW -->
   <div class="timer-stats-container">
     <app-timer-stats></app-timer-stats>
   </div>
 
-  <!-- MODAL CONFIGURAZIONE -->
   @if (showConfig) {
     <div class="modal-overlay" (click)="closeConfig()">
       <div class="modal-content" (click)="$event.stopPropagation()">
@@ -121,10 +107,9 @@
     </div>
   }
 
-    <!-- LOADING STATE -->
     @if (!timerState) {
       <div class="loading">
-        <p>Caricamento in corso...</p>
+        <p>Loading...</p>
       </div>
     }
     

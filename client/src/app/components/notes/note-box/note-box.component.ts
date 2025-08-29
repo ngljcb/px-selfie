@@ -24,26 +24,22 @@ import { NotesService } from '../../../service/notes.service';
 export class NoteBoxComponent {
   
   @Input() note!: NoteWithDetails;
-  
-  // Events for actions - using string IDs
+
   @Output() onEdit = new EventEmitter<string>();
   @Output() onDelete = new EventEmitter<string>();
   @Output() onView = new EventEmitter<string>();
 
-  // Component states
   showMenu = false;
   feedbackMessage = '';
   feedbackType: 'success' | 'error' = 'success';
-  
-  // Constants
+
   previewLength = 200;
 
-  // Accessibility type definitions
   accessibilityTypes = [
-    { value: AccessibilityType.PRIVATE, label: 'Private', icon: '🔒' },
-    { value: AccessibilityType.PUBLIC, label: 'Public', icon: '🌍' },
-    { value: AccessibilityType.AUTHORIZED, label: 'Authorized', icon: '👥' },
-    { value: AccessibilityType.GROUP, label: 'Group', icon: '👨‍👩‍👧‍👦' }
+    { value: AccessibilityType.PRIVATE, label: 'Private'},
+    { value: AccessibilityType.PUBLIC, label: 'Public'},
+    { value: AccessibilityType.AUTHORIZED, label: 'Authorized'},
+    { value: AccessibilityType.GROUP, label: 'Group'}
   ];
 
   constructor(
@@ -52,19 +48,11 @@ export class NoteBoxComponent {
     private notesService: NotesService
   ) {}
 
-  // ========== MENU MANAGEMENT ==========
-
-  /**
-   * Toggle options menu
-   */
   toggleMenu(event: Event): void {
     event.stopPropagation();
     this.showMenu = !this.showMenu;
   }
 
-  /**
-   * Close menu if clicked outside
-   */
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     if (!this.elementRef.nativeElement.contains(event.target)) {
@@ -72,14 +60,9 @@ export class NoteBoxComponent {
     }
   }
 
-  // ========== MAIN ACTIONS ==========
-
-  /**
-   * Handle card click to open note viewer
-   */
   onCardClick(event?: Event): void {
     if (event) {
-      // Prevent click if clicking on a button
+
       const target = event.target as HTMLElement;
       if (target.closest('button') || target.closest('.menu-container')) {
         return;
@@ -88,11 +71,6 @@ export class NoteBoxComponent {
     this.onView.emit(this.note.id);
   }
 
-  // ========== MENU ACTIONS ==========
-
-  /**
-   * Copy content to clipboard from menu
-   */
   async onCopyClick(event: Event): Promise<void> {
     event.stopPropagation();
     this.showMenu = false;
@@ -108,15 +86,11 @@ export class NoteBoxComponent {
     }
   }
 
-  /**
-   * Duplicate note from menu
-   */
   duplicateFromMenu(event: Event): void {
     event.stopPropagation();
     this.showMenu = false;
     
     try {
-      // Navigate to create new note with duplicated data as query parameters
       this.router.navigate(['/notes/create'], {
         queryParams: {
           duplicate: 'true',
@@ -134,9 +108,6 @@ export class NoteBoxComponent {
     }
   }
 
-  /**
-   * Delete note with confirmation from menu
-   */
   onDeleteClick(event: Event): void {
     event.stopPropagation();
     this.showMenu = false;
@@ -154,24 +125,14 @@ export class NoteBoxComponent {
     }
   }
 
-  // ========== UTILITY METHODS ==========
-
-  /**
-   * Copy text to clipboard with fallback
-   */
   private async copyToClipboard(text: string): Promise<void> {
-    // Use Clipboard API if available
     if (navigator.clipboard && window.isSecureContext) {
       await navigator.clipboard.writeText(text);
     } else {
-      // Fallback for older browsers
       this.copyTextFallback(text);
     }
   }
 
-  /**
-   * Fallback for copying text in browsers without Clipboard API
-   */
   private copyTextFallback(text: string): void {
     const textArea = document.createElement('textarea');
     textArea.value = text;
@@ -181,7 +142,7 @@ export class NoteBoxComponent {
     
     document.body.appendChild(textArea);
     textArea.select();
-    textArea.setSelectionRange(0, 99999); // For mobile devices
+    textArea.setSelectionRange(0, 99999); 
     
     try {
       document.execCommand('copy');
@@ -190,9 +151,6 @@ export class NoteBoxComponent {
     }
   }
 
-  /**
-   * Get CSS class for accessibility type badge
-   */
   getAccessibilityBadgeClass(type: AccessibilityType): string {
     const baseClasses = 'border transition-colors';
     
@@ -210,40 +168,19 @@ export class NoteBoxComponent {
     }
   }
 
-  /**
-   * Get label for accessibility type
-   */
   getAccessibilityLabel(type: AccessibilityType): string {
     const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
     return accessibilityType?.label || 'Unknown';
   }
 
-  /**
-   * Get icon for accessibility type
-   */
-  getAccessibilityIcon(type: AccessibilityType): string {
-    const accessibilityType = this.accessibilityTypes.find(t => t.value === type);
-    return accessibilityType?.icon || '🔒';
-  }
-
-  /**
-   * Get category name - FIXED to check both category and categoryDetails
-   */
   getCategoryName(): string {
-    // First try categoryDetails.name, then fallback to category string, then 'Uncategorized'
     return this.note.categoryDetails?.name || this.note.category || 'Uncategorized';
   }
 
-  /**
-   * Get group name if applicable
-   */
   getGroupName(): string | null {
     return this.note.groupName || null;
   }
 
-  /**
-   * Format date in user-friendly way
-   */
   formatDate(date: Date | string): string {
     const now = new Date();
     const noteDate = new Date(date);
@@ -274,9 +211,6 @@ export class NoteBoxComponent {
     }
   }
 
-  /**
-   * Check if note was recently modified (last 24 hours)
-   */
   isRecentlyModified(date: Date | string): boolean {
     const now = new Date();
     const noteDate = new Date(date);
@@ -284,100 +218,59 @@ export class NoteBoxComponent {
     return diffHours <= 24;
   }
 
-  /**
-   * Get preview text (ensuring it exists)
-   */
   getPreviewText(): string {
     return this.note.preview || this.note.text?.substring(0, 200) || 'No content';
   }
 
-  /**
-   * Check if content is truncated
-   */
   isContentTruncated(): boolean {
     const contentLength = this.note.contentLength || 0;
     return contentLength > this.previewLength;
   }
 
-  /**
-   * Get truncated content length
-   */
   getTruncatedLength(): number {
     const contentLength = this.note.contentLength || 0;
     return Math.max(0, contentLength - this.previewLength);
   }
 
-  /**
-   * Show temporary feedback message
-   */
   private showFeedback(message: string, type: 'success' | 'error'): void {
     this.feedbackMessage = message;
     this.feedbackType = type;
-    
-    // Hide message after 3 seconds
+
     setTimeout(() => {
       this.feedbackMessage = '';
     }, 3000);
   }
 
-  // ========== ACCESS CONTROL ==========
-
-  /**
-   * Check if current user can edit note
-   */
   canEdit(): boolean {
     return this.note.canEdit || false;
   }
 
-  /**
-   * Check if current user can delete note
-   */
   canDelete(): boolean {
     return this.note.canDelete || false;
   }
 
-  /**
-   * Check if note is owned by current user
-   */
   isOwner(): boolean {
-    return this.note.canDelete || false; // Assuming only owners can delete
+    return this.note.canDelete || false; 
   }
 
-  // ========== DISPLAY HELPERS ==========
-
-  /**
-   * Get display title (fallback to 'Untitled')
-   */
   getDisplayTitle(): string {
     return this.note.title || 'Untitled';
   }
 
-  /**
-   * Get accessibility display text (without icon)
-   */
   getAccessibilityDisplay(): string {
     const label = this.getAccessibilityLabel(this.note.accessibility);
     return `${label}`;
   }
 
-  /**
-   * Get content length display
-   */
   getContentLengthDisplay(): string {
     const length = this.note.contentLength || 0;
     return `${length} character${length !== 1 ? 's' : ''}`;
   }
 
-  /**
-   * Check if note has group information
-   */
   hasGroupInfo(): boolean {
     return this.note.accessibility === AccessibilityType.GROUP && !!this.note.groupName;
   }
 
-  /**
-   * Get additional info text
-   */
   getAdditionalInfo(): string {
     const parts: string[] = [];
     
@@ -392,11 +285,7 @@ export class NoteBoxComponent {
     return parts.join(' • ');
   }
 
-  /**
-   * Get note card CSS classes based on state - UPDATED to use CSS variables
-   */
   getNoteCardClasses(): string {
-    // UPDATED: Use CSS variable for background color that changes with time-machine
     const baseClasses = 'relative note-box bg-[var(--today-bg)] rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-[var(--select-bg)] group cursor-pointer';
     return baseClasses;
   }

@@ -6,27 +6,23 @@ export interface UserStatistics {
   updated_at: string;
 }
 
-// DTO per aggiornare le statistiche quando una sessione viene completata
 export interface UpdateSessionStatsDTO {
-  study_time_minutes: number; // Durata in minuti della sessione completata
-  virtual_time?: string; // Tempo virtuale opzionale (formato ISO) per Time Machine
+  study_time_minutes: number; 
+  virtual_time?: string; 
 }
 
-// DTO per risposta API delle statistiche formattate per il frontend
 export interface StatisticsResponse {
   totalCompletedSessions: number;
   totalStudyTimeMinutes: number;
-  totalStudyTimeFormatted: string; // es. "2h 30m" 
+  totalStudyTimeFormatted: string;
   consecutiveStudyDays: number;
-  // Campi calcolati per migliore UX
-  averageDailyMinutes?: number; // Media calcolata su ultimi 30 giorni
-  todayStudyMinutes?: number; // Studio di oggi (se disponibile)
+  averageDailyMinutes?: number; 
+  todayStudyMinutes?: number; 
 }
 
-// DTO per controllo streak al login
 export interface LoginStreakCheckDTO {
-  canIncrementStreak: boolean; // Flag per permettere incremento streak
-  streakWasReset: boolean; // Indica se lo streak è stato resettato
-  currentStreak: number; // Streak attuale dopo il controllo
-  virtual_time?: string; // Tempo virtuale opzionale per Time Machine
+  canIncrementStreak: boolean; 
+  streakWasReset: boolean; 
+  currentStreak: number;
+  virtual_time?: string;
 }

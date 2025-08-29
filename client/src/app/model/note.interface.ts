@@ -1,9 +1,6 @@
 import type { Category } from "./entity/category.interface";
 import type { Group } from "./entity/group.interface";
 
-/**
- * Enum for note accessibility types
- */
 export enum AccessibilityType {
   PRIVATE = 'private',
   PUBLIC = 'public', 
@@ -11,34 +8,23 @@ export enum AccessibilityType {
   GROUP = 'group'
 }
 
-/**
- * Enum for note sorting options
- */
 export enum NoteSortType {
   ALPHABETICAL = 'alphabetical',
   CREATION_DATE = 'creation_date',
   CONTENT_LENGTH = 'content_length'
 }
 
-// ==================== NOTE INTERFACES ====================
-
-/**
- * Main Note interface - UPDATED: removed lastModify
- */
 export interface Note {
   id: string;
   creator: string;
   title: string | null;
   text: string | null;
   createdAt: Date;
-  category: string | null; // References category.name
+  category: string | null; 
   accessibility: AccessibilityType;
   groupName: string | null;
 }
 
-/**
- * Interface for Note authorized user
- */
 export interface NoteAuthorizedUser {
   id: string;
   noteId: string;
@@ -46,9 +32,6 @@ export interface NoteAuthorizedUser {
   grantedAt: Date;
 }
 
-/**
- * Extended Note interface with related data for frontend use
- */
 export interface NoteWithDetails extends Note {
   categoryDetails?: Category;
   groupDetails?: Group;
@@ -59,23 +42,16 @@ export interface NoteWithDetails extends Note {
   contentLength?: number;
 }
 
-/**
- * DTO for creating a new note - UPDATED: added createdAt
- */
 export interface CreateNoteRequest {
   title?: string;
   text?: string;
-  category?: string; // Category name (must exist in DB)
+  category?: string;
   accessibility: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
-  createdAt?: Date; // Added for Time Machine support
+  createdAt?: Date; 
 }
 
-/**
- * DTO for updating an existing note - REMOVED: notes are no longer updatable
- * Keeping interface for backward compatibility but it won't be used
- */
 export interface UpdateNoteRequest {
   title?: string;
   text?: string;
@@ -85,9 +61,6 @@ export interface UpdateNoteRequest {
   authorizedUserIds?: string[];
 }
 
-/**
- * DTO for note filtering and search - UPDATED: removed lastModify sorting
- */
 export interface NoteFilterParams {
   searchQuery?: string;
   categoryName?: string;
@@ -99,30 +72,20 @@ export interface NoteFilterParams {
   offset?: number;
 }
 
-/**
- * Response interface for paginated notes
- */
 export interface NotesResponse {
   notes: NoteWithDetails[];
   total: number;
   hasMore: boolean;
 }
 
-/**
- * DTO for duplicating a note
- */
 export interface DuplicateNoteRequest {
   sourceNoteId: string;
   newTitle?: string;
   accessibility?: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
-  createdAt?: Date; // Added for Time Machine support
+  createdAt?: Date; 
 }
-
-/**
- * Interface for note preview display - UPDATED: removed lastModify
- */
 export interface NotePreview {
   id: string;
   title: string | null;
@@ -135,43 +98,74 @@ export interface NotePreview {
   canDelete: boolean;
 }
 
-/**
- * Interface for note sharing/authorization
- */
 export interface ShareNoteRequest {
   noteId: string;
   userIds: string[];
 }
 
-/**
- * Interface for note access permissions
- */
 export interface NotePermissions {
   canView: boolean;
   canDelete: boolean;
 }
 
-/**
- * Utility type for note operations - UPDATED: removed update
- */
 export type NoteOperation = 'create' | 'read' | 'delete' | 'duplicate' | 'share';
 
-/**
- * Validation interface for note content
- */
 export interface NoteValidation {
   isValid: boolean;
   errors: string[];
   warnings?: string[];
 }
 
-/**
- * Interface for bulk operations on notes - UPDATED: removed changeCategory and changeAccessibility
- */
 export interface BulkNoteOperation {
   operation: 'delete';
   noteIds: string[];
 }
+
+export type SortOption = {
+  value: string;
+  label: string;
+  sortBy: NoteSortType;
+  sortOrder: 'asc' | 'desc';
+};
+
+export const SORT_OPTIONS: SortOption[] = [
+  { 
+    value: 'alphabetical-asc', 
+    label: 'A-Z', 
+    sortBy: NoteSortType.ALPHABETICAL, 
+    sortOrder: 'asc' 
+  },
+  { 
+    value: 'alphabetical-desc', 
+    label: 'Z-A', 
+    sortBy: NoteSortType.ALPHABETICAL, 
+    sortOrder: 'desc' 
+  },
+  { 
+    value: 'creation_date-desc', 
+    label: 'Newest First', 
+    sortBy: NoteSortType.CREATION_DATE, 
+    sortOrder: 'desc' 
+  },
+  { 
+    value: 'creation_date-asc', 
+    label: 'Oldest First', 
+    sortBy: NoteSortType.CREATION_DATE, 
+    sortOrder: 'asc' 
+  },
+  { 
+    value: 'content_length-asc', 
+    label: 'Shortest First', 
+    sortBy: NoteSortType.CONTENT_LENGTH, 
+    sortOrder: 'asc' 
+  },
+  { 
+    value: 'content_length-desc', 
+    label: 'Longest First', 
+    sortBy: NoteSortType.CONTENT_LENGTH, 
+    sortOrder: 'desc' 
+  }
+];
 
 export type {Category} from "./entity/category.interface";
 export type {Group} from "./entity/group.interface";
