@@ -143,7 +143,7 @@
 
 /* Card inside each slot (title + body) */
 .slot-card{
-  background: #fff6d6;
+  background: var(--secondary-bg);
   border: 2px solid var(--primary-bg);
   border-radius: 14px;
   width: 100%;
