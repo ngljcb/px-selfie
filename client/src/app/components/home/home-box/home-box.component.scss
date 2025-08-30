@@ -6,7 +6,7 @@ a.home-box {
   padding: 2rem;
   height: 100%;
   text-decoration: none;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:0 16px 28px rgba(0,0,0,.25);
   transition: all 0.2s ease;
   overflow: hidden;
 
@@ -47,7 +47,7 @@ a.home-box {
 
   &:hover {
     background-color: var(--primary-hover-bg);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   }
 }
 

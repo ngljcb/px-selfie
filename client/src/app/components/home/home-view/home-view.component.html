@@ -1,7 +1,7 @@
 <!-- src/app/components/home/home-view/home-view.component.html -->
 <main class="home">
 
-    <!-- Menu cards: single row on desktop (hidden on small) -->
+    <!-- Menu cards -->
     <section class="menu-cards">
         <div class="menu-grid">
             <app-home-box *ngFor="let box of boxes" class="menu-card" [title]="box.title" [description]="box.description" [link]="box.link" [iconClass]="box.iconClass">
@@ -12,16 +12,26 @@
     <!-- Preview area: calendar, notes, stats -->
     <section class="preview-area">
         <div class="preview-grid">
+
             <!-- LEFT (wide) -->
             <div class="left-col">
                 <div class="preview-slot slot-large" cdkDropList id="left" #leftList="cdkDropList" [cdkDropListData]="leftSlot" [cdkDropListConnectedTo]="[rightTopList, rightBottomList]" (cdkDropListDropped)="onDrop($event)">
                     <ng-container *ngFor="let id of leftSlot">
                         <div cdkDrag class="tile-drag">
-                            <ng-container [ngSwitch]="id">
-                                <em *ngSwitchCase="'calendar'">calendar preview</em>
-                                <em *ngSwitchCase="'notes'">notes preview</em>
-                                <em *ngSwitchCase="'stats'">stats preview</em>
-                            </ng-container>
+                            <div class="slot-card">
+                                <div class="slot-header">
+                                    <span *ngIf="id==='calendar'">CALENDAR</span>
+                                    <span *ngIf="id==='notes'">NOTES</span>
+                                    <span *ngIf="id==='stats'">STATS</span>
+                                </div>
+                                <div class="slot-body">
+                                    <ng-container [ngSwitch]="id">
+                                        <em *ngSwitchCase="'calendar'">calendar preview</em>
+                                        <em *ngSwitchCase="'notes'">notes preview</em>
+                                        <em *ngSwitchCase="'stats'">stats preview</em>
+                                    </ng-container>
+                                </div>
+                            </div>
                         </div>
                     </ng-container>
                 </div>
@@ -29,14 +39,24 @@
 
             <!-- RIGHT (two stacked slots) -->
             <div class="right-col">
+
                 <div class="preview-slot slot-small" cdkDropList id="rightTop" #rightTopList="cdkDropList" [cdkDropListData]="rightTopSlot" [cdkDropListConnectedTo]="[leftList, rightBottomList]" (cdkDropListDropped)="onDrop($event)">
                     <ng-container *ngFor="let id of rightTopSlot">
                         <div cdkDrag class="tile-drag">
-                            <ng-container [ngSwitch]="id">
-                                <em *ngSwitchCase="'calendar'">calendar preview</em>
-                                <em *ngSwitchCase="'notes'">notes preview</em>
-                                <em *ngSwitchCase="'stats'">stats preview</em>
-                            </ng-container>
+                            <div class="slot-card">
+                                <div class="slot-header">
+                                    <span *ngIf="id==='calendar'">CALENDAR</span>
+                                    <span *ngIf="id==='notes'">NOTES</span>
+                                    <span *ngIf="id==='stats'">STATS</span>
+                                </div>
+                                <div class="slot-body">
+                                    <ng-container [ngSwitch]="id">
+                                        <em *ngSwitchCase="'calendar'">calendar preview</em>
+                                        <em *ngSwitchCase="'notes'">notes preview</em>
+                                        <em *ngSwitchCase="'stats'">stats preview</em>
+                                    </ng-container>
+                                </div>
+                            </div>
                         </div>
                     </ng-container>
                 </div>
@@ -44,14 +64,24 @@
                 <div class="preview-slot slot-small" cdkDropList id="rightBottom" #rightBottomList="cdkDropList" [cdkDropListData]="rightBottomSlot" [cdkDropListConnectedTo]="[leftList, rightTopList]" (cdkDropListDropped)="onDrop($event)">
                     <ng-container *ngFor="let id of rightBottomSlot">
                         <div cdkDrag class="tile-drag">
-                            <ng-container [ngSwitch]="id">
-                                <em *ngSwitchCase="'calendar'">calendar preview</em>
-                                <em *ngSwitchCase="'notes'">notes preview</em>
-                                <em *ngSwitchCase="'stats'">stats preview</em>
-                            </ng-container>
+                            <div class="slot-card">
+                                <div class="slot-header">
+                                    <span *ngIf="id==='calendar'">CALENDAR</span>
+                                    <span *ngIf="id==='notes'">NOTES</span>
+                                    <span *ngIf="id==='stats'">STATS</span>
+                                </div>
+                                <div class="slot-body">
+                                    <ng-container [ngSwitch]="id">
+                                        <em *ngSwitchCase="'calendar'">calendar preview</em>
+                                        <em *ngSwitchCase="'notes'">notes preview</em>
+                                        <em *ngSwitchCase="'stats'">stats preview</em>
+                                    </ng-container>
+                                </div>
+                            </div>
                         </div>
                     </ng-container>
                 </div>
+
             </div>
         </div>
     </section>
