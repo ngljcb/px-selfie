@@ -75,13 +75,22 @@
 .slot-body{
   flex:1 1 auto;
   background:#fff;
-  border:1.5px solid var(--slot-border);
+  border:1.5px solid var(--primary-bg);
   border-top:none;
-  border-radius:0 0 18px 18px;
+  border-radius:0 0 0 0;
   padding:1rem;
   display:flex;
   align-items:center;
   justify-content:center;
+}
+
+/* CDK cosmetics - remove placeholder space */
+.cdk-drag-placeholder{
+  display:none !important;   /* no ghost slot space */
+}
+
+.cdk-drop-list{
+  min-height:0 !important;   /* container shrinks to content */
 }
 
 /* CDK cosmetics */
@@ -90,4 +99,108 @@
   border-radius:18px;
   box-shadow:0 16px 28px rgba(0,0,0,.25);
 }
-.cdk-drag-placeholder{ opacity:.25; }
+
+
+
+:root {
+  --slot-bg: var(--primary-bg, #f6d469);
+  --slot-border: #9ca3af;
+}
+
+/* Root */
+.home { min-height: 100vh; padding-bottom: 1.5rem; }
+
+/* MENU CARDS */
+.menu-cards { margin-top: 1.25rem; padding-inline: 1rem; display: block; }
+@media (max-width: 767.98px){ .menu-cards{ display:none; } }
+
+.menu-grid { display:grid; grid-template-columns:1fr; gap:1rem; }
+@media (min-width:640px){ .menu-grid{ grid-template-columns:repeat(2,1fr);} }
+@media (min-width:768px){ .menu-grid{ grid-template-columns:repeat(3,1fr);} }
+@media (min-width:1024px){ .menu-grid{ grid-template-columns:repeat(4,1fr);} }
+.menu-card{ height:18vh; }
+
+/* PREVIEW AREA */
+.preview-area{ margin-top:2rem; padding-inline:1rem; }
+.preview-grid{ display:grid; grid-template-columns:1fr; gap:1.5rem; }
+@media (min-width:1024px){ .preview-grid{ grid-template-columns:2fr 1fr; } }
+
+.left-col{ grid-column:1; }
+.right-col{ grid-column:1; display:grid; grid-template-rows:1fr 1fr; gap:1.5rem; }
+@media (min-width:1024px){ .right-col{ grid-column:2; } }
+
+.preview-slot{
+  background: #fdfdfd31;
+  border-radius: 16px;
+  box-shadow: 0 10px 22px rgba(0,0,0,.12);
+  height: 100%;
+  display: flex;
+}
+.slot-large{ height: 65vh; }
+.slot-small{ height: 31vh; }
+
+.tile-drag{ width:100%; height:100%; }
+
+/* Card inside each slot (title + body) */
+.slot-card{
+  background: #fff6d6;
+  border: 2px solid var(--primary-bg);
+  border-radius: 14px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.slot-header{
+  background: var(--primary-bg);
+  color: #5b4636;
+  font-weight: 800;
+  font-style: italic;
+  padding: .6rem .9rem;
+  border-bottom: 2px solid var(--primary-bg);
+}
+.slot-body{
+  flex: 1 1 auto;
+  min-height: 0;         /* important for children with height:100% */
+  padding: .25rem;
+  overflow: hidden;      /* keeps the calendar inside */
+}
+
+/* Make widget components fill the slot body */
+.slot-body app-calendar,
+.slot-body app-notes,
+.slot-body app-stats{
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ====== NEW: keep destination widget from “jumping up” while hovering ====== */
+/* Prevent Angular CDK from translating the existing item when a draggable
+   hovers over its drop list (we already hide the placeholder). */
+.cdk-drop-list-dragging .cdk-drag:not(.cdk-drag-preview),
+.cdk-drop-list-receiving .cdk-drag:not(.cdk-drag-preview){
+  transform: none !important;
+}
+
+/* Also disable the default transition that can cause visual lift/shake */
+.cdk-drag-animating{
+  transition: none !important;
+}
+
+/* Ensure dropped cards stretch to the slot dimensions consistently */
+.preview-slot{ align-items: stretch; }
+.tile-drag{ display: flex; }
