@@ -1,40 +1,58 @@
-<main class="min-h-screen pb-6">
+<!-- src/app/components/home/home-view/home-view.component.html -->
+<main class="home">
 
-    <!-- Menu cards: single row on desktop -->
-    <section class="mt-5 px-4 hidden md:block">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <app-home-box *ngFor="let box of boxes" [title]="box.title" [description]="box.description" [link]="box.link" [iconClass]="box.iconClass" class="h-[28vh] sm:h-[36vh] lg:h-[18vh]">
+    <!-- Menu cards: single row on desktop (hidden on small) -->
+    <section class="menu-cards">
+        <div class="menu-grid">
+            <app-home-box *ngFor="let box of boxes" class="menu-card" [title]="box.title" [description]="box.description" [link]="box.link" [iconClass]="box.iconClass">
             </app-home-box>
         </div>
     </section>
 
     <!-- Preview area: calendar, notes, stats -->
-    <section class="mt-8 px-4">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-            <!-- Calendar preview (left, wide) -->
-            <div class="lg:col-span-8">
-                <div class="text-center bg-[--primary-bg] rounded-2xl shadow-lg p-4 h-[60vh] md:h-[65vh] border-2 border-dashed border-gray-400">
-                    <em>calendar preview</em>
-                    <!--app-calendar-preview class="w-full h-full block"></app-calendar-preview-->
+    <section class="preview-area">
+        <div class="preview-grid">
+            <!-- LEFT (wide) -->
+            <div class="left-col">
+                <div class="preview-slot slot-large" cdkDropList id="left" #leftList="cdkDropList" [cdkDropListData]="leftSlot" [cdkDropListConnectedTo]="[rightTopList, rightBottomList]" (cdkDropListDropped)="onDrop($event)">
+                    <ng-container *ngFor="let id of leftSlot">
+                        <div cdkDrag class="tile-drag">
+                            <ng-container [ngSwitch]="id">
+                                <em *ngSwitchCase="'calendar'">calendar preview</em>
+                                <em *ngSwitchCase="'notes'">notes preview</em>
+                                <em *ngSwitchCase="'stats'">stats preview</em>
+                            </ng-container>
+                        </div>
+                    </ng-container>
                 </div>
             </div>
 
-            <!-- Right column: Notes + Stats stacked -->
-            <div class="lg:col-span-4 grid grid-cols-1 gap-6">
-                <!-- Notes preview -->
-                <div class="text-center bg-[--primary-bg] rounded-2xl shadow-lg p-4 h-[28vh] md:h-[30vh] border-2 border-dashed border-gray-400">
-                    <em>notes preview</em>
-                    <!--app-notes-preview class="w-full h-full block"></app-notes-preview-->
+            <!-- RIGHT (two stacked slots) -->
+            <div class="right-col">
+                <div class="preview-slot slot-small" cdkDropList id="rightTop" #rightTopList="cdkDropList" [cdkDropListData]="rightTopSlot" [cdkDropListConnectedTo]="[leftList, rightBottomList]" (cdkDropListDropped)="onDrop($event)">
+                    <ng-container *ngFor="let id of rightTopSlot">
+                        <div cdkDrag class="tile-drag">
+                            <ng-container [ngSwitch]="id">
+                                <em *ngSwitchCase="'calendar'">calendar preview</em>
+                                <em *ngSwitchCase="'notes'">notes preview</em>
+                                <em *ngSwitchCase="'stats'">stats preview</em>
+                            </ng-container>
+                        </div>
+                    </ng-container>
                 </div>
 
-                <!-- Stats preview -->
-                <div class="text-center bg-[--primary-bg] rounded-2xl shadow-lg p-4 h-[28vh] md:h-[30vh] border-2 border-dashed border-gray-400">
-                    <em>stats preview</em>
-                    <!--app-stats-preview class="w-full h-full block"></app-stats-preview-->
+                <div class="preview-slot slot-small" cdkDropList id="rightBottom" #rightBottomList="cdkDropList" [cdkDropListData]="rightBottomSlot" [cdkDropListConnectedTo]="[leftList, rightTopList]" (cdkDropListDropped)="onDrop($event)">
+                    <ng-container *ngFor="let id of rightBottomSlot">
+                        <div cdkDrag class="tile-drag">
+                            <ng-container [ngSwitch]="id">
+                                <em *ngSwitchCase="'calendar'">calendar preview</em>
+                                <em *ngSwitchCase="'notes'">notes preview</em>
+                                <em *ngSwitchCase="'stats'">stats preview</em>
+                            </ng-container>
+                        </div>
+                    </ng-container>
                 </div>
             </div>
-
         </div>
     </section>
 
