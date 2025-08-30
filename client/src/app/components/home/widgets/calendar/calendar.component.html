@@ -1,0 +1,7 @@
+<!-- src/app/components/widgets/calendar/calendar.component.html -->
+<main class="widget-wrap">
+  <div class="calendar-body-only" [appTimeMachineListenerDirective]="applyVirtualNowToCalendar.bind(this)">
+    <full-calendar #fc *ngIf="calendarVisible" [options]="calendarOptions">
+    </full-calendar>
+  </div>
+</main>

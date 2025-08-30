@@ -1,0 +1,22 @@
+/* src/app/components/widgets/calendar/calendar.component.scss */
+:host{ display:block; height:100%; width:100%; }
+.widget-wrap{ height:100%; width:100%; display:flex; }
+.calendar-body-only{ flex:1 1 auto; height:100%; overflow:hidden; }
+
+/* FullCalendar sizing */
+:host ::ng-deep .fc{ display:flex; flex-direction:column; height:100%; }
+:host ::ng-deep .fc-header-toolbar{ display:none !important; }
+:host ::ng-deep .fc-col-header{ position:sticky; top:0; z-index:2; background:#fff; }
+:host ::ng-deep .fc-view-harness{ flex:1 1 auto; overflow:auto; }
+
+/* Theme bits */
+:host ::ng-deep .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame{
+  background: var(--today-bg, #fff6cc) !important;
+}
+:host ::ng-deep .fc .fc-highlight{ background: var(--select-bg, #e6f7ff) !important; }
+
+/* Readability inside compact slots */
+:host ::ng-deep .fc-daygrid-event{ font-size:.85rem; padding:0 2px; }
+:host ::ng-deep .fc-event,
+:host ::ng-deep .fc-daygrid-day,
+:host ::ng-deep .fc-daygrid-dot-event{ cursor: default; }
