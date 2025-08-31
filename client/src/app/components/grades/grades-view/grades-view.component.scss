@@ -2,11 +2,11 @@
 .center { text-align: center !important; }
 
 .grades-layout {
-  --ink: #1f2937;
-  --muted: #6b7280;
-  --line: #e5e7eb;
-  --panel: #ffffff;
-  --soft: #f9fafb;
+  --ink: var(--grades-ink);
+  --muted: var(--grades-muted);
+  --line: var(--grades-line);
+  --panel: var(--grades-panel);
+  --soft: var(--grades-soft);
 
   max-width: 1100px;
   margin: 24px auto;
@@ -14,13 +14,13 @@
   color: var(--ink);
 }
 
-/* STICKY SUMMARY: always on top */
+/* STICKY SUMMARY */
 .summary {
   position: sticky;
   top: 8px;
   z-index: 5;
-  background: #f3f7ffcc;
-  border: 1px solid #9ec3ff;
+  background: var(--secondary-bg);
+  border: 1px solid var(--grades-border);
   border-radius: 18px;
   padding: 18px;
   margin-bottom: 18px;
@@ -32,7 +32,7 @@
   gap: 5px;
 }
 
-/* Contenitore header: aggiungi layout flessibile */
+/* Header */
 .page-header {
   display: flex;
   align-items: center;
@@ -52,10 +52,10 @@
   }
 }
 
-/* ADD button: stile simile all'edit icon */
+/* ADD button */
 .page-header .btn.btn-add {
-  --bg: #e6f0ff;
-  --ink: #0b3c7a;
+  --bg: var(--secondary-bg);
+  --ink: var(--grades-header-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -65,19 +65,19 @@
   text-decoration: none;
   background: var(--bg);
   color: var(--ink);
-  border: 1px solid #9ec3ff;
+  border: 1px solid var(--grades-border);
   box-shadow: 0 6px 12px rgba(0, 0, 0, .06);
   transition: filter .15s ease, transform .08s ease;
-  margin-left: auto; /* spinge a destra */
+  margin-left: auto;
 
   .fa { font-size: 14px; }
-  .txt { padding-left: 5px; } /* nasconde testo "add" */
+  .txt { padding-left: 5px; }
   
   &:hover { filter: brightness(1.05); }
   &:active { transform: translateY(1px); }
 }
 
-
+/* Stats cards */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -85,7 +85,7 @@
 
   .card {
     background: var(--panel);
-    border: 1px solid #9ec3ff;
+    border: 1px solid var(--grades-border);
     border-radius: 16px;
     padding: 14px 16px;
     box-shadow: 0 8px 18px rgba(0,0,0,.05);
@@ -102,16 +102,15 @@
   margin: 6px 0 18px;
   font-weight: 600;
 
-  &.loading { background: #eef2ff; color: #334155; border: 1px solid #c7d2fe; }
+  &.loading { background: #fffdf4; color: var(--grades-header-text); border: 1px solid var(--grades-border); }
   &.error   { background: #ffeaea; color: #b91c1c; border: 1px solid #fecaca; }
-  &.empty   { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+  &.empty   { background: #fffdf4; color: var(--grades-header-text); border: 1px solid var(--grades-border); }
 }
 
-/* years / collapsible */
+/* years */
 .years { display: grid; gap: 22px; }
 .year-block { display: grid; gap: 10px; }
 
-/* clickable header */
 .year-title {
   display: flex;
   align-items: center;
@@ -124,11 +123,10 @@
 
   .pill {
     display: inline-block;
-    background: #1f7ae033;
-    color: #0b3c7a;
+    background: var(--secondary-bg);
+    color: var(--grades-header-text);
     font-weight: 800;
-    letter-spacing: .3px;
-    border: 1px solid #9ec3ff;
+    border: 1px solid var(--grades-border);
     border-radius: 999px;
     padding: 6px 14px;
     text-transform: uppercase;
@@ -138,8 +136,8 @@
 
 /* table */
 .table-card {
-  background: #fffdf4;
-  border: 1px solid #9ec3ff;
+  background: var(--secondary-bg);
+  border: 1px solid var(--grades-border);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 6px 16px rgba(0,0,0,.04);
@@ -154,8 +152,8 @@ table {
 
   thead th {
     text-align: left;
-    background: var(--soft);
-    color: #39507a;
+    background: var(--secondary-bg);
+    color: var(--grades-header-text);
     font-size: 12px;
     font-weight: 800;
     padding: 12px 14px;
@@ -166,10 +164,10 @@ table {
   tbody td {
     padding: 14px;
     border-bottom: 1px solid var(--line);
-    background: #f4f8ff;
+    background: #ffffff;
     vertical-align: middle;
   }
-  tbody tr:nth-child(2n) td { background: #eef5ff; }
+  tbody tr:nth-child(2n) td { background: var(--secondary-bg); }
 
   .col-course { width: 44%; }
   .col-cfu { width: 10%; }
@@ -179,7 +177,7 @@ table {
 
   .course .course-chip {
     display: inline-block;
-    color: #0f407a;
+    color: var(--grades-header-text);
     font-weight: 700;
     padding: 7px 10px;
     border-radius: 8px;
@@ -192,33 +190,28 @@ table {
     padding: 4px 10px;
     border-radius: 999px;
     font-weight: 800;
-    letter-spacing: .2px;
-    background: #eef2ff; color: #223;
+    background: var(--grades-btn-bg); color: var(--grades-ink);
   }
-  .badge-ok   { background: #ffeab3; color: #624; }
-  .badge-good { background: #c9f7d5; color: #175d3a; }
-  .badge-pass { background: #ddeafc; color: #214a9c; }
+  .badge-ok   { background: var(--grades-badge-ok); color: #624; }
+  .badge-good { background: var(--grades-badge-good); color: #175d3a; }
+  .badge-pass { background: var(--grades-badge-pass); color: var(--grades-header-text); }
 
-  .actions {
-    justify-content: center;
-    gap: 10px;
-  }
+  .actions { justify-content: center; gap: 10px; }
 }
 
-/* small icon buttons */
+/* buttons */
 .icon-btn {
-  --bg: #e6f0ff;
-  --ink: #0b3c7a;
+  --bg: var(--secondary-bg);
+  --ink: var(--grades-btn-ink);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  text-decoration: none;
   background: var(--bg);
   color: var(--ink);
-  border: 1px solid #9ec3ff;
+  border: 1px solid var(--grades-border);
   box-shadow: 0 6px 12px rgba(0,0,0,.06);
   transition: filter .15s ease, transform .08s ease;
   margin-inline: 2px;
@@ -228,17 +221,14 @@ table {
   .fa { font-size: 14px; }
 }
 .icon-btn.danger {
-  --bg: #ffe8e8;
-  --ink: #8b1c1c;
+  --bg: var(--grades-danger-bg);
+  --ink: var(--grades-danger-ink);
 }
 
 /* responsive */
 @media (max-width: 960px) {
   .grades-layout { margin: 16px auto; padding: 0 14px 20px; }
-  .stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-  }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .stats .card { padding: 10px 12px; }
   .stats .card .value { font-size: 22px; }
 }
