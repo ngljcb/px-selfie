@@ -1,4 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
+/* styles.css - global styles */ 
 html, body {
   margin: 0;
   padding: 0;
@@ -13,6 +13,7 @@ html, body {
 }
 
 :root {
+  /* Primary theme */
   --primary-bg: #fbd65a;
   --primary-hover-bg: #fde289;
 
@@ -29,4 +30,24 @@ html, body {
 
   --today-bg: #fff6cc;
   --select-bg: #e6f7ff;
+
+  /* Grades specific palette */
+  --grades-ink: #2b1c00;
+  --grades-muted: #6b7280;
+  --grades-line: #fff6cc;
+  --grades-panel: #ffffff;
+  --grades-soft: #fffaf0;
+
+  --grades-border: #f6d469;
+  --grades-header-text: #5b4636;
+
+  --grades-badge-ok: #ffeab3;
+  --grades-badge-good: #c9f7d5;
+  --grades-badge-pass: #f6d469aa;
+
+  --grades-danger-bg: #ffe8e8;
+  --grades-danger-ink: #8b1c1c;
+
+  --grades-btn-bg: #fff6d6;
+  --grades-btn-ink: #5b4636;
 }
