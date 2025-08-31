@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { HomeBoxComponent } from '../home-box/home-box.component';
 import { FeatureService, Feature } from '../../../service/feature.service';
 import { DragDropModule, CdkDragDrop, transferArrayItem, moveItemInArray } from '@angular/cdk/drag-drop';
-import { CalendarComponent } from '../widgets/calendar/calendar.component';
-import { NotesComponent } from '../widgets/notes/notes.component';
-import { StatsComponent } from '../widgets/stats/stats.component';
+import { CalendarComponent } from '../home-widgets/calendar/calendar.component';
+import { NotesComponent } from '../home-widgets/notes/notes.component';
+import { StatsComponent } from '../home-widgets/stats/stats.component';
 
 @Component({
   selector: 'app-home-view',
