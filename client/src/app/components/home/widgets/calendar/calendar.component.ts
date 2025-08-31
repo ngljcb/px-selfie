@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import { CalendarOptions } from '@fullcalendar/core';
+import { forkJoin } from 'rxjs';
 
 import { TimeMachineService } from '../../../../service/time-machine.service';
 import { TimeMachineListenerDirective } from '../../../../directives/time-machine-listener.directive';
@@ -41,24 +42,17 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
   private baseOptions(): CalendarOptions {
     return {
-      // only the month grid body
       plugins: [dayGridPlugin],
       initialView: 'dayGridMonth',
       initialDate: this.timeMachine.getNow(),
       now: () => this.timeMachine.getNow(),
       nowIndicator: true,
-
-      // hide toolbar completely (title + nav buttons)
       headerToolbar: false,
-
-      // READ-ONLY: no selection, no drag/resize, no external drop
       selectable: false,
       editable: false,
       eventStartEditable: false,
       eventDurationEditable: false,
       droppable: false,
-
-      // data will be injected after fetch
       events: [],
       height: 'full'
     };
@@ -68,67 +62,56 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this.loadActivitiesAndRender();
   }
 
+  /**
+   * Carica attività ed eventi in un'unica pipeline e aggiorna *una sola volta*
+   * la sorgente degli eventi del calendario. Questo evita di aggiungere
+   * EventSource multipli tra le navigazioni (bug dei duplicati).
+   */
   private loadActivitiesAndRender(): void {
-    this.calendarOptions = this.baseOptions();
-    this.calendarVisible = true;
-
-    this.activitiesService.list({}).subscribe({
-      next: (res) => {
-        const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(res.items || []);
-
-        const api = this.fc?.getApi();
-        if (api) {
-          api.removeAllEvents();
-          api.addEventSource(activitiesAsEvents);
-        } else {
-          this.calendarOptions = { ...this.calendarOptions, events: activitiesAsEvents };
-        }
-
-        this.loadAndInjectCalendarEvents();
-        this.cdr.markForCheck();
-      },
-      error: (err) => console.error('Errore caricamento attività:', err)
-    });
-  }
-
-  private loadAndInjectCalendarEvents(): void {
-    const api = this.fc?.getApi();
+    // finestra della vista (widget è read-only: la vista è sempre il mese corrente della Time Machine)
     const now = this.timeMachine.getNow();
-    const viewStart = api?.view?.currentStart ?? new Date(now.getFullYear(), now.getMonth(), 1);
-    const viewEnd = api?.view?.currentEnd ?? new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const viewStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const viewEnd   = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
-    this.eventsService.list({}).subscribe({
-      next: (items: AppEvent[]) => {
-        const expanded = items.flatMap(ev => this.calendarService.expandEventForWindow(ev, viewStart, viewEnd));
-        if (api) {
-          api.addEventSource(expanded);
-        } else {
-          const existing = (this.calendarOptions.events as any[]) ?? [];
-          this.calendarOptions = { ...this.calendarOptions, events: [...existing, ...expanded] };
-        }
+    // reset opzioni (svuota eventi) e nasconde momentaneamente per forzare re-render pulito
+    this.calendarVisible = false;
+    const freshOptions = this.baseOptions();
+
+    forkJoin({
+      acts: this.activitiesService.list({}),
+      evs: this.eventsService.list({})
+    }).subscribe({
+      next: ({ acts, evs }) => {
+        const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(acts.items || []);
+        const expandedEvents = (evs as AppEvent[]).flatMap(ev =>
+          this.calendarService.expandEventForWindow(ev, viewStart, viewEnd)
+        );
+
+        // de-duplica per sicurezza (chiave: id/title + start)
+        const seen = new Set<string>();
+        const allEvents = [...activitiesAsEvents, ...expandedEvents].filter(e => {
+          const key = `${e.id ?? e.title}-${e.start}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // aggiorna UNA SOLA volta la lista degli eventi -> niente duplicazioni
+        this.calendarOptions = { ...freshOptions, events: allEvents };
+        this.calendarVisible = true;
         this.cdr.markForCheck();
       },
-      error: (err) => console.error('Errore caricamento events:', err)
+      error: (err) => {
+        console.error('Errore caricamento attività/eventi:', err);
+        this.calendarOptions = { ...freshOptions, events: [] };
+        this.calendarVisible = true;
+        this.cdr.markForCheck();
+      }
     });
   }
 
-  // Re-render when Time Machine changes
+  // Re-render when Time Machine changes (ricarica tutto in modo pulito)
   applyVirtualNowToCalendar(): void {
-    const eventsBackup = (this.fc?.getApi()?.getEvents() || []).map(e => ({
-      id: e.id,
-      title: e.title,
-      start: e.startStr,
-      end: e.endStr || undefined,
-      allDay: e.allDay,
-      backgroundColor: (e as any).backgroundColor
-    }));
-    this.calendarVisible = false;
-    this.cdr.detectChanges();
-
-    this.calendarOptions = { ...this.baseOptions(), events: eventsBackup };
-    this.calendarVisible = true;
-    this.cdr.detectChanges();
-
     this.loadActivitiesAndRender();
   }
 
