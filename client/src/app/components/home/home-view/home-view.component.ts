@@ -18,8 +18,8 @@ export class HomeViewComponent {
 
   // Tre slot (ognuno contiene al più 1 elemento). Gli ID sono: 'calendar' | 'notes' | 'stats'
   leftSlot: string[] = ['calendar'];
-  rightTopSlot: string[] = ['notes'];
-  rightBottomSlot: string[] = ['stats'];
+  rightTopSlot: string[] = ['stats'];
+  rightBottomSlot: string[] = ['notes'];
 
   constructor(private featureService: FeatureService) {}
 
