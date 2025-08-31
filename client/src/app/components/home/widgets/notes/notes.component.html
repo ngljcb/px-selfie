@@ -1,6 +1,6 @@
 <div class="h-full grid grid-cols-2 grid-rows-2 gap-3">
   <ng-container *ngFor="let slot of slots(); let i = index">
-    <div class="h-full w-full bg-white rounded-lg border border-yellow-300 shadow-sm p-3 flex flex-col overflow-hidden">
+    <div class="h-full w-full bg-white rounded-lg border border-[--primary-bg] shadow-sm p-3 flex flex-col overflow-hidden">
       <div class="text-xs sm:text-sm font-semibold italic text-gray-800 truncate">
         {{ visibleNotes()[i]?.title || '—' }}
       </div>
