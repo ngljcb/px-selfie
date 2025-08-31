@@ -1,0 +1,46 @@
+<div *ngIf="!loading && !error; else stateBlock" class="h-full">
+  <div class="grid grid-cols-3 grid-rows-2 gap-3 h-full">
+
+    <!-- Row 1 -->
+    <div class="h-full flex flex-col items-center justify-center p-3 bg-white border border-[--primary-bg] rounded-lg shadow-sm min-w-0">
+      <span class="text-[11px] sm:text-sm text-gray-600 font-medium truncate">Completed Sessions</span>
+      <span class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{{ totalSessions }}</span>
+    </div>
+
+    <div class="h-full flex flex-col items-center justify-center p-3 bg-white border border-[--primary-bg] rounded-lg shadow-sm min-w-0">
+      <span class="text-[11px] sm:text-sm text-gray-600 font-medium truncate">Total Study Time</span>
+      <span class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{{ totalStudyTimeFormatted }}</span>
+    </div>
+
+    <div class="h-full flex flex-col items-center justify-center p-3 bg-white border border-[--primary-bg] rounded-lg shadow-sm min-w-0">
+      <span class="text-[11px] sm:text-sm text-gray-600 font-medium truncate">Consecutive Days</span>
+      <span class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{{ consecutiveDays }}</span>
+    </div>
+
+    <!-- Row 2 -->
+    <div class="h-full flex flex-col items-center justify-center p-3 bg-white border border-[--primary-bg] rounded-lg shadow-sm min-w-0">
+      <span class="text-[11px] sm:text-sm text-gray-600 font-medium truncate">Total CFU</span>
+      <span class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{{ totalCFU }}</span>
+    </div>
+
+    <div class="h-full flex flex-col items-center justify-center p-3 bg-white border border-[--primary-bg] rounded-lg shadow-sm min-w-0">
+      <span class="text-[11px] sm:text-sm text-gray-600 font-medium truncate">Average Grade</span>
+      <span class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{{ average }}</span>
+    </div>
+
+    <div class="h-full flex flex-col items-center justify-center p-3 bg-white border border-[--primary-bg] rounded-lg shadow-sm min-w-0">
+      <span class="text-[11px] sm:text-sm text-gray-600 font-medium truncate">Base Grade</span>
+      <span class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{{ laureaBase }}</span>
+    </div>
+
+  </div>
+</div>
+
+<ng-template #stateBlock>
+  <div *ngIf="loading" class="h-full flex items-center justify-center text-center italic text-gray-500">
+    Loading...
+  </div>
+  <div *ngIf="error && !loading" class="h-full flex items-center justify-center text-center text-red-600 font-semibold">
+    {{ error }}
+  </div>
+</ng-template>
