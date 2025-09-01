@@ -149,6 +149,10 @@ export class TimeMachineComponent implements OnInit, OnDestroy {
     document.documentElement.style.setProperty('--time-machine-bg', '#fde289');
     document.documentElement.style.setProperty('--today-bg', '#e6f7ff');
     document.documentElement.style.setProperty('--select-bg', '#fff6cc');
+
+    document.documentElement.style.setProperty('--grades-header-text', '#0b3c7a');
+    document.documentElement.style.setProperty('--grades-border', '#4badee');
+    document.documentElement.style.setProperty('--grades-line', '#e6f7ff');
   }
 
   private resetColor(): void {
@@ -159,5 +163,9 @@ export class TimeMachineComponent implements OnInit, OnDestroy {
     document.documentElement.style.setProperty('--time-machine-bg', '#83CBEB');
     document.documentElement.style.setProperty('--today-bg', '#fff6cc');
     document.documentElement.style.setProperty('--select-bg', '#e6f7ff');
+
+    document.documentElement.style.setProperty('--grades-header-text', '#5b4636');
+    document.documentElement.style.setProperty('--grades-border', '#f6d469');
+    document.documentElement.style.setProperty('--grades-line', '#fff6cc');
   }
 }
