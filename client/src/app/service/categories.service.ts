@@ -9,7 +9,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class CategoriesService {
-  private readonly apiUrl = `${environment.API_BASE_URL}/api/categories`;
+  private apiUrl = `${environment.API_BASE_URL}/api/categories`;
   
   private categoriesSubject = new BehaviorSubject<Category[]>([]);
   public categories$ = this.categoriesSubject.asObservable();
@@ -22,7 +22,9 @@ export class CategoriesService {
   }
 
   getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(`${this.apiUrl}`)
+    return this.http.get<Category[]>(`${this.apiUrl}`, {
+      withCredentials: true
+    })
       .pipe(
         tap(categories => this.categoriesSubject.next(categories)),
         catchError(this.errorHandler.handleError)

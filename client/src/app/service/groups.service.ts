@@ -12,7 +12,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class GroupsService {
-  private readonly apiUrl = `${environment.API_BASE_URL}/api/groups`;
+  private apiUrl = `${environment.API_BASE_URL}/api/groups`;
   
   private allGroupsSubject = new BehaviorSubject<GroupWithDetails[]>([]);
   public allGroups$ = this.allGroupsSubject.asObservable();
@@ -31,7 +31,10 @@ export class GroupsService {
   getAllGroups(): Observable<GroupsResponse> {
     let params = new HttpParams();
 
-    return this.http.get<GroupsResponse>(`${this.apiUrl}`, { params })
+    return this.http.get<GroupsResponse>(`${this.apiUrl}`, { 
+      params,
+      withCredentials: true
+    })
       .pipe(
         tap(response => {{
             this.allGroupsSubject.next(response.groups);
@@ -42,7 +45,9 @@ export class GroupsService {
   }
 
   getUserGroups(): Observable<GroupWithDetails[]> {
-    return this.http.get<GroupWithDetails[]>(`${this.apiUrl}/my-groups`)
+    return this.http.get<GroupWithDetails[]>(`${this.apiUrl}/my-groups`, {
+      withCredentials: true
+    })
       .pipe(
         map(groups => groups.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()))),
         tap(groups => this.userGroupsSubject.next(groups)),
@@ -57,7 +62,9 @@ export class GroupsService {
       return throwError(() => new Error(validation.errors.join(', ')));
     }
 
-    return this.http.post<GroupWithDetails>(`${this.apiUrl}`, groupData)
+    return this.http.post<GroupWithDetails>(`${this.apiUrl}`, groupData, {
+      withCredentials: true
+    })
       .pipe(
         tap(newGroup => {
           const currentAllGroups = this.allGroupsSubject.value;
@@ -74,7 +81,9 @@ export class GroupsService {
   }
 
   deleteGroup(name: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(name)}`)
+    return this.http.delete<void>(`${this.apiUrl}/${encodeURIComponent(name)}`, {
+      withCredentials: true
+    })
       .pipe(
         tap(() => {
           const currentAllGroups = this.allGroupsSubject.value;
@@ -92,7 +101,9 @@ export class GroupsService {
   }
 
   joinGroup(groupName: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${encodeURIComponent(groupName)}/join`, {})
+    return this.http.post<void>(`${this.apiUrl}/${encodeURIComponent(groupName)}/join`, {}, {
+      withCredentials: true
+    })
       .pipe(
         tap(() => {
           this.updateGroupMembershipInState(groupName, true);
@@ -102,7 +113,9 @@ export class GroupsService {
   }
 
   leaveGroup(groupName: string): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${encodeURIComponent(groupName)}/leave`, {})
+    return this.http.post<void>(`${this.apiUrl}/${encodeURIComponent(groupName)}/leave`, {}, {
+      withCredentials: true
+    })
       .pipe(
         tap(() => {
           this.updateGroupMembershipInState(groupName, false);
@@ -112,7 +125,9 @@ export class GroupsService {
   }
 
   isGroupMember(groupName: string): Observable<boolean> {
-    return this.http.get<{ isMember: boolean }>(`${this.apiUrl}/${encodeURIComponent(groupName)}/membership`)
+    return this.http.get<{ isMember: boolean }>(`${this.apiUrl}/${encodeURIComponent(groupName)}/membership`, {
+      withCredentials: true
+    })
       .pipe(
         map(response => response.isMember),
         catchError(this.errorHandler.handleError)
@@ -122,7 +137,10 @@ export class GroupsService {
   checkGroupNameExists(name: string): Observable<boolean> {
     const params = new HttpParams().set('name', name);
 
-    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/check-name`, { params })
+    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/check-name`, { 
+      params,
+      withCredentials: true
+    })
       .pipe(
         map(response => response.exists),
         catchError(this.errorHandler.handleError)

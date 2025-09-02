@@ -24,7 +24,7 @@ import {
   providedIn: 'root'
 })
 export class NotesService {
-  private readonly apiUrl = `${environment.API_BASE_URL}/api/notes`; 
+  private apiUrl = `${environment.API_BASE_URL}/api/notes`; 
 
   private notesSubject = new BehaviorSubject<NoteWithDetails[]>([]);
   public notes$ = this.notesSubject.asObservable();
@@ -54,7 +54,10 @@ export class NotesService {
       if (filters.offset) params = params.set('offset', filters.offset.toString());
     }
 
-    return this.http.get<NotesResponse>(`${this.apiUrl}`, { params })
+    return this.http.get<NotesResponse>(`${this.apiUrl}`, { 
+      params,
+      withCredentials: true
+    })
       .pipe(
         map(response => ({
           ...response,
@@ -76,7 +79,10 @@ export class NotesService {
       .set('sortBy', sortBy)
       .set('limit', '50');
 
-    return this.http.get<NotePreview[]>(`${this.apiUrl}/previews`, { params })
+    return this.http.get<NotePreview[]>(`${this.apiUrl}/previews`, { 
+      params,
+      withCredentials: true
+    })
       .pipe(
         map(previews => previews.map(preview => ({
           ...preview,
@@ -87,7 +93,9 @@ export class NotesService {
   }
 
   getNoteById(id: string): Observable<NoteWithDetails> {
-    return this.http.get<NoteWithDetails>(`${this.apiUrl}/${id}`)
+    return this.http.get<NoteWithDetails>(`${this.apiUrl}/${id}`, {
+      withCredentials: true
+    })
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(note => this.selectedNoteSubject.next(note)),
@@ -96,7 +104,9 @@ export class NotesService {
   }
 
   createNote(noteData: CreateNoteRequest): Observable<NoteWithDetails> {
-    return this.http.post<NoteWithDetails>(`${this.apiUrl}`, noteData)
+    return this.http.post<NoteWithDetails>(`${this.apiUrl}`, noteData, {
+      withCredentials: true
+    })
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(newNote => {
@@ -112,7 +122,9 @@ export class NotesService {
   }
 
   updateNote(id: string, noteData: UpdateNoteRequest): Observable<NoteWithDetails> {
-    return this.http.put<NoteWithDetails>(`${this.apiUrl}/${id}`, noteData)
+    return this.http.put<NoteWithDetails>(`${this.apiUrl}/${id}`, noteData, {
+      withCredentials: true
+    })
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(updatedNote => {
@@ -131,7 +143,9 @@ export class NotesService {
   }
 
   deleteNote(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`)
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, {
+      withCredentials: true
+    })
       .pipe(
         tap(() => {
 
@@ -151,7 +165,9 @@ export class NotesService {
   }
 
   duplicateNote(request: DuplicateNoteRequest): Observable<NoteWithDetails> {
-    return this.http.post<NoteWithDetails>(`${this.apiUrl}/${request.sourceNoteId}/duplicate`, request)
+    return this.http.post<NoteWithDetails>(`${this.apiUrl}/${request.sourceNoteId}/duplicate`, request, {
+      withCredentials: true
+    })
       .pipe(
         map(note => this.enrichNoteWithMetadata(note)),
         tap(duplicatedNote => {
@@ -167,14 +183,18 @@ export class NotesService {
   }
 
   shareNote(request: ShareNoteRequest): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/${request.noteId}/share`, request)
+    return this.http.post<void>(`${this.apiUrl}/${request.noteId}/share`, request, {
+      withCredentials: true
+    })
       .pipe(
         catchError(this.errorHandler.handleError)
       );
   }
 
   getNotePermissions(noteId: string): Observable<NotePermissions> {
-    return this.http.get<NotePermissions>(`${this.apiUrl}/${noteId}/permissions`)
+    return this.http.get<NotePermissions>(`${this.apiUrl}/${noteId}/permissions`, {
+      withCredentials: true
+    })
       .pipe(
         catchError(this.errorHandler.handleError)
       );
@@ -209,7 +229,9 @@ export class NotesService {
   }
 
   bulkOperation(operation: BulkNoteOperation): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/bulk`, operation)
+    return this.http.post<void>(`${this.apiUrl}/bulk`, operation, {
+      withCredentials: true
+    })
       .pipe(
         tap(() => {
           this.refreshNotes();
@@ -324,7 +346,9 @@ export class NotesService {
   }
 
   getNotesStats(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/stats`)
+    return this.http.get<any>(`${this.apiUrl}/stats`, {
+      withCredentials: true
+    })
       .pipe(
         catchError(this.errorHandler.handleError)
       );
@@ -438,7 +462,9 @@ export class NotesService {
   }
 
   getNotesCountByAccessibility(): Observable<Record<string, number>> {
-    return this.http.get<Record<string, number>>(`${this.apiUrl}/count-by-accessibility`)
+    return this.http.get<Record<string, number>>(`${this.apiUrl}/count-by-accessibility`, {
+      withCredentials: true
+    })
       .pipe(
         catchError(this.errorHandler.handleError)
       );
