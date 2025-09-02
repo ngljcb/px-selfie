@@ -7,11 +7,12 @@ import { CreateGroupRequest } from '../model/request/create-group-request.interf
 import { ErrorHandlerService } from './error-handler.service';
 import { GroupWithDetails } from '../model/entity/group.interface';
 import { GroupsResponse } from '../model/response/group-response.interface';
+import { environment } from '../../environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class GroupsService {
-  private readonly apiUrl = '/api/groups';
+  private readonly apiUrl = `${environment.API_BASE_URL}/api/groups`;
   
   private allGroupsSubject = new BehaviorSubject<GroupWithDetails[]>([]);
   public allGroups$ = this.allGroupsSubject.asObservable();

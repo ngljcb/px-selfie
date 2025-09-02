@@ -4,12 +4,13 @@ import { Observable} from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { User } from '../model/entity/user.interface';
 import { ErrorHandlerService } from './error-handler.service';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsersService {
-  private readonly apiUrl = '/api/users'; 
+  private readonly apiUrl = `${environment.API_BASE_URL}/api/users`; 
 
   constructor(
     private http: HttpClient,
