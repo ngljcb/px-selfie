@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { filter, Subscription } from 'rxjs';
+import { filter, Subscription, distinctUntilChanged } from 'rxjs';
 import { GradesService } from '../../../service/grades.service';
 import { Grade } from '../../../model/entity/grade.model';
 import {
@@ -11,6 +11,7 @@ import {
   toNumericGrade,
   formatDate,
 } from '../../../utils/grades.utils';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({
   selector: 'app-grades-view',
@@ -22,18 +23,18 @@ import {
 export class GradesViewComponent implements OnInit, OnDestroy {
   private gradesService = inject(GradesService);
   private router = inject(Router);
+  private timeMachine = inject(TimeMachineService);
   private navSub?: Subscription;
+  private tmSub?: Subscription;
 
   grades: Grade[] = [];
   loading = false;
   error: string | null = null;
 
-  // paging (se servirà in futuro)
   limit = 1000;
   offset = 0;
   total = 0;
 
-  // computed
   totalCFU = 0;
   average = 0;
   laureaBase = 0;
@@ -55,45 +56,61 @@ export class GradesViewComponent implements OnInit, OnDestroy {
           this.fetch();
         }
       });
+
+    // Ascolta i cambiamenti del Time Machine e ricarica dinamicamente
+    this.tmSub = this.timeMachine
+      .virtualNow$()
+      .pipe(distinctUntilChanged((a, b) => a?.getTime() === b?.getTime()))
+      .subscribe(() => this.fetch());
   }
 
   ngOnDestroy(): void {
     this.navSub?.unsubscribe();
+    this.tmSub?.unsubscribe();
   }
 
   fetch(): void {
     this.loading = true;
     this.error = null;
 
-    this.gradesService.list({ limit: this.limit, offset: this.offset }).subscribe({
-      next: (res) => {
-        this.grades = (res.items ?? []).slice();
-        this.total = res.count ?? this.grades.length;
+    const cutoff = this.timeMachine.isActive()
+      ? this.timeMachine.getNow()
+      : new Date();
 
-        // normalizzazione/ordinamento + calcoli delegati alle utility
-        this.grades = normalizeAndSort(this.grades);
+    this.gradesService
+      .list({
+        limit: this.limit,
+        offset: this.offset,
+        to: cutoff.toISOString(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.grades = (res.items ?? []).slice();
+          this.total = res.count ?? this.grades.length;
 
-        const totals = computeTotals(this.grades);
-        this.totalCFU = totals.totalCFU;
-        this.average = totals.average;
-        this.laureaBase = totals.laureaBase;
+          this.grades = normalizeAndSort(this.grades);
 
-        const grouped = groupByYear(this.grades);
-        this.byYear = grouped.byYear;
-        this.years = grouped.years;
+          const totals = computeTotals(this.grades);
+          this.totalCFU = totals.totalCFU;
+          this.average = totals.average;
+          this.laureaBase = totals.laureaBase;
 
-        this.collapsedYears.clear();
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = err?.message || 'Errore nel caricamento';
-        this.loading = false;
-      },
-    });
+          const grouped = groupByYear(this.grades);
+          this.byYear = grouped.byYear;
+          this.years = grouped.years;
+
+          this.collapsedYears.clear();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = err?.message || 'Errore nel caricamento';
+          this.loading = false;
+        },
+      });
   }
 
-  // ---------- Helpers usati nel template ----------
   toNumericGrade = (grade: number | string | null | undefined) => toNumericGrade(grade);
+
   formatDate = (d?: string | null) => formatDate(d);
 
   trackById = (_: number, g: Grade) => g.id;
