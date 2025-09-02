@@ -1,39 +1,54 @@
-// ==================== TIMER APP CONTAINER ==================== 
+/* ==================== TIMER APP CONTAINER ====================  */
 .timer-app-container {
   min-height: 100vh;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #000;
   display: flex;
   flex-direction: column;
-  background-color: var(--secondary-bg, #f6ecc8); 
+  background-color: var(--secondary-bg, #f6ecc8);
 }
 
 .timer-view {
   padding: 1rem;
   box-sizing: border-box;
   position: relative;
-  flex: 0 0 auto; // Non si espande per occupare tutto lo spazio
-  
+  flex: 0 0 auto; /* Non si espande per occupare tutto lo spazio */
+
   @media (min-width: 641px) {
     padding: 2rem;
     max-width: 800px;
     margin: 0 auto;
     width: 100%;
   }
-  
+
   @media (min-width: 1024px) {
     padding: 3rem;
   }
 }
 
-// ==================== TIMER STATS CONTAINER (MOBILE-FIRST) ====================
+/* ==================== TIMER STATS CONTAINER (match timer width) ==================== */
 .timer-stats-container {
   margin: 1rem 0;
   padding: 1rem;
-
+  box-sizing: border-box;
+  width: 100%;
 }
 
-// ==================== NOTIFICHE ==================== 
+@media (min-width: 641px) {
+  .timer-stats-container {
+    padding: 2rem;
+    max-width: 800px;      /* >>> same width as .timer-view */
+    margin: 0 auto 1rem;   /* center like the timer above   */
+  }
+}
+
+@media (min-width: 1024px) {
+  .timer-stats-container {
+    padding: 3rem;         /* keep padding parity */
+  }
+}
+
+/* ==================== NOTIFICHE ====================  */
 .notifications-container {
   position: fixed;
   top: 1rem;
@@ -44,7 +59,7 @@
   gap: 0.5rem;
   max-width: 320px;
   width: 100%;
-  
+
   @media (max-width: 640px) {
     left: 1rem;
     right: 1rem;
@@ -63,22 +78,22 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  
+
   &.notification-study-complete {
     border-left-color: #a8e6cf;
     background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   }
-  
+
   &.notification-break-complete {
     border-left-color: var(--primary-bg, #fbd65a);
     background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
   }
-  
+
   &.notification-session-complete {
     border-left-color: #ffd93d;
     background: linear-gradient(135deg, #fefce8 0%, #fef08a 100%);
   }
-  
+
   &.notification-phase-skipped {
     border-left-color: #17a2b8;
     background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
@@ -108,19 +123,19 @@
   justify-content: center;
   border-radius: 50%;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: rgba(0, 0, 0, 0.1);
     color: #374151;
   }
 }
 
-// ==================== TIMER DISPLAY ==================== 
+/* ==================== TIMER DISPLAY ====================  */
 .timer-display {
   position: relative;
   background-color: var(--primary-bg, #fbd65a);
   border-radius: 1rem;
-  padding: 1.5rem 1rem 1rem 1rem; // Ridotto padding mobile
+  padding: 1.5rem 1rem 1rem 1rem; /* Ridotto padding mobile */
   margin-bottom: 1rem;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   text-align: center;
@@ -129,12 +144,12 @@
 
   &.study-mode {
     background-color: var(--primary-bg, #fbd65a);
-    
+
     &.running {
       background-color: var(--primary-hover-bg, #fcf3b5);
       animation: studyPulse 2s ease-in-out infinite;
     }
-    
+
     &.completed {
       background-color: var(--primary-bg, #fbd65a);
       animation: completedGlow 1.5s ease-in-out infinite alternate;
@@ -143,12 +158,12 @@
 
   &.break-mode {
     background-color: #a8e6cf;
-    
+
     &.running {
       background-color: #c8f7e0;
       animation: breakPulse 2s ease-in-out infinite;
     }
-    
+
     &.completed {
       background-color: #a8e6cf;
       animation: completedGlow 1.5s ease-in-out infinite alternate;
@@ -158,14 +173,14 @@
   &:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
-  
+
   @media (min-width: 641px) {
     padding: 3rem 2rem 2rem 2rem;
-    margin-bottom: 1rem; // Ridotto per dare spazio alle stats
+    margin-bottom: 1rem; /* Ridotto per dare spazio alle stats */
   }
 }
 
-// ==================== CONFIG BUTTON ==================== 
+/* ==================== CONFIG BUTTON ====================  */
 .config-btn {
   position: absolute;
   top: 1rem;
@@ -183,8 +198,8 @@
   border-radius: 50%;
 
   img {
-    width: 24px;       
-    height: 24px;   
+    width: 24px;
+    height: 24px;
   }
 
   &:hover:not(:disabled) {
@@ -203,42 +218,42 @@
   }
 }
 
-// ==================== TIME DISPLAY ==================== 
+/* ==================== TIME DISPLAY ====================  */
 .time-display {
-  margin-bottom: 1rem; // Ridotto per mobile
-  
+  margin-bottom: 1rem;
+
   .time-number {
-    font-size: 2.5rem; // Ridotto per mobile
+    font-size: 2.5rem;
     font-weight: bold;
-    
+
     @media (min-width: 641px) {
       font-size: 4rem;
     }
-    
+
     @media (min-width: 1024px) {
       font-size: 5rem;
     }
   }
 }
 
-// ==================== PHASE INFO ==================== 
+/* ==================== PHASE INFO ====================  */
 .phase-info {
-  margin-bottom: 1rem; // Ridotto per mobile
+  margin-bottom: 1rem;
 
   .cycle-info {
-    font-size: 0.85rem; // Leggermente ridotto per mobile
+    font-size: 0.85rem;
     color: #666;
     font-weight: 400;
-    
+
     @media (min-width: 641px) {
       font-size: 1rem;
     }
   }
 }
 
-// ==================== PROGRESS BAR ==================== 
+/* ==================== PROGRESS BAR ====================  */
 .progress-container {
-  margin-bottom: 1rem; // Ridotto per mobile
+  margin-bottom: 1rem;
 
   .progress-bar {
     width: 100%;
@@ -254,7 +269,7 @@
       transition: width 0.3s ease;
       border-radius: 3px;
     }
-    
+
     @media (min-width: 641px) {
       height: 8px;
       border-radius: 4px;
@@ -266,54 +281,54 @@
   }
 
   .progress-text {
-    font-size: 0.75rem; // Ridotto per mobile
+    font-size: 0.75rem;
     color: #666;
     font-weight: 400;
-    
+
     @media (min-width: 641px) {
       font-size: 0.9rem;
     }
   }
 }
 
-// ==================== CONTROLS ==================== 
+/* ==================== CONTROLS ====================  */
 .controls {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem; // Ridotto per mobile
-  margin-top: 0.75rem; // Ridotto per mobile
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 
   .secondary-controls {
     display: flex;
-    gap: 0.5rem; // Ridotto per mobile
+    gap: 0.5rem;
     flex-wrap: wrap;
     justify-content: center;
     animation: fadeInUp 0.3s ease;
-    
+
     @media (min-width: 641px) {
       gap: 1rem;
     }
   }
-  
+
   @media (min-width: 641px) {
     gap: 1.5rem;
     margin-top: 1rem;
   }
 }
 
-// ==================== BUTTONS ==================== 
+/* ==================== BUTTONS ====================  */
 .btn {
-  padding: 0.6rem 0.8rem; // Ridotto per mobile
+  padding: 0.6rem 0.8rem;
   border: none;
   border-radius: 0.75rem;
-  font-size: 0.75rem; // Ridotto per mobile
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  min-height: 50px; // Ridotto per mobile
-  min-width: 60px; // Ridotto per mobile
+  min-height: 50px;
+  min-width: 60px;
 
   &:hover:not(:disabled) {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -333,10 +348,10 @@
   &.btn-primary {
     background-color: rgba(255, 255, 255, 0.9);
     color: #000;
-    font-size: 0.9rem; // Ridotto per mobile
-    padding: 0.8rem 1.5rem; // Ridotto per mobile
-    min-height: 60px; // Ridotto per mobile
-    min-width: 100px; // Ridotto per mobile
+    font-size: 0.9rem;
+    padding: 0.8rem 1.5rem;
+    min-height: 60px;
+    min-width: 100px;
   }
 
   &.btn-pause {
@@ -358,7 +373,7 @@
     background-color: rgba(220, 53, 69, 0.9);
     color: #fff;
   }
-  
+
   @media (min-width: 641px) {
     padding: 1rem 1.5rem;
     border-radius: 1rem;
@@ -373,7 +388,7 @@
       min-width: 140px;
     }
   }
-  
+
   @media (min-width: 1024px) {
     padding: 1.2rem 2rem;
     min-width: 120px;
@@ -387,12 +402,10 @@
   }
 }
 
-// ==================== PULSE ANIMATION (RIMOSSA) ==================== 
-.pulse-animation {
-  display: none; // Completamente disabilitata
-}
+/* ==================== PULSE ANIMATION (RIMOSSA) ====================  */
+.pulse-animation { display: none; }
 
-// ==================== COMPLETION OVERLAY ==================== 
+/* ==================== COMPLETION OVERLAY ====================  */
 .completion-overlay {
   position: fixed;
   top: 0;
@@ -416,55 +429,23 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     background-color: var(--primary-bg, #fbd65a);
 
-    .completion-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
+    .completion-icon { font-size: 3rem; margin-bottom: 1rem; }
+    h2 { color: #000; margin-bottom: 1rem; font-size: 1.5rem; font-weight: 900; }
+    p { color: #333; margin-bottom: 1rem; line-height: 1.6; font-size: 0.9rem; }
+    .study-time { font-weight: 700; color: #000; font-size: 1rem; }
 
-    h2 {
-      color: #000;
-      margin-bottom: 1rem;
-      font-size: 1.5rem;
-      font-weight: 900;
-    }
-
-    p {
-      color: #333;
-      margin-bottom: 1rem;
-      line-height: 1.6;
-      font-size: 0.9rem;
-    }
-
-    .study-time {
-      font-weight: 700;
-      color: #000;
-      font-size: 1rem;
-    }
-    
     @media (min-width: 641px) {
       padding: 3rem 2rem;
       max-width: 400px;
-
-      .completion-icon {
-        font-size: 4rem;
-      }
-
-      h2 {
-        font-size: 1.8rem;
-      }
-
-      p {
-        font-size: 1rem;
-      }
-
-      .study-time {
-        font-size: 1.1rem;
-      }
+      .completion-icon { font-size: 4rem; }
+      h2 { font-size: 1.8rem; }
+      p { font-size: 1rem; }
+      .study-time { font-size: 1.1rem; }
     }
   }
 }
 
-// ==================== MODAL ==================== 
+/* ==================== MODAL ====================  */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -488,14 +469,14 @@
     overflow-y: auto;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     animation: slideUp 0.3s ease;
-    
+
     @media (min-width: 641px) {
       max-width: 600px;
     }
   }
 }
 
-// ==================== LOADING ==================== 
+/* ==================== LOADING ====================  */
 .loading {
   display: flex;
   align-items: center;
@@ -505,93 +486,30 @@
   font-size: 1rem;
 }
 
-// ==================== ANIMATIONS ==================== 
+/* ==================== ANIMAZIONI ====================  */
 @keyframes studyPulse {
   0%, 100% { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
   50% { box-shadow: 0 4px 12px rgba(251, 214, 90, 0.4); }
 }
-
 @keyframes breakPulse {
   0%, 100% { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
   50% { box-shadow: 0 4px 12px rgba(168, 230, 207, 0.4); }
 }
-
 @keyframes completedGlow {
   0% { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
   100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(30px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-// ==================== RESPONSIVE LAYOUT ==================== 
+/* ==================== RESPONSIVE LAYOUT ====================  */
 @media (min-width: 641px) {
-  .config-btn {
-    width: 50px;
-    height: 50px;
-    top: 1.5rem;
-    right: 1.5rem;
-
-    img {
-      width: 28px;
-      height: 28px;
-    }
-  }
-
-  .phase-info {
-    margin-bottom: 2rem;
-  }
-
-  .progress-container {
-    margin-bottom: 2rem;
-  }
+  .config-btn { width: 50px; height: 50px; top: 1.5rem; right: 1.5rem; img { width: 28px; height: 28px; } }
+  .phase-info { margin-bottom: 2rem; }
+  .progress-container { margin-bottom: 2rem; }
 }
-
 @media (min-width: 1024px) {
-  .config-btn {
-    width: 60px;
-    height: 60px;
-    top: 2rem;
-    right: 2rem;
-
-    img {
-      width: 32px;
-      height: 32px;
-    }
-  }
+  .config-btn { width: 60px; height: 60px; top: 2rem; right: 2rem; img { width: 32px; height: 32px; } }
 }
