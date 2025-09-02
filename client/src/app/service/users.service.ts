@@ -10,7 +10,7 @@ import { environment } from '../../environments/environment';
   providedIn: 'root'
 })
 export class UsersService {
-  private readonly apiUrl = `${environment.API_BASE_URL}/api/users`; 
+  private apiUrl = `${environment.API_BASE_URL}/api/users`; 
 
   constructor(
     private http: HttpClient,
@@ -24,7 +24,10 @@ export class UsersService {
 
     const params = new HttpParams().set('search', query.trim());
 
-    return this.http.get<User[]>(`${this.apiUrl}/search`, { params })
+    return this.http.get<User[]>(`${this.apiUrl}/search`, { 
+      params,
+      withCredentials: true
+    })
       .pipe(
         map(users => users.slice(0, 10)),
         catchError(this.errorHandler.handleError)
@@ -32,7 +35,9 @@ export class UsersService {
   }
 
   getUserById(userId: string): Observable<User> {
-    return this.http.get<User>(`${this.apiUrl}/${userId}`)
+    return this.http.get<User>(`${this.apiUrl}/${userId}`, {
+      withCredentials: true
+    })
       .pipe(
         catchError(this.errorHandler.handleError)
       );
@@ -45,7 +50,10 @@ export class UsersService {
 
     const params = new HttpParams().set('ids', userIds.join(','));
 
-    return this.http.get<User[]>(`${this.apiUrl}/batch`, { params })
+    return this.http.get<User[]>(`${this.apiUrl}/batch`, { 
+      params,
+      withCredentials: true
+    })
       .pipe(
         catchError(this.errorHandler.handleError)
       );
@@ -54,7 +62,10 @@ export class UsersService {
   checkUsernameExists(username: string): Observable<boolean> {
     const params = new HttpParams().set('username', username);
 
-    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/exists`, { params })
+    return this.http.get<{ exists: boolean }>(`${this.apiUrl}/exists`, { 
+      params,
+      withCredentials: true
+    })
       .pipe(
         map(response => response.exists),
         catchError(this.errorHandler.handleError)

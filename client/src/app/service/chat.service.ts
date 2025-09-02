@@ -10,7 +10,7 @@ import { ErrorHandlerService } from './error-handler.service';
   providedIn: 'root'
 })
 export class ChatService {
-  private readonly apiUrl = `${environment.API_BASE_URL}/api/chat`;
+  private apiUrl = `${environment.API_BASE_URL}/api/chat`;
 
   constructor(
     private http: HttpClient,
