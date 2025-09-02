@@ -121,7 +121,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   justify-content: space-between;
   padding: 15px 19px;
   border-bottom: 1px solid $gray-200;
-  background: linear-gradient(135deg, $gray-50 0%, $white 100%);
+  background: var(--primary-bg);
   border-radius: 16px 16px 0 0;
 
   .header-info {
@@ -131,7 +131,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
     .header-icon {
       width: 44px;
-      height: 44px;
+      height: auto;
       padding: 4px;
       margin-left: 2px;
       background: $white;
@@ -224,7 +224,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   .message-avatar {
     flex-shrink: 0;
-    width: 32px;
+    width: auto;
     height: 32px;
     display: flex;
     align-items: center;
@@ -302,7 +302,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 // Input area
 .input-container {
   border-top: 1px solid $gray-200;
-  background: $white;
+  background: var(--secondary-bg);
   border-radius: 0 0 16px 16px;
   padding: 16px 24px;
 
@@ -345,7 +345,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
     .send-btn {
       width: 44px;
       height: 44px;
-      background: $primary-color;
+      background: var(--primary-bg);
       border: none;
       border-radius: 12px;
       color: $white;
@@ -357,7 +357,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
       flex-shrink: 0;
 
       &:hover:not(:disabled) {
-        background: $primary-dark;
+        background: var(--primary-hover-bg);
         transform: translateY(-1px);
       }
 

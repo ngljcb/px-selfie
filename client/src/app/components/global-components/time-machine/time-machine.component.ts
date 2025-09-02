@@ -153,6 +153,8 @@ export class TimeMachineComponent implements OnInit, OnDestroy {
     document.documentElement.style.setProperty('--grades-header-text', '#0b3c7a');
     document.documentElement.style.setProperty('--grades-border', '#4badee');
     document.documentElement.style.setProperty('--grades-line', '#e6f7ff');
+
+    document.documentElement.style.setProperty('--active-btn', '#3498db');
   }
 
   private resetColor(): void {
@@ -167,5 +169,7 @@ export class TimeMachineComponent implements OnInit, OnDestroy {
     document.documentElement.style.setProperty('--grades-header-text', '#5b4636');
     document.documentElement.style.setProperty('--grades-border', '#f6d469');
     document.documentElement.style.setProperty('--grades-line', '#fff6cc');
+
+    document.documentElement.style.setProperty('--active-btn', '#fbd65a');
   }
 }
