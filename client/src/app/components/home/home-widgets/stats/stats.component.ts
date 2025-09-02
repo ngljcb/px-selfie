@@ -1,4 +1,3 @@
-// src/app/components/home/widgets/stats/stats.component.ts
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -19,22 +18,18 @@ import { StatisticsResponse } from '../../../../model/statistics.interface';
 export class StatsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
-  // Services
   private gradesService = inject(GradesService);
   private statisticsService = inject(StatisticsService);
   private timeMachineService = inject(TimeMachineService);
 
-  // UI state
   loading = true;
   error: string | null = null;
 
-  // Grades metrics (row 1)
   grades: Grade[] = [];
   totalCFU = 0;
   average = 0;
   laureaBase = 0;
 
-  // Timer metrics (row 2)
   statistics: StatisticsResponse | null = null;
 
   ngOnInit(): void {
@@ -67,13 +62,16 @@ export class StatsComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ----------- LOADERS -----------
   private refreshGrades(): void {
     this.loading = true;
     this.error = null;
 
+    const cutoff = this.timeMachineService.isActive()
+      ? this.timeMachineService.getNow()
+      : new Date();
+
     this.gradesService
-      .list({ limit: 1000, offset: 0 })
+      .list({ limit: 1000, offset: 0, to: cutoff.toISOString() })
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
@@ -106,7 +104,6 @@ export class StatsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // ----------- GETTERS (Timer row) -----------
   get totalSessions(): number {
     return this.statistics?.totalCompletedSessions ?? 0;
   }
