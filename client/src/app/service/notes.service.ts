@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject} from 'rxjs';
 import { ErrorHandlerService } from './error-handler.service';
 import { map, catchError, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 import { 
   Note, 
   NoteWithDetails, 
@@ -23,7 +24,7 @@ import {
   providedIn: 'root'
 })
 export class NotesService {
-  private readonly apiUrl = '/api/notes'; 
+  private readonly apiUrl = `${environment.API_BASE_URL}/api/notes`; 
 
   private notesSubject = new BehaviorSubject<NoteWithDetails[]>([]);
   public notes$ = this.notesSubject.asObservable();
