@@ -11,7 +11,7 @@ export class CalendarService {
       title: act.title,
       start: act.due_date,
       allDay: true,
-      backgroundColor: act.status === 'done' ? '#43a047' : '#e53935'
+      backgroundColor: act.status === 'done' ? '#58fc60' : '#f34643'
     }));
   }
 
@@ -38,7 +38,7 @@ export class CalendarService {
         start: startISO,
         end: endISO ?? undefined,
         allDay: !startTime && !endTime,
-        backgroundColor: '#1e88e5'
+        backgroundColor: '#e250ff'
       });
     };
 

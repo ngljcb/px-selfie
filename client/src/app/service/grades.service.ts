@@ -30,39 +30,23 @@ export class GradesService {
     });
   }
 
-  /**
-   * Dettaglio di un grade
-   */
+  /** Dettaglio di un grade */
   get(id: number): Observable<Grade> {
-    return this.http.get<Grade>(`${this.baseUrl}/${id}`, {
-      withCredentials: true,
-    });
+    return this.http.get<Grade>(`${this.baseUrl}/${id}`, { withCredentials: true });
   }
 
-  /**
-   * Crea un nuovo grade
-   */
+  /** Crea un nuovo grade */
   create(grade: Omit<Grade, 'id' | 'user_id' | 'created_at'>): Observable<Grade> {
-    return this.http.post<Grade>(this.baseUrl, grade, {
-      withCredentials: true,
-    });
+    return this.http.post<Grade>(this.baseUrl, grade, { withCredentials: true });
   }
 
-  /**
-   * Aggiorna un grade esistente
-   */
+  /** Aggiorna un grade esistente */
   update(id: number, patch: Partial<Omit<Grade, 'id' | 'user_id' | 'created_at'>>): Observable<Grade> {
-    return this.http.patch<Grade>(`${this.baseUrl}/${id}`, patch, {
-      withCredentials: true,
-    });
+    return this.http.patch<Grade>(`${this.baseUrl}/${id}`, patch, { withCredentials: true });
   }
 
-  /**
-   * Elimina un grade
-   */
+  /** Elimina un grade */
   delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`, {
-      withCredentials: true,
-    });
+    return this.http.delete<void>(`${this.baseUrl}/${id}`, { withCredentials: true });
   }
 }

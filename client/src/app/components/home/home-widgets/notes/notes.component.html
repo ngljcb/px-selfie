@@ -1,0 +1,20 @@
+<div class="h-full grid grid-cols-2 grid-rows-2 gap-3">
+  <ng-container *ngFor="let slot of slots(); let i = index">
+    <div class="h-full w-full bg-white rounded-lg border border-[--primary-bg] shadow-sm p-3 flex flex-col overflow-hidden">
+      <div class="text-xs sm:text-sm font-semibold italic text-gray-800 truncate">
+        {{ visibleNotes()[i]?.title || '—' }}
+      </div>
+
+      <div class="mt-2 text-[11px] sm:text-xs leading-relaxed text-gray-600 overflow-hidden">
+        <ng-container *ngIf="visibleNotes()[i]?.preview; else emptyDescr">
+          <p class="line-clamp-4">
+            {{ visibleNotes()[i]?.preview }}
+          </p>
+        </ng-container>
+        <ng-template #emptyDescr>
+          <p class="italic text-gray-400">No description</p>
+        </ng-template>
+      </div>
+    </div>
+  </ng-container>
+</div>

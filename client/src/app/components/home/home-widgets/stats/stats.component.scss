@@ -1,0 +1,37 @@
+/* src/app/components/widgets/stats/stats.component.scss */
+.stats-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background: #fffef7;
+  border: 1px solid var(--slot-border, #ddd);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,.05);
+}
+
+.label {
+  font-weight: 600;
+  color: #5b4636;
+}
+
+.value {
+  font-weight: bold;
+  color: #222;
+}
+
+.status {
+  padding: 0.5rem;
+  text-align: center;
+  font-style: italic;
+}
+.status.error {
+  color: #d32f2f;
+}

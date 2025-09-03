@@ -1,9 +1,17 @@
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { filter, Subscription } from 'rxjs';
+import { filter, Subscription, distinctUntilChanged } from 'rxjs';
 import { GradesService } from '../../../service/grades.service';
 import { Grade } from '../../../model/entity/grade.model';
+import {
+  normalizeAndSort,
+  computeTotals,
+  groupByYear,
+  toNumericGrade,
+  formatDate,
+} from '../../../utils/grades.utils';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({
   selector: 'app-grades-view',
@@ -15,18 +23,18 @@ import { Grade } from '../../../model/entity/grade.model';
 export class GradesViewComponent implements OnInit, OnDestroy {
   private gradesService = inject(GradesService);
   private router = inject(Router);
+  private timeMachine = inject(TimeMachineService);
   private navSub?: Subscription;
+  private tmSub?: Subscription;
 
   grades: Grade[] = [];
   loading = false;
   error: string | null = null;
 
-  // paging (se servirà in futuro)
   limit = 1000;
   offset = 0;
   total = 0;
 
-  // computed
   totalCFU = 0;
   average = 0;
   laureaBase = 0;
@@ -40,8 +48,7 @@ export class GradesViewComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.fetch();
 
-    // Quando si torna dalla route di delete (o da qualunque altra navigazione verso /grades),
-    // ricarica la lista e ricalcola le statistiche SENZA refresh di pagina.
+    // Ricarica la lista al ritorno su /grades senza refresh
     this.navSub = this.router.events
       .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
       .subscribe((e) => {
@@ -49,52 +56,62 @@ export class GradesViewComponent implements OnInit, OnDestroy {
           this.fetch();
         }
       });
+
+    // Ascolta i cambiamenti del Time Machine e ricarica dinamicamente
+    this.tmSub = this.timeMachine
+      .virtualNow$()
+      .pipe(distinctUntilChanged((a, b) => a?.getTime() === b?.getTime()))
+      .subscribe(() => this.fetch());
   }
 
   ngOnDestroy(): void {
     this.navSub?.unsubscribe();
+    this.tmSub?.unsubscribe();
   }
 
   fetch(): void {
     this.loading = true;
     this.error = null;
 
-    this.gradesService.list({ limit: this.limit, offset: this.offset }).subscribe({
-      next: (res) => {
-        this.grades = (res.items ?? []).slice();
-        this.total = res.count ?? this.grades.length;
-        this.normalizeAndSort();
-        this.computeTotals();
-        this.groupByYear();
-        this.collapsedYears.clear();
-        this.loading = false;
-      },
-      error: (err) => {
-        this.error = err?.message || 'Errore nel caricamento';
-        this.loading = false;
-      },
-    });
+    const cutoff = this.timeMachine.isActive()
+      ? this.timeMachine.getNow()
+      : new Date();
+
+    this.gradesService
+      .list({
+        limit: this.limit,
+        offset: this.offset,
+        to: cutoff.toISOString(),
+      })
+      .subscribe({
+        next: (res) => {
+          this.grades = (res.items ?? []).slice();
+          this.total = res.count ?? this.grades.length;
+
+          this.grades = normalizeAndSort(this.grades);
+
+          const totals = computeTotals(this.grades);
+          this.totalCFU = totals.totalCFU;
+          this.average = totals.average;
+          this.laureaBase = totals.laureaBase;
+
+          const grouped = groupByYear(this.grades);
+          this.byYear = grouped.byYear;
+          this.years = grouped.years;
+
+          this.collapsedYears.clear();
+          this.loading = false;
+        },
+        error: (err) => {
+          this.error = err?.message || 'Errore nel caricamento';
+          this.loading = false;
+        },
+      });
   }
 
-  // ---------- Helpers usati nel template ----------
-  toNumericGrade(grade: number | string | null | undefined): number | null {
-    if (grade == null) return null;
-    if (typeof grade === 'number') return grade;
-    const s = String(grade).trim().toLowerCase();
-    if (s === 'passed' || s === 'idoneo') return null;
-    const n = parseInt(s, 10);
-    return Number.isFinite(n) ? n : null;
-  }
+  toNumericGrade = (grade: number | string | null | undefined) => toNumericGrade(grade);
 
-  formatDate(d?: string | null): string {
-    if (!d) return '';
-    const dt = new Date(d);
-    if (isNaN(dt.getTime())) return '';
-    const dd = String(dt.getDate()).padStart(2, '0');
-    const mm = String(dt.getMonth() + 1).padStart(2, '0');
-    const yyyy = dt.getFullYear();
-    return `${dd}/${mm}/${yyyy}`;
-  }
+  formatDate = (d?: string | null) => formatDate(d);
 
   trackById = (_: number, g: Grade) => g.id;
 
@@ -105,44 +122,5 @@ export class GradesViewComponent implements OnInit, OnDestroy {
   toggleYear(year: string): void {
     if (this.collapsedYears.has(year)) this.collapsedYears.delete(year);
     else this.collapsedYears.add(year);
-  }
-
-  // ---------- Interni ----------
-  private normalizeAndSort(): void {
-    this.grades.sort((a, b) => {
-      const ya = (a.year ?? '').localeCompare(b.year ?? '');
-      if (ya !== 0) return ya;
-      const da = a.date ? new Date(a.date).getTime() : 0;
-      const db = b.date ? new Date(b.date).getTime() : 0;
-      if (da !== db) return da - db;
-      return (a.course_name ?? '').localeCompare(b.course_name ?? '');
-    });
-  }
-
-  private computeTotals(): void {
-    this.totalCFU = this.grades.reduce((s, g) => s + (Number(g.cfu) || 0), 0);
-
-    let sumWeighted = 0;
-    let sumCfu = 0;
-    for (const g of this.grades) {
-      const nv = this.toNumericGrade(g.grade);
-      if (nv != null) {
-        const c = Number(g.cfu) || 0;
-        sumWeighted += nv * c;
-        sumCfu += c;
-      }
-    }
-    this.average = sumCfu > 0 ? +(sumWeighted / sumCfu).toFixed(2) : 0;
-    this.laureaBase = this.average ? +((this.average * 110) / 30).toFixed(2) : 0;
-  }
-
-  private groupByYear(): void {
-    this.byYear.clear();
-    for (const g of this.grades) {
-      const y = g.year || '—';
-      if (!this.byYear.has(y)) this.byYear.set(y, []);
-      this.byYear.get(y)!.push(g);
-    }
-    this.years = Array.from(this.byYear.keys());
   }
 }
