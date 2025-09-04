@@ -21,7 +21,7 @@ export class ChatAiComponent implements OnInit, AfterViewChecked, OnDestroy {
   messages: ChatMessage[] = [];
   currentMessage: string = '';
   isLoading: boolean = false;
-  isModalOpen: boolean = false;
+  isModalOpen: boolean = true;
   isUserLoggedIn: boolean = false;
   
   private destroy$ = new Subject<void>();

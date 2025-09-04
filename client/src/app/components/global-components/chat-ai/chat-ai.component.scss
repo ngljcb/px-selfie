@@ -23,8 +23,8 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 // Floating Action Button - Parallelo alla time machine
 .chat-fab {
   position: fixed;
-  bottom: 24px; // Stesso livello della time machine
-  left: 24px; // Angolo sinistro invece che destro
+  bottom: 13px; // Stesso livello della time machine
+  left: 15px; // Angolo sinistro invece che destro
   width: 150px; // Stessa dimensione della time machine
   height: 150px; // Stessa dimensione della time machine
   background: transparent; // Sfondo trasparente per mostrare solo l'immagine
@@ -46,9 +46,8 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 
   .sloth-icon {
-    width: 150px; // Stessa dimensione della time machine
-    height: auto; // Stessa dimensione della time machine
-    // Rimosso il filtro per mostrare l'immagine originale
+    width: 100px;
+    height: auto;
   }
 }
 
@@ -56,9 +55,9 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 .modal-overlay {
   position: fixed;
   top: 0;
-  left: 155px;
+  left: 120px;
   right: 0;
-  bottom: 40px;
+  bottom: 37px;
   background: transparent; // Desktop: nessun overlay per permettere interazione
   display: flex;
   align-items: flex-end; // Desktop: allinea al bottom per posizionare vicino al FAB
@@ -99,6 +98,7 @@ $shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   opacity: 0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   pointer-events: auto; // Ripristina eventi per il contenuto del modal
+  box-shadow:0 16px 28px rgba(0,0,0,.25);
 
   &.show {
     transform: scale(1) translateY(0);
