@@ -54,6 +54,15 @@ export class CalendarInfoComponent {
     this.close.emit();
   }
 
+  // NEW: handle event save
+  onEventSaved(ev: AppEvent): void {
+    this.showModify = false;
+    if (ev?.id != null) {
+      this.modify.emit(ev.id);
+    }
+    this.close.emit();
+  }
+
   toDateOnly(s?: string | null): string {
     if (!s) return '';
     const d = new Date(s);

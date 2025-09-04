@@ -1,12 +1,19 @@
+<!-- src/app/components/calendar/calendar-modify/calendar-modify.component.html -->
 <div class="modal-overlay">
   <div class="modal-container">
     <div class="calendar-info-wrapper">
-      <div class="header-row">
+      <div class="header-row" *ngIf="activity && !calendarEvent">
         <h2>Modify activity</h2>
         <button type="button" class="btn-close" (click)="onCancel()" aria-label="Close">×</button>
       </div>
 
-      <div class="info-grid">
+      <div class="header-row" *ngIf="calendarEvent && !activity">
+        <h2>Modify event</h2>
+        <button type="button" class="btn-close" (click)="onCancel()" aria-label="Close">×</button>
+      </div>
+
+      <!-- ===== ACTIVITY FORM (unchanged structure) ===== -->
+      <div class="info-grid" *ngIf="activity && !calendarEvent">
         <div>
           <label>Title *</label>
           <input [(ngModel)]="title" name="title" />
@@ -23,6 +30,79 @@
             <option value="pending">pending</option>
             <option value="done">done</option>
           </select>
+        </div>
+      </div>
+
+      <!-- ===== EVENT FORM (same structure as CalendarCreate for events) ===== -->
+      <div class="form-grid" *ngIf="calendarEvent && !activity">
+        <div>
+          <label>Title *</label>
+          <input [(ngModel)]="ev_title" name="ev_title" required />
+        </div>
+
+        <div>
+          <label>Place</label>
+          <input [(ngModel)]="location" name="location" />
+        </div>
+
+        <div class="row-group">
+          <div>
+            <label>Start date *</label>
+            <input type="date" [(ngModel)]="dataInizio" name="dataInizio" required />
+          </div>
+          <div>
+            <label>End date</label>
+            <input type="date" [(ngModel)]="dataFine" name="dataFine" />
+          </div>
+        </div>
+        <div *ngIf="erroreData" class="error-msg">
+          La data di inizio deve essere precedente a quella di fine.
+        </div>
+
+        <div class="row-group">
+          <div>
+            <label>Start time *</label>
+            <input type="time" [(ngModel)]="oraInizio" name="oraInizio" required />
+          </div>
+          <div>
+            <label>End time</label>
+            <input type="time" [(ngModel)]="oraFine" name="oraFine" />
+          </div>
+        </div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="isRecurring" name="isRecurring" />
+          <label for="isRecurring">Recurring event</label>
+        </div>
+
+        <div *ngIf="isRecurring" class="giorni-frequenza">
+          <label>Day of the week:</label>
+          <div class="checkbox-giorni">
+            <label *ngFor="let giorno of giorniSettimana">
+              <input type="checkbox" [(ngModel)]="giorniSelezionati[giorno]" name="{{giorno}}" />
+              {{ giorno }}
+            </label>
+          </div>
+        </div>
+
+        <div *ngIf="isRecurring" class="row-group">
+          <div>
+            <label>Recurrence type *</label>
+            <select [(ngModel)]="tipoRipetizione" name="tipoRipetizione">
+              <option disabled selected value=""> -- Select a type -- </option>
+              <option value="numeroFisso">Fixed number of recurrence</option>
+              <option value="scadenza">Due date</option>
+              <option value="indeterminato">Indefinite recurrence</option>
+            </select>
+          </div>
+          <div *ngIf="tipoRipetizione === 'numeroFisso'">
+            <label>Number of recurrence</label>
+            <input type="number" min="1" [(ngModel)]="ripetizioni" name="ripetizioni" />
+          </div>
+          <div *ngIf="tipoRipetizione === 'scadenza'">
+            <label>Due date</label>
+            <input type="date" [(ngModel)]="fineRicorrenza" name="fineRicorrenza" />
+          </div>
         </div>
       </div>
 

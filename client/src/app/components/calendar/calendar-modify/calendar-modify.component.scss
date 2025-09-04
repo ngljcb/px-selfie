@@ -1,52 +1,78 @@
-.calendar-info-wrapper {
+/* src/app/components/calendar/calendar-modify/calendar-modify.component.scss */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  z-index: 100008; /* > CalendarInfo (100000) */
+}
+
+.modal-container {
+  width: 100%;
   padding: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* Panel – match the clean look of CalendarInfo */
+.calendar-info-wrapper {
+  width: 700px;
+  max-width: 1000px;  
+  min-height: 300px;
+  max-height: 90vh;
+  overflow-y: auto;
   background-color: var(--secondary-bg);
   border-radius: 1rem;
-  max-width: 700px;
-  width: 100%;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 16px rgba(0,0,0,.15);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
 
+  /* Header */
   .header-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    width: 100%;
+    justify-content: center;
+    position: relative;
 
     h2 {
-      flex: 1;
       font-size: 1.6rem;
       font-weight: 700;
-      color: #5c3b00;
-      margin: 0;
+      margin-bottom: 0.1rem;
       text-align: center;
+      color: #5c3b00;
     }
 
     .btn-close {
-      background: none;
-      border: none;
+      position: absolute;
+      right: .25rem;
+      top: -.25rem;
+      background: transparent;
+      border: 0;
+      color: #5c3b00;
       font-size: 1.6rem;
-      font-weight: bold;
-      cursor: pointer;
-      color: #444;
-      padding: 0.3rem;
+      font-weight: 700;
       line-height: 1;
-      transition: color 0.2s;
+      padding: .25rem .5rem;
+      cursor: pointer;
+      border-radius: .5rem;
+      transition: background .15s ease, color .15s ease;
 
-      &:hover {
-        color: #e53935;
-      }
+      &:hover { background: rgba(0,0,0,.06); color: #e53935; }
     }
   }
 
-  .info-grid {
+  /* Shared form look (like CalendarInfo) */
+  .info-grid,
+  .form-grid {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    width: 100%;
 
     label {
       font-weight: 600;
@@ -56,94 +82,136 @@
       margin-bottom: 0.3rem;
     }
 
-    input, select {
+    input,
+    select,
+    textarea {
       width: 100%;
-      padding: 0.45rem 0.7rem;
-      border-radius: 0.5rem;
-      border: 1px solid #ccc;
-      background-color: #fff;
+      max-width: 100%;
+      padding: .45rem .7rem;
       font-size: 1rem;
       color: #333;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: .5rem;
       box-sizing: border-box;
-      transition: border-color 0.2s, box-shadow 0.2s;
+      transition: border-color .2s, box-shadow .2s;
 
       &:focus {
-        border-color: #fbbf24;
-        box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.3);
         outline: none;
+        border-color: #fbbf24;
+        box-shadow: 0 0 0 3px rgba(251,191,36,.3);
+      }
+    }
+
+    /* read-only / disabled consistency (not used here, but for parity) */
+    input[readonly],
+    textarea[readonly],
+    select[disabled] {
+      background: #fdfaf0;
+      color: #3f3a34;
+    }
+
+    .row-group {
+      display: flex;
+      gap: 1rem;
+
+      > div { flex: 1; }
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-top: .5rem;
+      font-weight: 600;
+      color: #444;
+
+      input { width: auto; margin: 0; }
+      label { flex: 1; }
+    }
+
+    .giorni-frequenza {
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+
+      .checkbox-giorni {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+
+        label {
+          display: flex;
+          align-items: center;
+          gap: .3rem;
+          white-space: nowrap;
+          font-weight: 500;
+        }
+
+        input[type='checkbox'] {
+          width: auto;
+          margin: 0;
+        }
       }
     }
   }
 
+  .error-msg {
+    color: #e53935;
+    font-weight: 700;
+    font-size: .9rem;
+  }
+
+  /* Actions – same gradient style as CalendarInfo */
   .button-row {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    margin-top: 0.5rem;
-    width: 100%;
+    margin-top: 1rem;
 
     button {
-      padding: 0.6rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: bold;
+      min-width: 140px;
+      padding: 0.6rem 2rem;
+      border: 0;
+      border-radius: .5rem;
+      font-weight: 700;
       font-size: 1rem;
       cursor: pointer;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-      border: none;
-      transition: background 0.3s, transform 0.1s;
-      display: flex;
+      box-shadow: 0 4px 6px rgba(0,0,0,.25);
+      transition: filter .15s ease, transform .06s ease;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.4rem;
-      min-width: 140px;
+      gap: .4rem;
 
       &:active { transform: translateY(1px); }
     }
 
     .btn-save {
       background: linear-gradient(to bottom, #ffa94d, #e65c00);
-      color: white;
+      color: #fff;
 
-      &:hover {
-        background: linear-gradient(to bottom, #ffb366, #ff6f1a);
-      }
+      &:hover { filter: brightness(1.05); }
     }
 
     .btn-cancel {
       background: linear-gradient(to bottom, #ffd0a2, #f79a64);
       color: #5c3b00;
 
-      &:hover {
-        background: linear-gradient(to bottom, #ffc386, #ff9b37);
-      }
+      &:hover { filter: brightness(1.03); }
     }
   }
 }
 
-/* overlay */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-}
-
-.modal-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  padding: 1rem;
-}
-
+/* Responsive parity with CalendarInfo */
 @media (max-width: 768px) {
   .calendar-info-wrapper {
     width: 90vw;
 
-    h2 { font-size: 1.3rem; }
+    .info-grid .row-group,
+    .form-grid .row-group {
+      flex-direction: column;
+    }
 
     .button-row {
       flex-direction: column;
@@ -151,5 +219,7 @@
 
       button { width: 100%; }
     }
+
+    .header-row h2 { font-size: 1.3rem; }
   }
 }

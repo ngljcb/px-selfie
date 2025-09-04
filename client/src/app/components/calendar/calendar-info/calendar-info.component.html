@@ -117,7 +117,10 @@
   </div>
 </div>
 
-<!-- Keep existing nested modals for activity actions -->
-<app-calendar-delete *ngIf="showDeleteConfirm" [activity]="activity" [calendarEvent]="calendarEvent" (deleted)="onConfirmDelete($event)" (cancel)="onCancelDelete()"></app-calendar-delete>
+<!-- Delete modal -->
+<app-calendar-delete *ngIf="showDeleteConfirm" [activity]="activity" [calendarEvent]="calendarEvent" (deleted)="onConfirmDelete($event)" (cancel)="onCancelDelete()">
+</app-calendar-delete>
 
-<app-calendar-modify *ngIf="showModify" [activity]="activity" (close)="onCancelModify()" (saved)="onSaved($event)"></app-calendar-modify>
+<!-- MODIFY modal: pass BOTH inputs + listen for eventSaved -->
+<app-calendar-modify *ngIf="showModify" [activity]="activity" [calendarEvent]="calendarEvent" (close)="onCancelModify()" (saved)="onSaved($event)" (eventSaved)="onEventSaved($event)">
+</app-calendar-modify>
