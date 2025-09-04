@@ -70,12 +70,12 @@ export class TimerViewComponent implements OnInit, OnDestroy {
           console.log('Login streak checked:', streakInfo);
           if (streakInfo.streakWasReset) {
             this.showNotification(
-              `Il tuo streak è stato resettato.`, 
+              `Your streak has been reset.`, 
               'phase-skipped'
             );
           } else if (streakInfo.canIncrementStreak) {
             this.showNotification(
-              `Completa una sessione per continuare il tuo streak.`, 
+              `Complete a session to continue your streak.`, 
               'phase-skipped'
             );
           }
@@ -112,9 +112,9 @@ export class TimerViewComponent implements OnInit, OnDestroy {
       this.timerService.pauseTimer();
       
       if (currentState.currentPhase === TimerPhase.STUDY && currentState.config.breakMinutes === 0) {
-        this.showNotification('Tempo di pausa!', 'study-complete');
+        this.showNotification('Break time!', 'study-complete');
       } else {
-        this.showNotification('Torniamo a studiare!', 'break-complete');
+        this.showNotification('Back to studying!', 'break-complete');
       }
     }
   }
@@ -196,7 +196,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
     const currentState = this.timerState;
     
     if (currentState && currentState.status === TimerStatus.RUNNING) {
-      const skippedPhase = currentState.currentPhase === TimerPhase.STUDY ? 'studio' : 'pausa';
+      const skippedPhase = currentState.currentPhase === TimerPhase.STUDY ? 'study' : 'break';
       
       if (currentState.currentPhase === TimerPhase.BREAK && 
           currentState.currentCycle >= currentState.config.totalCycles) {
@@ -205,7 +205,7 @@ export class TimerViewComponent implements OnInit, OnDestroy {
         return;
       }
       
-      this.showNotification(`Fase di ${skippedPhase} saltata!`, 'phase-skipped');
+      this.showNotification(`${skippedPhase.charAt(0).toUpperCase() + skippedPhase.slice(1)} phase skipped!`, 'phase-skipped');
 
       this.timerService.skipCurrentPhase();
 
