@@ -1,3 +1,4 @@
+// src/app/components/calendar/calendar-view/calendar-view.component.ts
 import { Component, OnDestroy, ChangeDetectorRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
@@ -38,6 +39,9 @@ export class CalendarViewComponent implements OnDestroy {
   selectedDate = '';
   selectedActivity: Activity | null = null;
   selectedEvent: AppEvent | null = null;
+
+  // Sidebar list (upcoming to-dos)
+  upcomingActivities: Activity[] = [];
 
   private lastMonthStart?: string;
   private lastMonthEnd?: string;
@@ -84,12 +88,16 @@ export class CalendarViewComponent implements OnDestroy {
 
     this.activitiesService.list({ from: fromISO, to: toISO }).subscribe({
       next: (res) => {
-        const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(res.items || []);
+        const items = res.items || [];
+        const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(items);
         api.addEventSource(activitiesAsEvents);
 
+        // refresh sidebar list
+        this.computeUpcomingTodos(items);
+
         this.eventsService.list({}).subscribe({
-          next: (items: AppEvent[]) => {
-            const expanded = items.flatMap(ev =>
+          next: (evs: AppEvent[]) => {
+            const expanded = evs.flatMap(ev =>
               this.calendarService.expandEventForWindow(ev, new Date(fromISO), new Date(toISO))
             );
             api.addEventSource(expanded);
@@ -108,7 +116,8 @@ export class CalendarViewComponent implements OnDestroy {
 
     this.activitiesService.list({}).subscribe({
       next: (res) => {
-        const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(res.items || []);
+        const items = res.items || [];
+        const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(items);
 
         const api = this.fc?.getApi();
         if (api) {
@@ -117,6 +126,9 @@ export class CalendarViewComponent implements OnDestroy {
         } else {
           this.calendarOptions = { ...this.calendarOptions, events: activitiesAsEvents };
         }
+
+        // refresh sidebar list
+        this.computeUpcomingTodos(items);
 
         this.loadAndInjectCalendarEvents();
         this.cdr.markForCheck();
@@ -180,6 +192,9 @@ export class CalendarViewComponent implements OnDestroy {
       const id = Number(String(info.event.id).split(':')[1]);
       const newDate = info.event.startStr.slice(0, 10);
       this.activitiesService.update(id, { due_date: newDate }).subscribe({
+        next: () => {
+          this.loadActivitiesAndRender();
+        },
         error: (err) => { console.error('Errore aggiornando due_date:', err); info.revert(); }
       });
     } else {
@@ -205,7 +220,6 @@ export class CalendarViewComponent implements OnDestroy {
     this.showInfo = false;
     this.selectedActivity = null;
     this.selectedEvent = null;
-    //this.loadActivitiesAndRender();
   }
 
   deleteActivity(id: number): void {
@@ -236,6 +250,26 @@ export class CalendarViewComponent implements OnDestroy {
 
     this.loadActivitiesAndRender();
   }
+
+  // ---------- helpers (sidebar) ----------
+  private computeUpcomingTodos(items: Activity[]): void {
+    const todayISO = this.timeMachine.getNow().toISOString().slice(0, 10);
+    this.upcomingActivities = (items || [])
+      .filter(a => !!a.due_date && (a.status ?? 'pending') !== 'done')
+      .filter(a => (a.due_date as string).slice(0, 10) >= todayISO)
+      .sort((a, b) => (a.due_date as string).localeCompare(b.due_date as string))
+      .slice(0, 50);
+  }
+
+  formatDue(d?: string | null): string {
+    if (!d) return '';
+    const dt = new Date(d);
+    if (isNaN(dt.getTime())) return (d as string).slice(0, 10);
+    return dt.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  // trackBy for *ngFor
+  trackActivity = (_: number, a: Activity) => a?.id ?? a?.title ?? _;
 
   ngOnDestroy(): void {}
 }
