@@ -1,8 +1,29 @@
-<main class="h-full items-center overflow-hidden flex flex-col">
-  <div class="h-full w-full justify-center flex-1 overflow-hidden px-10 py-10 sm:py-5 sm:px-5" [appTimeMachineListenerDirective]="applyVirtualNowToCalendar.bind(this)">
-    <full-calendar #fc *ngIf="calendarVisible" [options]="calendarOptions"></full-calendar>
-  </div>
+<!-- src/app/components/calendar/calendar-view/calendar-view.component.html -->
+<main class="calendar-shell" [appTimeMachineListenerDirective]="applyVirtualNowToCalendar.bind(this)">
+  <!-- LEFT: To-Dos -->
+  <aside class="todos-pane">
+    <div class="todos-header">TO DOs</div>
 
+    <div class="todo-list" *ngIf="upcomingActivities.length; else emptyTodos">
+      <article class="todo-card" *ngFor="let a of upcomingActivities; trackBy: trackActivity">
+        <div class="todo-body">
+          <div class="todo-title">{{ a.title || 'Untitled' }}</div>
+          <div class="todo-date"><em>Due date: {{ formatDue(a.due_date) }}</em></div>
+        </div>
+      </article>
+    </div>
+
+    <ng-template #emptyTodos>
+      <div class="todo-empty">No upcoming activities</div>
+    </ng-template>
+  </aside>
+
+  <!-- RIGHT: Calendar -->
+  <section class="calendar-pane">
+    <full-calendar #fc *ngIf="calendarVisible" [options]="calendarOptions"></full-calendar>
+  </section>
+
+  <!-- CREATE MODAL -->
   <div class="calendar-overlay" *ngIf="showCreate">
     <div class="calendar-create-wrapper">
       <button class="close-button" (click)="closeCreate()">×</button>
@@ -10,6 +31,7 @@
     </div>
   </div>
 
+  <!-- INFO MODAL -->
   <div class="calendar-overlay" *ngIf="showInfo">
     <div class="calendar-create-wrapper">
       <button class="close-button" (click)="closeInfo()">×</button>
