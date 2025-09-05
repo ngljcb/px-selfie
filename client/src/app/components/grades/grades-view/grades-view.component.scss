@@ -162,7 +162,7 @@ table {
   }
 
   tbody td {
-    padding: 14px;
+    padding: 8px;
     border-bottom: 1px solid var(--line);
     background: #ffffff;
     vertical-align: middle;
@@ -231,10 +231,22 @@ table {
   .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .stats .card { padding: 10px 12px; }
   .stats .card .value { font-size: 22px; }
+  table { 
+    tbody td {
+      padding: 8px;
+    }
+  }
 }
 
 @media (max-width: 640px) {
   .page-header h1 { font-size: 24px; }
   .page-header .btn.btn-add { top: -10px; right: 0; padding: 8px 12px; }
-  table { min-width: 520px; }
+  table { 
+    min-width: 520px;
+  
+    tbody td {
+      padding: 2px;
+      font-size: 12.5px;
+    }
+  }
 }
