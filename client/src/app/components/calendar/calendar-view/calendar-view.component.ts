@@ -1,3 +1,4 @@
+// src/app/components/calendar/calendar-view/calendar-view.component.ts
 import { Component, OnDestroy, ChangeDetectorRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
@@ -44,28 +45,34 @@ export class CalendarViewComponent implements OnDestroy {
   private lastMonthEnd?: string;
 
   private baseOptions(): CalendarOptions {
-    return {
-      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-      initialView: 'dayGridMonth',
-      initialDate: this.timeMachine.getNow(),
-      now: () => this.timeMachine.getNow(),
-      nowIndicator: true,
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      events: [],
-      editable: true,
-      eventDurationEditable: false,
-      selectable: true,
-      height: 'full',
-      dateClick: this.handleDateClick.bind(this),
-      eventDrop: this.handleEventDrop.bind(this),
-      eventClick: this.handleEventClick.bind(this),
-      datesSet: this.handleMonthDatesSet.bind(this)
-    };
-  }
+  return {
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: 'dayGridMonth',
+    initialDate: this.timeMachine.getNow(),
+    now: () => this.timeMachine.getNow(),
+    nowIndicator: true,
+    customButtons: {
+      add: {
+        text: '+ add',
+        click: () => this.openAdd()
+      }
+    },
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'add dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    events: [],
+    editable: true,
+    eventDurationEditable: false,
+    selectable: true,
+    height: 'full',
+    dateClick: this.handleDateClick.bind(this),
+    eventDrop: this.handleEventDrop.bind(this),
+    eventClick: this.handleEventClick.bind(this),
+    datesSet: this.handleMonthDatesSet.bind(this)
+  };
+}
 
   private handleMonthDatesSet(arg: DatesSetArg): void {
     if (arg.view.type !== 'dayGridMonth') return;
@@ -75,10 +82,7 @@ export class CalendarViewComponent implements OnDestroy {
     this.lastMonthStart = startISO;
     this.lastMonthEnd = endISO;
 
-    // refresh only the calendar grid for the new visible month
     this.refreshCurrentMonth(startISO, endISO);
-
-    // keep sidebar independent from the visible month
     this.refreshUpcomingTodos();
   }
 
@@ -126,7 +130,6 @@ export class CalendarViewComponent implements OnDestroy {
           this.calendarOptions = { ...this.calendarOptions, events: activitiesAsEvents };
         }
 
-        // refresh sidebar list (independent from month)
         this.computeUpcomingTodos(items);
 
         this.loadAndInjectCalendarEvents();
@@ -206,6 +209,11 @@ export class CalendarViewComponent implements OnDestroy {
     this.showCreate = true;
   }
 
+  openAdd(): void {
+    this.selectedDate = this.timeMachine.getNow().toISOString().slice(0, 10);
+    this.showCreate = true;
+  }
+
   closeCreate(): void {
     this.showCreate = false;
     this.selectedDate = '';
@@ -247,12 +255,10 @@ export class CalendarViewComponent implements OnDestroy {
     this.calendarVisible = true;
     this.cdr.detectChanges();
 
-    // reload both calendar and independent sidebar (since getNow() may have changed)
     this.loadActivitiesAndRender();
     this.refreshUpcomingTodos();
   }
 
-  // ---------- helpers (sidebar) ----------
   private computeUpcomingTodos(items: Activity[]): void {
     const todayISO = this.timeMachine.getNow().toISOString().slice(0, 10);
     this.upcomingActivities = (items || [])
@@ -262,7 +268,6 @@ export class CalendarViewComponent implements OnDestroy {
       .slice(0, 50);
   }
 
-  // Fetch for sidebar independently from calendar visible month
   private refreshUpcomingTodos(): void {
     this.activitiesService.list({}).subscribe({
       next: (res) => this.computeUpcomingTodos(res.items || []),
@@ -277,7 +282,6 @@ export class CalendarViewComponent implements OnDestroy {
     return dt.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  // trackBy for *ngFor
   trackActivity = (_: number, a: Activity) => a?.id ?? a?.title ?? _;
 
   ngOnDestroy(): void {}
