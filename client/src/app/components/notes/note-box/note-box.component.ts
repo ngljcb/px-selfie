@@ -14,6 +14,7 @@ import {
   AccessibilityType,
 } from '../../../model/note.interface';
 import { NotesService } from '../../../service/notes.service';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 @Component({
   selector: 'app-note-box',
@@ -45,7 +46,8 @@ export class NoteBoxComponent {
   constructor(
     private elementRef: ElementRef,
     private router: Router,
-    private notesService: NotesService
+    private notesService: NotesService,
+    private timeMachineService: TimeMachineService
   ) {}
 
   toggleMenu(event: Event): void {
@@ -62,13 +64,18 @@ export class NoteBoxComponent {
 
   onCardClick(event?: Event): void {
     if (event) {
-
       const target = event.target as HTMLElement;
       if (target.closest('button') || target.closest('.menu-container')) {
         return;
       }
     }
     this.onView.emit(this.note.id);
+  }
+
+  onEditClick(event: Event): void {
+    event.stopPropagation();
+    this.showMenu = false;
+    this.onEdit.emit(this.note.id);
   }
 
   async onCopyClick(event: Event): Promise<void> {
@@ -182,7 +189,7 @@ export class NoteBoxComponent {
   }
 
   formatDate(date: Date | string): string {
-    const now = new Date();
+    const now = this.timeMachineService.getNow();
     const noteDate = new Date(date);
     const diffTime = now.getTime() - noteDate.getTime();
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -212,7 +219,7 @@ export class NoteBoxComponent {
   }
 
   isRecentlyModified(date: Date | string): boolean {
-    const now = new Date();
+    const now = this.timeMachineService.getNow();
     const noteDate = new Date(date);
     const diffHours = (now.getTime() - noteDate.getTime()) / (1000 * 60 * 60);
     return diffHours <= 24;
@@ -288,5 +295,31 @@ export class NoteBoxComponent {
   getNoteCardClasses(): string {
     const baseClasses = 'relative note-box bg-[var(--today-bg)] rounded-2xl shadow-sm p-4 h-full flex flex-col transition-all duration-200 hover:shadow-md hover:bg-[var(--select-bg)] group cursor-pointer';
     return baseClasses;
+  }
+
+  getLastModificationText(): string {
+    if (!this.note.lastModifyAt) return '';
+    return this.formatDate(this.note.lastModifyAt);
+  }
+
+  getFullModificationDate(): string {
+    if (!this.note.lastModifyAt) return '';
+    return new Date(this.note.lastModifyAt).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  getFullCreationDate(): string {
+    return new Date(this.note.createdAt).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   }
 }

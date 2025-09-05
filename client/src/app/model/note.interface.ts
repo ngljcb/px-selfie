@@ -40,6 +40,7 @@ export interface NoteWithDetails extends Note {
   canDelete?: boolean;
   preview?: string;
   contentLength?: number;
+  lastModifyAt?: Date; 
 }
 
 export interface CreateNoteRequest {
@@ -50,6 +51,7 @@ export interface CreateNoteRequest {
   groupName?: string;
   authorizedUserIds?: string[];
   createdAt?: Date; 
+  lastModifyAt?: Date; 
 }
 
 export interface UpdateNoteRequest {
@@ -59,6 +61,7 @@ export interface UpdateNoteRequest {
   accessibility?: AccessibilityType;
   groupName?: string;
   authorizedUserIds?: string[];
+  lastModifyAt?: Date;
 }
 
 export interface NoteFilterParams {

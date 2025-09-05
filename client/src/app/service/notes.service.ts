@@ -122,7 +122,12 @@ export class NotesService {
   }
 
   updateNote(id: string, noteData: UpdateNoteRequest): Observable<NoteWithDetails> {
-    return this.http.put<NoteWithDetails>(`${this.apiUrl}/${id}`, noteData, {
+    const requestData = {
+      ...noteData,
+      lastModifyAt: noteData.lastModifyAt ? noteData.lastModifyAt.toISOString() : undefined
+    };
+
+    return this.http.put<NoteWithDetails>(`${this.apiUrl}/${id}`, requestData, {
       withCredentials: true
     })
       .pipe(

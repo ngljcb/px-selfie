@@ -101,7 +101,8 @@ async function getNotePreviews(userId, sortBy, limit) {
     accessibility: note.accessibility,
     contentLength: (note.text || '').length,
     canEdit: false, 
-    canDelete: note.creator === userId
+    canDelete: note.creator === userId,
+    canEdit: note.creator === userId,
   }));
 }
 
@@ -152,7 +153,6 @@ async function getNoteById(userId, noteId) {
       .eq('note_id', noteId);
     
     if (authUsers && authUsers.length > 0) {
-
       const userIds = authUsers.map(au => au.user_id);
       const { data: users } = await supabase
         .from('profiles')
@@ -160,7 +160,10 @@ async function getNoteById(userId, noteId) {
         .in('id', userIds);
       
       authorizedUsers = authUsers.map(authUser => ({
-        ...authUser,
+        id: authUser.id,
+        noteId: noteId,
+        userId: authUser.user_id, 
+        grantedAt: authUser.granted_at,
         user: users?.find(u => u.id === authUser.user_id) || null
       }));
     }
@@ -168,9 +171,11 @@ async function getNoteById(userId, noteId) {
 
   const enrichedNote = {
     ...note,
+    groupName: note.group_name, 
     category_details: categoryDetails,
     group_details: groupDetails,
-    authorized_users: authorizedUsers
+    authorized_users: authorizedUsers,
+    authorizedUsers: authorizedUsers 
   };
 
   return enrichNoteWithMetadata(enrichedNote, userId);
@@ -189,7 +194,8 @@ async function createNote(userId, noteData) {
     category: noteData.category || null,
     accessibility: noteData.accessibility,
     group_name: noteData.groupName || null,
-    created_at: createdAt 
+    created_at: createdAt,
+    lastModifyAt: createdAt,
   };
 
   const { data: note, error } = await supabase
@@ -278,6 +284,72 @@ async function shareNote(userId, noteId, userIds) {
 
   await addAuthorizedUsers(noteId, userIds);
 }
+
+async function updateNote(userId, noteId, updateData) {
+
+  const note = await getNoteById(userId, noteId);
+  if (note.creator !== userId) {
+    throw new Error('Access denied');
+  }
+
+  await validateNoteData(updateData, userId);
+
+  const modificationTime = updateData.lastModifyAt || new Date().toISOString();
+
+  const noteToUpdate = {
+    title: updateData.title,
+    text: updateData.text,
+    category: updateData.category || null,
+    accessibility: updateData.accessibility,
+    group_name: updateData.groupName || null,
+    last_modify_at: modificationTime  
+  };
+
+  const { data: updatedNote, error } = await supabase
+    .from('notes')
+    .update(noteToUpdate)
+    .eq('id', noteId)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(`Error updating note: ${error.message}`);
+  }
+
+  if (updateData.accessibility === ACCESSIBILITY_TYPES.AUTHORIZED) {
+    await supabase
+      .from('note_authorized_users')
+      .delete()
+      .eq('note_id', noteId);
+
+    if (updateData.authorizedUserIds?.length > 0) {
+      await addAuthorizedUsers(noteId, updateData.authorizedUserIds);
+    }
+  } else {
+    await supabase
+      .from('note_authorized_users')
+      .delete()
+      .eq('note_id', noteId);
+  }
+
+  let categoryDetails = null;
+  if (updatedNote.category) {
+    const { data: category } = await supabase
+      .from('category')
+      .select('name')
+      .eq('name', updatedNote.category)
+      .single();
+    categoryDetails = category;
+  }
+
+  const enrichedNote = {
+    ...updatedNote,
+    category_details: categoryDetails
+  };
+
+  return enrichNoteWithMetadata(enrichedNote, userId);
+}
+
 
 async function getNotePermissions(userId, noteId) {
   const note = await getNoteById(userId, noteId);
@@ -419,8 +491,10 @@ function enrichNoteWithMetadata(note, userId) {
     ...note,
     preview,
     contentLength,
+    canEdit: note.creator === userId,
     canDelete: note.creator === userId,
-    createdAt: note.created_at
+    createdAt: note.created_at,
+    lastModifyAt: note.last_modify_at 
   };
 }
 
@@ -540,5 +614,6 @@ module.exports = {
   getNotePermissions,
   bulkOperation,
   getNotesStats,
-  getNotesCountByAccessibility
+  getNotesCountByAccessibility,
+  updateNote
 };
