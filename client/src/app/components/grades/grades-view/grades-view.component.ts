@@ -1,3 +1,4 @@
+// src/app/components/grades/grades-view/grades-view.component.ts 
 import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
@@ -82,7 +83,9 @@ export class GradesViewComponent implements OnInit, OnDestroy {
         limit: this.limit,
         offset: this.offset,
         to: cutoff.toISOString(),
-      })
+        // cache buster per evitare eventuali risposte stale dopo una modifica
+        ts: Date.now()
+      } as any)
       .subscribe({
         next: (res) => {
           this.grades = (res.items ?? []).slice();

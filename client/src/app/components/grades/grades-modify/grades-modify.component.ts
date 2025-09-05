@@ -1,3 +1,4 @@
+// src/app/components/grades/grades-modify/grades-modify.component.ts 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -76,7 +77,13 @@ export class GradesModifyComponent implements OnInit {
     this.gradesService.update(this.grade.id, patch).subscribe({
       next: () => {
         this.saving = false;
-        this.router.navigate(['/grades']);
+
+        // Best-effort: invalida eventuale cache del service se presente (non cambia la logica esistente)
+        (this.gradesService as any)?.resetState?.();
+        (this.gradesService as any)?.refreshGrades?.();
+
+        // Naviga a /grades con un query param “buster” per forzare il refresh della lista/medie
+        this.router.navigate(['/grades'], { queryParams: { r: Date.now() } });
       },
       error: () => {
         this.saving = false;
