@@ -32,11 +32,19 @@
   <div class="space-y-2 mb-4">
     <div class="flex items-center text-xs text-gray-600">
       <span class="font-medium truncate" [title]="getCategoryName()">
-        📁 {{ getCategoryName() }}
+        📂 {{ getCategoryName() }}
       </span>
     </div>
 
-    <div class="flex items-center justify-end">
+    <div class="flex items-center justify-between">
+      <div class="text-xs text-gray-500">
+        <span *ngIf="note.lastModifyAt" [title]="getFullModificationDate()">
+          Modified: {{ getLastModificationText() }}
+        </span>
+        <span *ngIf="!note.lastModifyAt" [title]="getFullCreationDate()">
+          Created: {{ formatDate(note.createdAt) }}
+        </span>
+      </div>
 
       <div class="relative" #menuContainer>
         <button
@@ -50,6 +58,13 @@
              class="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-in slide-in-from-bottom-2 duration-200">
           
           <button
+            *ngIf="canEdit()"
+            (click)="onEditClick($event)"
+            class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
+            <span>Edit</span>
+          </button>
+
+          <button
             (click)="onCopyClick($event)"
             class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2">
             <span>Copy content</span>
@@ -62,9 +77,9 @@
           </button>
           
           <button
-            *ngIf="canDelete()" class="my-1 border-gray-200"
+            *ngIf="canDelete()"
             (click)="onDeleteClick($event)"
-            class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2">
+            class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 border-t border-gray-200">
             <span>Delete</span>
           </button>
         </div>

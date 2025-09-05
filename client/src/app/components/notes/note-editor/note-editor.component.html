@@ -14,12 +14,12 @@
           
           <div class="h-6 w-px bg-gray-300"></div>
           
-          <h1 class="text-2xl font-bold text-gray-900">Create Note</h1>
+          <h1 class="text-2xl font-bold text-gray-900">{{ getPageTitle() }}</h1>
         </div>
 
         <div class="flex items-center gap-3">
           <button 
-            (click)="createNote()"
+            (click)="saveNote()"
             [disabled]="!isFormValid() || isSaving"
             class="flex items-center gap-2 px-6 py-2 bg-[var(--primary-bg)] hover:bg-[var(--primary-hover-bg)] text-black font-bold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
             <span class="animate-spin w-4 h-4 border-2 border-black border-t-transparent rounded-full" *ngIf="isSaving"></span>
