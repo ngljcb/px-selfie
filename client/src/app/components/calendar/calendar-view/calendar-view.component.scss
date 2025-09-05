@@ -109,9 +109,9 @@
 }
 :host ::ng-deep .fc-button:hover { background-color: var(--primary-hover-bg) !important; outline: none; color: #f54c4c !important; }
 :host ::ng-deep .fc-button.fc-button-active { background-color: #422E29 !important; font-weight: bold; }
-:host ::ng-deep .fc-today-button { background-color: #9c7f78 !important; }
+:host ::ng-deep .fc-today-button { color: #000 !important; background-color: var(--primary-bg) !important; }
 :host ::ng-deep .fc-today-button:hover,
-:host ::ng-deep .fc-today-button:focus { background-color: var(--primary-hover-bg) !important; outline: none; color: #f54c4c; }
+:host ::ng-deep .fc-today-button:focus { background-color: var(--primary-hover-bg) !important; outline: none; color: #f54c4c !important; }
 :host ::ng-deep .fc { display: flex; flex-direction: column; height: 100%; }
 :host ::ng-deep .fc-header-toolbar { flex-shrink: 0; z-index: 10; position: sticky; top: 0; }
 :host ::ng-deep .fc-col-header { flex-shrink: 0; background: white; z-index: 10; position: sticky; top: 0; }

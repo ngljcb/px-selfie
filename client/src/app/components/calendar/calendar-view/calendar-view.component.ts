@@ -39,36 +39,40 @@ export class CalendarViewComponent implements OnDestroy {
   selectedDate = '';
   selectedActivity: Activity | null = null;
   selectedEvent: AppEvent | null = null;
-
-  // Sidebar list (upcoming to-dos)
   upcomingActivities: Activity[] = [];
 
   private lastMonthStart?: string;
   private lastMonthEnd?: string;
 
   private baseOptions(): CalendarOptions {
-    return {
-      plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-      initialView: 'dayGridMonth',
-      initialDate: this.timeMachine.getNow(),
-      now: () => this.timeMachine.getNow(),
-      nowIndicator: true,
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'dayGridMonth,timeGridWeek,timeGridDay'
-      },
-      events: [],
-      editable: true,
-      eventDurationEditable: false,
-      selectable: true,
-      height: 'full',
-      dateClick: this.handleDateClick.bind(this),
-      eventDrop: this.handleEventDrop.bind(this),
-      eventClick: this.handleEventClick.bind(this),
-      datesSet: this.handleMonthDatesSet.bind(this)
-    };
-  }
+  return {
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: 'dayGridMonth',
+    initialDate: this.timeMachine.getNow(),
+    now: () => this.timeMachine.getNow(),
+    nowIndicator: true,
+    customButtons: {
+      add: {
+        text: '+ add',
+        click: () => this.openAdd()
+      }
+    },
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'add dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    events: [],
+    editable: true,
+    eventDurationEditable: false,
+    selectable: true,
+    height: 'full',
+    dateClick: this.handleDateClick.bind(this),
+    eventDrop: this.handleEventDrop.bind(this),
+    eventClick: this.handleEventClick.bind(this),
+    datesSet: this.handleMonthDatesSet.bind(this)
+  };
+}
 
   private handleMonthDatesSet(arg: DatesSetArg): void {
     if (arg.view.type !== 'dayGridMonth') return;
@@ -77,7 +81,9 @@ export class CalendarViewComponent implements OnDestroy {
     if (this.lastMonthStart === startISO && this.lastMonthEnd === endISO) return;
     this.lastMonthStart = startISO;
     this.lastMonthEnd = endISO;
+
     this.refreshCurrentMonth(startISO, endISO);
+    this.refreshUpcomingTodos();
   }
 
   private refreshCurrentMonth(fromISO: string, toISO: string): void {
@@ -91,9 +97,6 @@ export class CalendarViewComponent implements OnDestroy {
         const items = res.items || [];
         const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(items);
         api.addEventSource(activitiesAsEvents);
-
-        // refresh sidebar list
-        this.computeUpcomingTodos(items);
 
         this.eventsService.list({}).subscribe({
           next: (evs: AppEvent[]) => {
@@ -127,7 +130,6 @@ export class CalendarViewComponent implements OnDestroy {
           this.calendarOptions = { ...this.calendarOptions, events: activitiesAsEvents };
         }
 
-        // refresh sidebar list
         this.computeUpcomingTodos(items);
 
         this.loadAndInjectCalendarEvents();
@@ -207,6 +209,11 @@ export class CalendarViewComponent implements OnDestroy {
     this.showCreate = true;
   }
 
+  openAdd(): void {
+    this.selectedDate = this.timeMachine.getNow().toISOString().slice(0, 10);
+    this.showCreate = true;
+  }
+
   closeCreate(): void {
     this.showCreate = false;
     this.selectedDate = '';
@@ -249,9 +256,9 @@ export class CalendarViewComponent implements OnDestroy {
     this.cdr.detectChanges();
 
     this.loadActivitiesAndRender();
+    this.refreshUpcomingTodos();
   }
 
-  // ---------- helpers (sidebar) ----------
   private computeUpcomingTodos(items: Activity[]): void {
     const todayISO = this.timeMachine.getNow().toISOString().slice(0, 10);
     this.upcomingActivities = (items || [])
@@ -261,6 +268,13 @@ export class CalendarViewComponent implements OnDestroy {
       .slice(0, 50);
   }
 
+  private refreshUpcomingTodos(): void {
+    this.activitiesService.list({}).subscribe({
+      next: (res) => this.computeUpcomingTodos(res.items || []),
+      error: () => {/* keep old list on failure */}
+    });
+  }
+
   formatDue(d?: string | null): string {
     if (!d) return '';
     const dt = new Date(d);
@@ -268,7 +282,6 @@ export class CalendarViewComponent implements OnDestroy {
     return dt.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  // trackBy for *ngFor
   trackActivity = (_: number, a: Activity) => a?.id ?? a?.title ?? _;
 
   ngOnDestroy(): void {}
