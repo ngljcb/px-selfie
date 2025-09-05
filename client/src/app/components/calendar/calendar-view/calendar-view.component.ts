@@ -1,4 +1,3 @@
-// src/app/components/calendar/calendar-view/calendar-view.component.ts
 import { Component, OnDestroy, ChangeDetectorRef, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FullCalendarModule, FullCalendarComponent } from '@fullcalendar/angular';
@@ -39,8 +38,6 @@ export class CalendarViewComponent implements OnDestroy {
   selectedDate = '';
   selectedActivity: Activity | null = null;
   selectedEvent: AppEvent | null = null;
-
-  // Sidebar list (upcoming to-dos)
   upcomingActivities: Activity[] = [];
 
   private lastMonthStart?: string;
@@ -77,7 +74,12 @@ export class CalendarViewComponent implements OnDestroy {
     if (this.lastMonthStart === startISO && this.lastMonthEnd === endISO) return;
     this.lastMonthStart = startISO;
     this.lastMonthEnd = endISO;
+
+    // refresh only the calendar grid for the new visible month
     this.refreshCurrentMonth(startISO, endISO);
+
+    // keep sidebar independent from the visible month
+    this.refreshUpcomingTodos();
   }
 
   private refreshCurrentMonth(fromISO: string, toISO: string): void {
@@ -91,9 +93,6 @@ export class CalendarViewComponent implements OnDestroy {
         const items = res.items || [];
         const activitiesAsEvents = this.calendarService.mapActivitiesToEvents(items);
         api.addEventSource(activitiesAsEvents);
-
-        // refresh sidebar list
-        this.computeUpcomingTodos(items);
 
         this.eventsService.list({}).subscribe({
           next: (evs: AppEvent[]) => {
@@ -127,7 +126,7 @@ export class CalendarViewComponent implements OnDestroy {
           this.calendarOptions = { ...this.calendarOptions, events: activitiesAsEvents };
         }
 
-        // refresh sidebar list
+        // refresh sidebar list (independent from month)
         this.computeUpcomingTodos(items);
 
         this.loadAndInjectCalendarEvents();
@@ -248,7 +247,9 @@ export class CalendarViewComponent implements OnDestroy {
     this.calendarVisible = true;
     this.cdr.detectChanges();
 
+    // reload both calendar and independent sidebar (since getNow() may have changed)
     this.loadActivitiesAndRender();
+    this.refreshUpcomingTodos();
   }
 
   // ---------- helpers (sidebar) ----------
@@ -259,6 +260,14 @@ export class CalendarViewComponent implements OnDestroy {
       .filter(a => (a.due_date as string).slice(0, 10) >= todayISO)
       .sort((a, b) => (a.due_date as string).localeCompare(b.due_date as string))
       .slice(0, 50);
+  }
+
+  // Fetch for sidebar independently from calendar visible month
+  private refreshUpcomingTodos(): void {
+    this.activitiesService.list({}).subscribe({
+      next: (res) => this.computeUpcomingTodos(res.items || []),
+      error: () => {/* keep old list on failure */}
+    });
   }
 
   formatDue(d?: string | null): string {
