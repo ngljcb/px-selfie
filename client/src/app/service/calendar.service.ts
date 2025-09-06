@@ -1,3 +1,4 @@
+// src/app/service/calendar.service.ts
 import { Injectable } from '@angular/core';
 import { Activity } from '../model/activity.model';
 import { Event as AppEvent } from '../model/event.model';
@@ -11,7 +12,8 @@ export class CalendarService {
       title: act.title,
       start: act.due_date,
       allDay: true,
-      backgroundColor: act.status === 'done' ? '#e250ff' : '#f54b4b'
+      backgroundColor: act.status === 'done' ? '#91ff00' : '#ff6df3',
+      color: act.status === 'done' ? '#91ff00' : '#ff6df3'
     }));
   }
 
@@ -38,7 +40,8 @@ export class CalendarService {
         start: startISO,
         end: endISO ?? undefined,
         allDay: !startTime && !endTime,
-        backgroundColor: '#08dd61'
+        backgroundColor: '#2ecc70',
+        color: '#2ecc70',
       });
     };
 
@@ -54,6 +57,69 @@ export class CalendarService {
     }
 
     const days = this.parseDays(ev.days_recurrence);
+
+    // --- SCADENZA senza giorni specificati: mostra OGNI GIORNO da start_date a due_date inclusa
+    if (rtype === 'scadenza' && ev.due_date && days.length === 0) {
+      const due = this.parseISODate(ev.due_date)!;
+      const rangeStart = new Date(Math.max(startDate.getTime(), winStart.getTime()));
+      const rangeEnd = new Date(Math.min(due.getTime(), winEnd.getTime()));
+      rangeStart.setHours(0, 0, 0, 0);
+      rangeEnd.setHours(0, 0, 0, 0);
+
+      for (let d = new Date(rangeStart); d.getTime() <= rangeEnd.getTime(); d.setDate(d.getDate() + 1)) {
+        pushOccurrence(d);
+      }
+      return out;
+    }
+
+    // --- NUMEROFISSO senza days_recurrence: N GIORNI CONSECUTIVI da start_date (inclusa)
+    if (rtype === 'numeroFisso' && days.length === 0 && (ev.number_recurrence ?? 0) > 0) {
+      const n = ev.number_recurrence as number; // già > 0
+      const last = new Date(startDate);
+      last.setDate(last.getDate() + (n - 1)); // inclusivo
+
+      const rangeStart = new Date(Math.max(startDate.getTime(), winStart.getTime()));
+      const rangeEnd = new Date(Math.min(last.getTime(), winEnd.getTime()));
+      rangeStart.setHours(0, 0, 0, 0);
+      rangeEnd.setHours(0, 0, 0, 0);
+
+      for (let d = new Date(rangeStart); d.getTime() <= rangeEnd.getTime(); d.setDate(d.getDate() + 1)) {
+        pushOccurrence(d);
+      }
+      return out;
+    }
+
+    // --- INDETERMINATO senza days_recurrence: ricorrenza ANNUALE nella stessa data (mese/giorno)
+    if (rtype === 'indeterminato' && days.length === 0) {
+      const startYear = Math.max(startDate.getFullYear(), winStart.getFullYear());
+      const endYear = winEnd.getFullYear();
+      const m = startDate.getMonth();
+      const d = startDate.getDate();
+
+      for (let y = startYear; y <= endYear; y++) {
+        const occ = new Date(y, m, d);
+        occ.setHours(0, 0, 0, 0);
+        if (occ < startDate) continue;
+        if (occ >= winEnd || occ < winStart) continue;
+
+        const startISO = this.combineDateTime(occ, startTime);
+        const endISO = endTime ? this.combineDateTime(occ, endTime) : undefined;
+
+        out.push({
+          id: `E:${ev.id}:${startISO}`,
+          title: ev.title,
+          start: startISO,
+          end: endISO,
+          allDay: !startTime && !endTime,
+          backgroundColor: '#2ecc70',
+          color: '#2ecc70',
+        });
+      }
+      return out;
+    }
+
+    // Caso generale: ricorrenza settimanale (con giorni specificati o il giorno di startDate),
+    // con fine inclusiva se 'scadenza' (<= due_date).
     const daysToUse = days.length ? days : [startDate.getDay()];
 
     const seriesStart = new Date(Math.max(startDate.getTime(), winStart.getTime()));
@@ -68,19 +134,19 @@ export class CalendarService {
     let cursor = new Date(seriesStart);
     cursor.setHours(0, 0, 0, 0);
 
-    while (cursor <= searchEnd && occurrencesLeft > 0) {
+    while (cursor.getTime() <= searchEnd.getTime() && occurrencesLeft > 0) {
       const weekStart = new Date(cursor);
       weekStart.setDate(weekStart.getDate() - weekStart.getDay());
       weekStart.setHours(0, 0, 0, 0);
 
       for (const wd of daysToUse) {
-        const d = new Date(weekStart);
-        d.setDate(weekStart.getDate() + wd);
-        if (d < seriesStart) continue;
-        if (seriesEndHard && d > seriesEndHard) continue;
-        if (d > searchEnd) continue;
+        const dW = new Date(weekStart);
+        dW.setDate(weekStart.getDate() + wd);
+        if (dW < seriesStart) continue;
+        if (seriesEndHard && dW > seriesEndHard) continue;
+        if (dW > searchEnd) continue;
 
-        pushOccurrence(d);
+        pushOccurrence(dW);
         occurrencesLeft--;
         if (occurrencesLeft <= 0) break;
       }
