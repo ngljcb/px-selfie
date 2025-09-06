@@ -1,5 +1,5 @@
 // src/app/components/calendar/calendar-modify/calendar-modify.component.ts
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, DoCheck } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Activity } from '../../../model/activity.model';
@@ -17,7 +17,7 @@ type Variant = 'success' | 'error' | 'info' | 'warning';
   templateUrl: './calendar-modify.component.html',
   styleUrl: './calendar-modify.component.scss'
 })
-export class CalendarModifyComponent implements OnChanges {
+export class CalendarModifyComponent implements OnChanges, DoCheck {
   @Input() activity: Activity | null = null;
   @Input() calendarEvent: CalendarEvent | null = null;
 
@@ -37,11 +37,10 @@ export class CalendarModifyComponent implements OnChanges {
   ev_title = '';
   location = '';
   dataInizio = '';
-  dataFine = '';
   oraInizio = '';
   oraFine = '';
   isRecurring = false;
-  tipoRipetizione: '' | 'numeroFisso' | 'scadenza' | 'indeterminato' = '';
+  tipoRipetizione: '' | 'giorniSettimana' | 'numeroFisso' | 'scadenza' | 'indeterminato' = '';
   ripetizioni: number | null = null;
   fineRicorrenza = '';
   giorniSettimana: string[] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -60,6 +59,9 @@ export class CalendarModifyComponent implements OnChanges {
   private lastSavedActivity!: Activity;
   private lastSavedEvent!: CalendarEvent;
 
+  // tracker per intercettare quando il flag passa da true -> false
+  private prevIsRecurring = this.isRecurring;
+
   constructor(private activities: ActivitiesService, private events: EventsService) {}
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -76,13 +78,14 @@ export class CalendarModifyComponent implements OnChanges {
       this.ev_title = ev.title || '';
       this.location = ev.place || '';
       this.dataInizio = ev.start_date || '';
-      this.dataFine = ev.end_date || '';
       this.oraInizio = (ev.start_time || '').slice(0,5) || '';
       this.oraFine = (ev.end_time || '').slice(0,5) || '';
 
       // recurrence
       const hasRec = !!ev.recurrence_type;
       this.isRecurring = hasRec;
+      this.prevIsRecurring = this.isRecurring;
+
       this.tipoRipetizione = (ev.recurrence_type as any) || '';
       this.ripetizioni = ev.number_recurrence ?? null;
       this.fineRicorrenza = ev.due_date || '';
@@ -97,6 +100,19 @@ export class CalendarModifyComponent implements OnChanges {
     }
   }
 
+  // pulizia automatica quando isRecurring passa da true -> false
+  ngDoCheck(): void {
+    if (this.prevIsRecurring && !this.isRecurring) {
+      this.tipoRipetizione = '';
+      this.ripetizioni = null;
+      this.fineRicorrenza = '';
+      this.giorniSelezionati = {
+        Monday: false, Tuesday: false, Wednesday: false, Thursday: false, Friday: false, Saturday: false, Sunday: false
+      };
+    }
+    this.prevIsRecurring = this.isRecurring;
+  }
+
   onCancel(): void {
     this.close.emit();
   }
@@ -104,41 +120,44 @@ export class CalendarModifyComponent implements OnChanges {
   private normTime(t?: string): string {
     if (!t) return '';
     return t.length === 5 ? `${t}:00` : t;
-  }
+    }
 
   onSave(): void {
     // ========= UPDATE EVENT =========
     if (this.calendarEvent && !this.activity) {
       this.erroreData = false;
 
-      if (this.dataInizio && this.dataFine) {
-        const inizio = new Date(this.dataInizio);
-        const fine = new Date(this.dataFine);
-        if (inizio > fine) {
-          this.erroreData = true;
-          return;
-        }
-      }
-
       const days = Object.entries(this.giorniSelezionati)
         .filter(([_, v]) => v)
         .map(([k]) => k);
 
-      const patch: Partial<CalendarEvent> = {
-        title: this.ev_title,
-        place: this.location || '',
-        start_date: this.dataInizio || '',
-        end_date: this.dataFine || '',
-        start_time: this.normTime(this.oraInizio),
-        end_time: this.normTime(this.oraFine),
-        days_recurrence: this.isRecurring && days.length ? days.join(',') : '',
-        recurrence_type: this.isRecurring ? (this.tipoRipetizione || 'indeterminato') : undefined,
-        number_recurrence: this.isRecurring && this.tipoRipetizione === 'numeroFisso' ? (this.ripetizioni ?? 0) : 0,
-        due_date: this.isRecurring && this.tipoRipetizione === 'scadenza' ? (this.fineRicorrenza || '') : ''
-      };
+      // se non ricorrente -> svuota campi, usando "undefined" dove richiesto dal tipo
+      const patch: Partial<CalendarEvent> = this.isRecurring
+        ? {
+            title: this.ev_title,
+            place: this.location || '',
+            start_date: this.dataInizio || '',
+            start_time: this.normTime(this.oraInizio),
+            end_time: this.normTime(this.oraFine),
+            days_recurrence: days.length ? days.join(',') : '',
+            recurrence_type: (this.tipoRipetizione || 'indeterminato') as any,
+            number_recurrence: this.tipoRipetizione === 'numeroFisso' ? (this.ripetizioni ?? 0) : undefined,
+            due_date: this.tipoRipetizione === 'scadenza' ? (this.fineRicorrenza || '') : ''
+          }
+        : {
+            title: this.ev_title,
+            place: this.location || '',
+            start_date: this.dataInizio || '',
+            start_time: this.normTime(this.oraInizio),
+            end_time: this.normTime(this.oraFine),
+            days_recurrence: '',
+            recurrence_type: null,
+            number_recurrence: 0,
+            due_date: '' // string va bene per azzerare lato backend; opzionale potresti ometterlo
+          };
 
       this.events.update(this.calendarEvent.id, patch).subscribe({
-        next: (updated) => {
+        next: () => {
           this.saveOk = true;
           this.lastSavedEvent = { ...(this.calendarEvent as any), ...patch } as CalendarEvent;
           this.responseTitle = 'Saved';
