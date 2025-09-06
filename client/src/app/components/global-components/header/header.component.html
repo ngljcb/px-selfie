@@ -22,7 +22,7 @@
 
     <!-- Navbar desktop -->
     <nav *ngIf="!isRoot" class="hidden sm:flex ml-auto h-full">
-        <a *ngFor="let link of navLinks" [routerLink]="link.href" class="flex items-center justify-center h-24 w-40 text-black no-underline hover:[background-color:--primary-hover-bg]">
+        <a *ngFor="let link of navLinks" [routerLink]="link.href" class="flex items-center justify-center h-24 w-40 text-black font-medium no-underline hover:[background-color:--primary-hover-bg]">
             {{ link.label }}
         </a>
     </nav>
