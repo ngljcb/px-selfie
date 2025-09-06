@@ -1,5 +1,5 @@
 // src/app/components/calendar/calendar-create/calendar-create.component.ts
-import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivitiesService } from '../../../service/activities.service';
@@ -7,6 +7,7 @@ import { Activity } from '../../../model/activity.model';
 import { CalendarResponseComponent } from '../calendar-response/calendar-response.component';
 import { EventsService } from '../../../service/events.service';
 import { Event as CalendarEvent } from '../../../model/event.model';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 type Variant = 'success' | 'error' | 'info' | 'warning';
 
@@ -22,6 +23,8 @@ export class CalendarCreateComponent implements OnChanges {
   @Output() chiudi = new EventEmitter<void>();
   @Output() activityCreated = new EventEmitter<void>();
   @Output() eventCreated = new EventEmitter<void>(); // facoltativo per chi ascolta
+
+  private timeMachine = inject(TimeMachineService);
 
   type: '' | 'event' | 'activity' = '';
   tipoRipetizione: '' | 'giorniSettimana' | 'numeroFisso' | 'scadenza' | 'indeterminato' = '';
@@ -85,6 +88,19 @@ export class CalendarCreateComponent implements OnChanges {
       const fine = new Date(this.fineRicorrenza);
       if (inizio > fine) {
         this.erroreData = true;
+        return;
+      }
+    }
+
+    if (this.scadenza) {
+      const inizio = this.timeMachine.getNow();
+      const fine = new Date(this.scadenza);
+      if (inizio > fine) {
+        this.createdOk = false;
+        this.responseTitle = 'Due date error';
+        this.responseMessage = 'Due date must be ahead of the current date.';
+        this.responseVariant = 'warning';
+        this.showResponse = true;
         return;
       }
     }
