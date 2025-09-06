@@ -100,8 +100,6 @@
   box-shadow:0 16px 28px rgba(0,0,0,.25);
 }
 
-
-
 :root {
   --slot-bg: var(--primary-bg, #f6d469);
   --slot-border: #9ca3af;
@@ -175,18 +173,6 @@
   height: 100%;
   width: 100%;
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* ====== NEW: keep destination widget from “jumping up” while hovering ====== */
 /* Prevent Angular CDK from translating the existing item when a draggable

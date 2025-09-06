@@ -23,12 +23,14 @@
                                     <span *ngIf="id==='calendar'">CALENDAR</span>
                                     <span *ngIf="id==='notes'">NOTES</span>
                                     <span *ngIf="id==='stats'">STATS</span>
+                                    <span *ngIf="id==='todos'">TO DO</span>
                                 </div>
                                 <div class="slot-body">
                                     <ng-container [ngSwitch]="id">
                                         <app-calendar *ngSwitchCase="'calendar'" />
                                         <app-notes *ngSwitchCase="'notes'" />
                                         <app-stats *ngSwitchCase="'stats'" />
+                                        <app-todos *ngSwitchCase="'todos'" />
                                     </ng-container>
                                 </div>
                             </div>
@@ -48,12 +50,14 @@
                                     <span *ngIf="id==='calendar'">CALENDAR</span>
                                     <span *ngIf="id==='notes'">NOTES</span>
                                     <span *ngIf="id==='stats'">STATS</span>
+                                    <span *ngIf="id==='todos'">TO DO</span>
                                 </div>
                                 <div class="slot-body">
                                     <ng-container [ngSwitch]="id">
                                         <app-calendar *ngSwitchCase="'calendar'" />
                                         <app-notes *ngSwitchCase="'notes'" />
                                         <app-stats *ngSwitchCase="'stats'" />
+                                        <app-todos *ngSwitchCase="'todos'" />
                                     </ng-container>
                                 </div>
                             </div>
@@ -69,12 +73,14 @@
                                     <span *ngIf="id==='calendar'">CALENDAR</span>
                                     <span *ngIf="id==='notes'">NOTES</span>
                                     <span *ngIf="id==='stats'">STATS</span>
+                                    <span *ngIf="id==='todos'">TO DO</span>
                                 </div>
                                 <div class="slot-body">
                                     <ng-container [ngSwitch]="id">
                                         <app-calendar *ngSwitchCase="'calendar'" />
                                         <app-notes *ngSwitchCase="'notes'" />
                                         <app-stats *ngSwitchCase="'stats'" />
+                                        <app-todos *ngSwitchCase="'todos'" />
                                     </ng-container>
                                 </div>
                             </div>
