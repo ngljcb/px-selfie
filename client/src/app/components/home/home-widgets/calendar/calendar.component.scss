@@ -15,6 +15,10 @@
 }
 :host ::ng-deep .fc .fc-highlight{ background: var(--select-bg, #e6f7ff) !important; }
 
+:host ::ng-deep .fc-event-title { color: #000; font-size: 11px; font-weight: 700; }
+:host ::ng-deep .fc-event-time { color: #000; font-size: 11px; }
+:host ::ng-deep .fc-event { height: 18px; }
+
 /* Readability inside compact slots */
 :host ::ng-deep .fc-daygrid-event{ font-size:.85rem; padding:0 2px; }
 :host ::ng-deep .fc-event,
