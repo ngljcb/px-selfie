@@ -118,6 +118,10 @@
       background: linear-gradient(to bottom, #ffb366, #ff6f1a);
     }
 
+    button[type='submit']:disabled {
+      background: linear-gradient(to bottom, #ffd4aa, #f09d6d);
+    }
+
     button[type='button'] {
       background: linear-gradient(to bottom, #ffd0a2, #f79a64);
       color: #5c3b00;

@@ -1,3 +1,4 @@
+// src/app/components/calendar/calendar-create/calendar-create.component.ts
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -30,7 +31,6 @@ export class CalendarCreateComponent implements OnChanges {
   
   location: string = '';
   dataInizio: string = '';
-  dataFine: string = '';
   oraInizio: string = '';
   oraFine: string = '';
   duration: number = 1;
@@ -58,6 +58,12 @@ export class CalendarCreateComponent implements OnChanges {
   responseVariant: Variant = 'info';
   private createdOk = false;
 
+  // ---- client-side validation helpers (no logic changes) ----
+  submitted = false;
+  get hasSelectedDays(): boolean {
+    return Object.values(this.giorniSelezionati).some(v => !!v);
+  }
+
   constructor(
     private activitiesService: ActivitiesService,
     private eventsService: EventsService
@@ -67,7 +73,6 @@ export class CalendarCreateComponent implements OnChanges {
     if (changes['selectedDate'] && this.selectedDate) {
       const base = this.selectedDate.slice(0, 10); // YYYY-MM-DD
       this.dataInizio = base;
-      this.dataFine = base;
       this.scadenza = base;
     }
   }
@@ -75,9 +80,9 @@ export class CalendarCreateComponent implements OnChanges {
   onSubmit(): void {
     this.erroreData = false;
 
-    if (this.dataInizio && this.dataFine) {
+    if (this.dataInizio && this.fineRicorrenza) {
       const inizio = new Date(this.dataInizio);
-      const fine = new Date(this.dataFine);
+      const fine = new Date(this.fineRicorrenza);
       if (inizio > fine) {
         this.erroreData = true;
         return;
@@ -93,7 +98,6 @@ export class CalendarCreateComponent implements OnChanges {
       title: this.title,
       location: this.location,
       dataInizio: this.dataInizio,
-      dataFine: this.dataFine,
       oraInizio: this.oraInizio,
       oraFine: this.oraFine,
       tipoRipetizione: this.tipoRipetizione,
@@ -127,15 +131,12 @@ export class CalendarCreateComponent implements OnChanges {
         }
       });
     } else if (this.type === 'event') {
-      // normalizza orari a HH:mm:ss se forniti
-      const normTime = (t?: string) =>
-        t ? (t.length === 5 ? `${t}:00` : t) : '';
+      const normTime = (t?: string) => t ? (t.length === 5 ? `${t}:00` : t) : '';
 
       const payload: Partial<CalendarEvent> = {
         title: this.title,
         place: this.location || '',
         start_date: this.dataInizio || '',
-        end_date: this.dataFine || '',
         start_time: normTime(this.oraInizio),
         end_time: normTime(this.oraFine),
         days_recurrence: this.isRecurring && giorniAttivi.length ? giorniAttivi.join(',') : '',
@@ -161,7 +162,6 @@ export class CalendarCreateComponent implements OnChanges {
         }
       });
     } else {
-      // Manteniamo il comportamento attuale se nessun tipo
       console.log('Nuovo elemento:', eventoPreview);
       this.chiudi.emit();
     }
