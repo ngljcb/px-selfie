@@ -59,6 +59,9 @@ export class CalendarModifyComponent implements OnChanges, DoCheck {
   private lastSavedActivity!: Activity;
   private lastSavedEvent!: CalendarEvent;
 
+  // validation helpers
+  submitted = false;
+
   // tracker per intercettare quando il flag passa da true -> false
   private prevIsRecurring = this.isRecurring;
 
@@ -113,6 +116,25 @@ export class CalendarModifyComponent implements OnChanges, DoCheck {
     this.prevIsRecurring = this.isRecurring;
   }
 
+  // ===== client-side validation helpers for enabling/disabling submit =====
+  get hasSelectedDays(): boolean {
+    return Object.values(this.giorniSelezionati).some(v => v);
+  }
+
+  extraInvalid(): boolean {
+    // invalid extra rules for EVENT branch
+    if (this.calendarEvent && !this.activity) {
+      if (this.isRecurring) {
+        if (!this.tipoRipetizione) return true;
+        if (this.tipoRipetizione === 'numeroFisso' && (!this.ripetizioni || this.ripetizioni < 1)) return true;
+        if (this.tipoRipetizione === 'scadenza' && !this.fineRicorrenza) return true;
+        if (this.tipoRipetizione === 'giorniSettimana' && !this.hasSelectedDays) return true;
+      }
+    }
+    // activity branch has no extra rules beyond required controls
+    return false;
+  }
+
   onCancel(): void {
     this.close.emit();
   }
@@ -120,7 +142,7 @@ export class CalendarModifyComponent implements OnChanges, DoCheck {
   private normTime(t?: string): string {
     if (!t) return '';
     return t.length === 5 ? `${t}:00` : t;
-    }
+  }
 
   onSave(): void {
     // ========= UPDATE EVENT =========
@@ -131,7 +153,7 @@ export class CalendarModifyComponent implements OnChanges, DoCheck {
         .filter(([_, v]) => v)
         .map(([k]) => k);
 
-      // se non ricorrente -> svuota campi, usando "undefined" dove richiesto dal tipo
+      // se non ricorrente -> svuota campi
       const patch: Partial<CalendarEvent> = this.isRecurring
         ? {
             title: this.ev_title,
@@ -153,7 +175,7 @@ export class CalendarModifyComponent implements OnChanges, DoCheck {
             days_recurrence: '',
             recurrence_type: null,
             number_recurrence: 0,
-            due_date: '' // string va bene per azzerare lato backend; opzionale potresti ometterlo
+            due_date: ''
           };
 
       this.events.update(this.calendarEvent.id, patch).subscribe({

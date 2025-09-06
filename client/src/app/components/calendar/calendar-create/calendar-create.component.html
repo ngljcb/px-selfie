@@ -1,81 +1,103 @@
+<!-- src/app/components/calendar/calendar-create/calendar-create.component.html -->
 <div class="modal-overlay">
   <div class="modal-container">
     <div class="calendar-create-wrapper">
-      <form (ngSubmit)="onSubmit()">
+      <!-- VALIDATION: use template-driven form api -->
+      <form #f="ngForm" (ngSubmit)="submitted = true; onSubmit()">
         <h2>Create a new {{ type || 'event/activity'}}</h2>
 
         <div class="form-grid">
+          <!-- TYPE -->
           <div>
             <label>Type *</label>
-            <select [(ngModel)]="type" name="type">
+            <select [(ngModel)]="type" name="type" #typeCtrl="ngModel" required [attr.aria-invalid]="submitted && typeCtrl.invalid ? true : null">
               <option disabled selected value=""> -- Select a type -- </option>
               <option value="event">Event</option>
               <option value="activity">Activity</option>
             </select>
+            <div class="error-msg" *ngIf="submitted && typeCtrl.invalid">Type is required.</div>
           </div>
 
+          <!-- TITLE -->
           <div>
             <label>Title *</label>
-            <input [(ngModel)]="title" name="title" required />
+            <input [(ngModel)]="title" name="title" #titleCtrl="ngModel" required [attr.aria-invalid]="submitted && titleCtrl.invalid ? true : null" />
+            <div class="error-msg" *ngIf="submitted && titleCtrl.invalid">Title is required.</div>
           </div>
 
+          <!-- ACTIVITY: DUE DATE -->
           <div *ngIf="type == 'activity'">
             <label>Due date *</label>
-            <input type="date" [(ngModel)]="scadenza" name="scadenza" required />
+            <input type="date" [(ngModel)]="scadenza" name="scadenza" #scadCtrl="ngModel" required [attr.aria-invalid]="submitted && scadCtrl.invalid ? true : null" />
+            <div class="error-msg" *ngIf="submitted && scadCtrl.invalid">Due date is required.</div>
           </div>
 
+          <!-- EVENT: PLACE -->
           <div *ngIf="type == 'event'">
             <label>Place</label>
             <input [(ngModel)]="location" name="location" />
           </div>
 
+          <!-- EVENT: START DATE -->
           <div class="row-group" *ngIf="type == 'event'">
             <div>
               <label>Start date *</label>
-              <input type="date" [(ngModel)]="dataInizio" name="dataInizio" required />
+              <input type="date" [(ngModel)]="dataInizio" name="dataInizio" #startDateCtrl="ngModel" required [attr.aria-invalid]="submitted && startDateCtrl.invalid ? true : null" />
+              <div class="error-msg" *ngIf="submitted && startDateCtrl.invalid">Start date is required.</div>
             </div>
           </div>
+
+          <!-- EVENT: DATE ORDER ERROR -->
           <div *ngIf="type == 'event' && erroreData" class="error-msg">
             La data di inizio deve essere precedente a quella di fine.
           </div>
 
+          <!-- EVENT: TIMES -->
           <div class="row-group" *ngIf="type == 'event'">
             <div>
-              <label>Start time</label>
-              <input type="time" [(ngModel)]="oraInizio" name="oraInizio" required />
+              <label for="oraInizio">Start time</label>
+              <input type="time" [(ngModel)]="oraInizio" name="oraInizio" />
             </div>
             <div>
-              <label>End time</label>
+              <label for="oraFine">End time</label>
               <input type="time" [(ngModel)]="oraFine" name="oraFine" />
             </div>
           </div>
 
+          <!-- EVENT: RECURRING -->
           <div class="checkbox-row" *ngIf="type == 'event'">
             <input type="checkbox" [(ngModel)]="isRecurring" name="isRecurring" id="isRecurring" />
             <label for="isRecurring">Recurring event</label>
           </div>
 
+          <!-- EVENT: RECURRENCE OPTIONS -->
           <div *ngIf="type == 'event' && isRecurring" class="row-group">
             <div>
               <label>Recurrence type *</label>
-              <select [(ngModel)]="tipoRipetizione" name="tipoRipetizione">
+              <select [(ngModel)]="tipoRipetizione" name="tipoRipetizione" #tipoCtrl="ngModel" [required]="isRecurring" [attr.aria-invalid]="submitted && tipoCtrl.invalid ? true : null">
                 <option disabled selected value=""> -- Select a type -- </option>
                 <option value="giorniSettimana">Days of the week</option>
                 <option value="numeroFisso">Fixed number of recurrence</option>
                 <option value="scadenza">Due date</option>
                 <option value="indeterminato">Indefinite recurrence</option>
               </select>
+              <div class="error-msg" *ngIf="submitted && tipoCtrl.invalid">Recurrence type is required.</div>
             </div>
+
             <div *ngIf="type == 'event' && tipoRipetizione == 'numeroFisso'">
-              <label>Number of recurrence</label>
-              <input type="number" min="1" [(ngModel)]="ripetizioni" name="ripetizioni" />
+              <label for="ripetizioni">Number of recurrence *</label>
+              <input type="number" min="1" [(ngModel)]="ripetizioni" name="ripetizioni" #ripCtrl="ngModel" [required]="tipoRipetizione == 'numeroFisso'" [attr.aria-invalid]="submitted && ripCtrl.invalid ? true : null" />
+              <div class="error-msg" *ngIf="submitted && ripCtrl.invalid">Please enter a number ≥ 1.</div>
             </div>
+
             <div *ngIf="type == 'event' && tipoRipetizione == 'scadenza'">
-              <label>Due date</label>
-              <input type="date" [(ngModel)]="fineRicorrenza" name="fineRicorrenza" />
+              <label for="fineRicorrenza">Due date *</label>
+              <input type="date" [(ngModel)]="fineRicorrenza" name="fineRicorrenza" #fineCtrl="ngModel" [required]="tipoRipetizione == 'scadenza'" [attr.aria-invalid]="submitted && fineCtrl.invalid ? true : null" />
+              <div class="error-msg" *ngIf="submitted && fineCtrl.invalid">Due date is required.</div>
             </div>
           </div>
 
+          <!-- EVENT: DAYS OF WEEK -->
           <div *ngIf="type == 'event' && tipoRipetizione == 'giorniSettimana'" class="giorni-frequenza">
             <label>Day of the week:</label>
             <div class="checkbox-giorni">
@@ -84,11 +106,12 @@
                 {{ giorno }}
               </label>
             </div>
+            <div class="error-msg" *ngIf="submitted && !hasSelectedDays">Select at least one day.</div>
           </div>
         </div>
 
         <div class="button-row">
-          <button type="submit"><em class="fa fa-save"></em> Save</button>
+          <button type="submit" [disabled]="!f.form.valid"><em class="fa fa-save"></em> Save</button>
         </div>
       </form>
     </div>
