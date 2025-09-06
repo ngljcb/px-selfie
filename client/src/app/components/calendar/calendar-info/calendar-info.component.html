@@ -10,23 +10,23 @@
           <!-- ===== ACTIVITY DETAILS ===== -->
           <ng-container *ngIf="activity && !calendarEvent">
             <div>
-              <label>Title *</label>
-              <input [value]="activity.title" readonly />
+              <label>Title</label>
+              <input [value]="activity.title" readonly disabled />
             </div>
 
             <div>
-              <label>Due date *</label>
-              <input type="date" [value]="activity.due_date" readonly />
+              <label>Due date</label>
+              <input type="date" [value]="activity.due_date" readonly disabled />
             </div>
 
             <div>
               <label>Status</label>
-              <input [value]="activity.status || 'pending'" readonly />
+              <input [value]="activity.status || 'pending'" readonly disabled />
             </div>
 
             <div *ngIf="activity.finished_at">
               <label>Finished at</label>
-              <input [value]="activity.finished_at" readonly />
+              <input [value]="activity.finished_at" readonly disabled />
             </div>
           </ng-container>
 
@@ -34,34 +34,30 @@
           <ng-container *ngIf="calendarEvent && !activity">
 
             <div>
-              <label>Title *</label>
-              <input [value]="calendarEvent.title" readonly />
+              <label>Title</label>
+              <input [value]="calendarEvent.title" readonly disabled />
             </div>
 
             <div>
               <label>Place</label>
-              <input [value]="calendarEvent.place || ''" readonly />
+              <input [value]="calendarEvent.place || ''" readonly disabled />
             </div>
 
             <div class="row-group">
               <div>
-                <label>Start date *</label>
-                <input type="date" [value]="calendarEvent.start_date" readonly />
-              </div>
-              <div>
-                <label>End date</label>
-                <input type="date" [value]="calendarEvent.end_date" readonly />
+                <label>Start date</label>
+                <input type="date" [value]="calendarEvent.start_date" readonly disabled />
               </div>
             </div>
 
             <div class="row-group">
               <div>
-                <label>Start time *</label>
-                <input type="time" [value]="calendarEvent.start_time" readonly />
+                <label>Start time</label>
+                <input type="time" [value]="calendarEvent.start_time" readonly disabled />
               </div>
               <div>
                 <label>End time</label>
-                <input type="time" [value]="calendarEvent.end_time" readonly />
+                <input type="time" [value]="calendarEvent.end_time" readonly disabled />
               </div>
             </div>
 
@@ -92,12 +88,12 @@
 
               <div *ngIf="calendarEvent.recurrence_type==='numeroFisso'">
                 <label>Number of recurrence</label>
-                <input type="number" [value]="calendarEvent.number_recurrence" readonly />
+                <input type="number" [value]="calendarEvent.number_recurrence" readonly disabled />
               </div>
 
               <div *ngIf="calendarEvent.recurrence_type==='scadenza'">
                 <label>Due date</label>
-                <input type="date" [value]="calendarEvent.due_date" readonly />
+                <input type="date" [value]="calendarEvent.due_date" readonly disabled />
               </div>
             </div>
           </ng-container>
