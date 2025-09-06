@@ -6,7 +6,7 @@ const app = express();
 const routes = require('./router');
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL, // client Angular
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 
