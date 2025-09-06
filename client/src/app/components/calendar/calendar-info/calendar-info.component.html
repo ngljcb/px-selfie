@@ -50,7 +50,7 @@
               </div>
             </div>
 
-            <div class="row-group">
+            <div class="row-group" *ngIf="calendarEvent.start_time !=null ">
               <div>
                 <label>Start time</label>
                 <input type="time" [value]="calendarEvent.start_time" readonly disabled />
@@ -61,29 +61,13 @@
               </div>
             </div>
 
-            <div class="checkbox-row">
-              <input type="checkbox" [checked]="!!calendarEvent.recurrence_type" disabled />
-              <label>Recurring event</label>
-            </div>
-
-            <div class="giorni-frequenza" *ngIf="calendarEvent.recurrence_type">
-              <label>Day of the week:</label>
-              <div class="checkbox-giorni">
-                <label *ngFor="let d of (calendarEvent.days_recurrence || '').split(',')">
-                  <input type="checkbox" checked disabled />
-                  {{ d }}
-                </label>
-              </div>
-            </div>
-
             <div class="row-group" *ngIf="calendarEvent.recurrence_type">
               <div>
-                <label>Recurrence type *</label>
-                <select disabled>
-                  <option [selected]="calendarEvent.recurrence_type==='numeroFisso'">Fixed number of recurrence</option>
-                  <option [selected]="calendarEvent.recurrence_type==='scadenza'">Due date</option>
-                  <option [selected]="calendarEvent.recurrence_type==='indeterminato'">Indefinite recurrence</option>
-                </select>
+                <label>Recurrence type</label>
+                <input *ngIf="calendarEvent.recurrence_type === 'giorniSettimana' " value="Days of the week" readonly disabled />
+                <input *ngIf="calendarEvent.recurrence_type === 'numeroFisso' " value="Fixed number of recurrence" readonly disabled />
+                <input *ngIf="calendarEvent.recurrence_type === 'scadenza' " value="Due date" readonly disabled />
+                <input *ngIf="calendarEvent.recurrence_type === 'indeterminato' " value="Indefinite recurrence" readonly disabled />
               </div>
 
               <div *ngIf="calendarEvent.recurrence_type==='numeroFisso'">
@@ -94,6 +78,16 @@
               <div *ngIf="calendarEvent.recurrence_type==='scadenza'">
                 <label>Due date</label>
                 <input type="date" [value]="calendarEvent.due_date" readonly disabled />
+              </div>
+            </div>
+
+            <div class="giorni-frequenza" *ngIf="calendarEvent.recurrence_type==='giorniSettimana'">
+              <label>Day of the week:</label>
+              <div class="checkbox-giorni">
+                <label *ngFor="let d of (calendarEvent.days_recurrence || '').split(',')">
+                  <input type="checkbox" checked disabled />
+                  {{ d }}
+                </label>
               </div>
             </div>
           </ng-container>
