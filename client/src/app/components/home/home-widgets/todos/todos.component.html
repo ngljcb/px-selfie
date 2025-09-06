@@ -1,0 +1,18 @@
+<!-- src/app/components/home/widgets/todos/todos.component.html -->
+
+<ng-container *ngIf="hasItems(); else empty">
+
+  <div class="todos-grid">
+    <div class="todo-row" *ngFor="let a of items() | slice:0:4; trackBy: trackById">
+      <div class="todo-date">{{ formatDue(a.due_date) }}</div>
+      <div class="todo-title">{{ a.title || '—' }}</div>
+    </div>
+  </div>
+</ng-container>
+
+<ng-template #empty>
+
+  <div class="todos-empty">
+    <div class="todos-empty-box">No upcoming activities</div>
+  </div>
+</ng-template>
