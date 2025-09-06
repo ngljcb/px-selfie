@@ -1,5 +1,5 @@
 // src/app/components/calendar/calendar-modify/calendar-modify.component.ts
-import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, DoCheck } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, SimpleChanges, DoCheck, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Activity } from '../../../model/activity.model';
@@ -7,6 +7,7 @@ import { ActivitiesService } from '../../../service/activities.service';
 import { CalendarResponseComponent } from '../calendar-response/calendar-response.component';
 import { EventsService } from '../../../service/events.service';
 import { Event as CalendarEvent } from '../../../model/event.model';
+import { TimeMachineService } from '../../../service/time-machine.service';
 
 type Variant = 'success' | 'error' | 'info' | 'warning';
 
@@ -27,6 +28,8 @@ export class CalendarModifyComponent implements OnChanges, DoCheck {
   @Output() saved = new EventEmitter<Activity>();
   /** Notifica al padre i dati aggiornati (event) */
   @Output() eventSaved = new EventEmitter<CalendarEvent>();
+
+  private timeMachine = inject(TimeMachineService);
 
   // ===== Activity form model =====
   title = '';
@@ -207,6 +210,19 @@ export class CalendarModifyComponent implements OnChanges, DoCheck {
       this.responseVariant = 'warning';
       this.showResponse = true;
       return;
+    }
+
+    if (this.due_date) {
+      const inizio = this.timeMachine.getNow();
+      const fine = new Date(this.due_date);
+      if (inizio > fine) {
+        this.saveOk = false;
+        this.responseTitle = 'Due date error';
+        this.responseMessage = 'Due date must be ahead of the current date.';
+        this.responseVariant = 'warning';
+        this.showResponse = true;
+        return;
+      }
     }
 
     const patch = { title: this.title, due_date: this.due_date, status: this.status };

@@ -111,7 +111,7 @@
         </div>
 
         <div class="button-row">
-          <button type="submit" [disabled]="!f.form.valid"><em class="fa fa-save"></em> Save</button>
+          <button type="submit" [disabled]="!f.form.valid || erroreData"><em class="fa fa-save"></em> Save</button>
         </div>
       </form>
     </div>

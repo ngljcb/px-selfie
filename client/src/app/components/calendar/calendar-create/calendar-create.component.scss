@@ -119,7 +119,8 @@
     }
 
     button[type='submit']:disabled {
-      background: linear-gradient(to bottom, #ffd4aa, #f09d6d);
+      background: #cfd8dc;
+      color: #777;
     }
 
     button[type='button'] {
