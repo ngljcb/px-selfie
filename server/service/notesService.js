@@ -185,7 +185,9 @@ async function createNote(userId, noteData) {
 
   await validateNoteData(noteData, userId);
 
-  const createdAt = noteData.createdAt || new Date().toISOString();
+  const currentTime = new Date().toISOString();
+  const createdAt = noteData.createdAt || currentTime;
+  const lastModifyAt = noteData.lastModifyAt || currentTime;  // Aggiunto supporto per lastModifyAt
 
   const noteToInsert = {
     creator: userId,
@@ -195,7 +197,7 @@ async function createNote(userId, noteData) {
     accessibility: noteData.accessibility,
     group_name: noteData.groupName || null,
     created_at: createdAt,
-    lastModifyAt: createdAt,
+    last_modify_at: lastModifyAt,  // Correzione: usiamo last_modify_at invece di lastModifyAt
   };
 
   const { data: note, error } = await supabase
@@ -251,7 +253,9 @@ async function duplicateNote(userId, sourceNoteId, duplicateData) {
 
   const sourceNote = await getNoteById(userId, sourceNoteId);
 
-  const createdAt = duplicateData.createdAt || new Date().toISOString();
+  const currentTime = new Date().toISOString();
+  const createdAt = duplicateData.createdAt || currentTime;
+  const lastModifyAt = duplicateData.lastModifyAt || currentTime;  // Aggiunto supporto per lastModifyAt
 
   const newNoteData = {
     title: duplicateData.newTitle || `Copy of ${sourceNote.title || 'Untitled'}`,
@@ -260,7 +264,8 @@ async function duplicateNote(userId, sourceNoteId, duplicateData) {
     accessibility: duplicateData.accessibility || ACCESSIBILITY_TYPES.PRIVATE,
     groupName: duplicateData.groupName,
     authorizedUserIds: duplicateData.authorizedUserIds,
-    createdAt: createdAt 
+    createdAt: createdAt,
+    lastModifyAt: lastModifyAt  // Aggiunto supporto per lastModifyAt
   };
 
   return await createNote(userId, newNoteData);
@@ -302,7 +307,7 @@ async function updateNote(userId, noteId, updateData) {
     category: updateData.category || null,
     accessibility: updateData.accessibility,
     group_name: updateData.groupName || null,
-    last_modify_at: modificationTime  
+    last_modify_at: modificationTime  // Correzione: usiamo last_modify_at invece di lastModifyAt
   };
 
   const { data: updatedNote, error } = await supabase
@@ -350,7 +355,6 @@ async function updateNote(userId, noteId, updateData) {
   return enrichNoteWithMetadata(enrichedNote, userId);
 }
 
-
 async function getNotePermissions(userId, noteId) {
   const note = await getNoteById(userId, noteId);
   
@@ -360,7 +364,6 @@ async function getNotePermissions(userId, noteId) {
     canShare: note.creator === userId
   };
 }
-
 
 async function bulkOperation(userId, operationData) {
   const { operation, noteIds } = operationData;
@@ -494,7 +497,7 @@ function enrichNoteWithMetadata(note, userId) {
     canEdit: note.creator === userId,
     canDelete: note.creator === userId,
     createdAt: note.created_at,
-    lastModifyAt: note.last_modify_at 
+    lastModifyAt: note.last_modify_at  // Correzione: mappiamo last_modify_at a lastModifyAt per il frontend
   };
 }
 
@@ -534,6 +537,15 @@ function getOrderColumn(sortBy) {
 }
 
 async function validateNoteData(noteData, userId) {
+
+  // Validazione campi obbligatori
+  if (!noteData.title || !noteData.title.trim()) {
+    throw new Error('Title is required');
+  }
+
+  if (!noteData.text || !noteData.text.trim()) {
+    throw new Error('Text content is required');
+  }
 
   if (!noteData.accessibility || !Object.values(ACCESSIBILITY_TYPES).includes(noteData.accessibility)) {
     throw new Error('Invalid accessibility type');
