@@ -6,10 +6,11 @@ import { DragDropModule, CdkDragDrop, transferArrayItem, moveItemInArray } from 
 import { CalendarComponent } from '../home-widgets/calendar/calendar.component';
 import { NotesComponent } from '../home-widgets/notes/notes.component';
 import { StatsComponent } from '../home-widgets/stats/stats.component';
+import { TodosComponent } from '../home-widgets/todos/todos.component';
 
 @Component({
   selector: 'app-home-view',
-  imports: [CommonModule, HomeBoxComponent, DragDropModule, CalendarComponent, NotesComponent, StatsComponent],
+  imports: [CommonModule, HomeBoxComponent, DragDropModule, CalendarComponent, NotesComponent, StatsComponent, TodosComponent],
   templateUrl: './home-view.component.html',
   styleUrl: './home-view.component.scss'
 })
@@ -19,7 +20,7 @@ export class HomeViewComponent {
   // Tre slot (ognuno contiene al più 1 elemento). Gli ID sono: 'calendar' | 'notes' | 'stats'
   leftSlot: string[] = ['calendar'];
   rightTopSlot: string[] = ['stats'];
-  rightBottomSlot: string[] = ['notes'];
+  rightBottomSlot: string[] = ['todos'];
 
   constructor(private featureService: FeatureService) {}
 
