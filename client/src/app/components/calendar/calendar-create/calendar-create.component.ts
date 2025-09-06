@@ -23,7 +23,7 @@ export class CalendarCreateComponent implements OnChanges {
   @Output() eventCreated = new EventEmitter<void>(); // facoltativo per chi ascolta
 
   type: '' | 'event' | 'activity' = '';
-  tipoRipetizione: '' | 'numeroFisso' | 'scadenza' | 'indeterminato' = '';
+  tipoRipetizione: '' | 'giorniSettimana' | 'numeroFisso' | 'scadenza' | 'indeterminato' = '';
 
   title: string = '';
   scadenza: string = '';

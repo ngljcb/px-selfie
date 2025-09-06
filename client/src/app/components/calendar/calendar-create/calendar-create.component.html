@@ -34,10 +34,6 @@
               <label>Start date *</label>
               <input type="date" [(ngModel)]="dataInizio" name="dataInizio" required />
             </div>
-            <div>
-              <label>End date</label>
-              <input type="date" [(ngModel)]="dataFine" name="dataFine" />
-            </div>
           </div>
           <div *ngIf="type == 'event' && erroreData" class="error-msg">
             La data di inizio deve essere precedente a quella di fine.
@@ -45,7 +41,7 @@
 
           <div class="row-group" *ngIf="type == 'event'">
             <div>
-              <label>Start time *</label>
+              <label>Start time</label>
               <input type="time" [(ngModel)]="oraInizio" name="oraInizio" required />
             </div>
             <div>
@@ -59,21 +55,12 @@
             <label for="isRecurring">Recurring event</label>
           </div>
 
-          <div *ngIf="type == 'event' && isRecurring" class="giorni-frequenza">
-            <label>Day of the week:</label>
-            <div class="checkbox-giorni">
-              <label *ngFor="let giorno of giorniSettimana">
-                <input type="checkbox" [(ngModel)]="giorniSelezionati[giorno]" name="{{giorno}}" />
-                {{ giorno }}
-              </label>
-            </div>
-          </div>
-
           <div *ngIf="type == 'event' && isRecurring" class="row-group">
             <div>
               <label>Recurrence type *</label>
               <select [(ngModel)]="tipoRipetizione" name="tipoRipetizione">
                 <option disabled selected value=""> -- Select a type -- </option>
+                <option value="giorniSettimana">Days of the week</option>
                 <option value="numeroFisso">Fixed number of recurrence</option>
                 <option value="scadenza">Due date</option>
                 <option value="indeterminato">Indefinite recurrence</option>
@@ -86,6 +73,16 @@
             <div *ngIf="type == 'event' && tipoRipetizione == 'scadenza'">
               <label>Due date</label>
               <input type="date" [(ngModel)]="fineRicorrenza" name="fineRicorrenza" />
+            </div>
+          </div>
+
+          <div *ngIf="type == 'event' && tipoRipetizione == 'giorniSettimana'" class="giorni-frequenza">
+            <label>Day of the week:</label>
+            <div class="checkbox-giorni">
+              <label *ngFor="let giorno of giorniSettimana">
+                <input type="checkbox" [(ngModel)]="giorniSelezionati[giorno]" name="{{giorno}}" />
+                {{ giorno }}
+              </label>
             </div>
           </div>
         </div>
