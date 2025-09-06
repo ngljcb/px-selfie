@@ -63,22 +63,33 @@ async function createNote(req, res) {
       accessibility, 
       groupName, 
       authorizedUserIds,
-      createdAt 
+      createdAt,
+      lastModifyAt  // Aggiungiamo lastModifyAt
     } = req.body;
 
+    // Validazione campi obbligatori
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Title is required' });
+    }
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ error: 'Text content is required' });
+    }
+
+    if (!accessibility) {
+      return res.status(400).json({ error: 'Accessibility type is required' });
+    }
+
     const noteData = {
-      title,
-      text,
+      title: title.trim(),
+      text: text.trim(),
       category,
       accessibility,
       groupName,
       authorizedUserIds,
-      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined 
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined,
+      lastModifyAt: lastModifyAt ? new Date(lastModifyAt).toISOString() : undefined  // Aggiunto supporto per lastModifyAt
     };
-
-    if (!noteData.accessibility) {
-      return res.status(400).json({ error: 'Accessibility type is required' });
-    }
 
     const note = await notesService.createNote(userId, noteData);
     res.status(201).json(note);
@@ -91,13 +102,33 @@ async function updateNote(req, res) {
   try {
     const userId = req.user.id;
     const noteId = req.params.id;
+    
+    const {
+      title,
+      text,
+      category,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      lastModifyAt
+    } = req.body;
+
+    if (title !== undefined && (!title || !title.trim())) {
+      return res.status(400).json({ error: 'Title cannot be empty' });
+    }
+
+    if (text !== undefined && (!text || !text.trim())) {
+      return res.status(400).json({ error: 'Text content cannot be empty' });
+    }
+
     const updateData = {
-      title: req.body.title,
-      text: req.body.text,
-      category: req.body.category,
-      accessibility: req.body.accessibility,
-      groupName: req.body.groupName,
-      authorizedUserIds: req.body.authorizedUserIds
+      title: title ? title.trim() : undefined,
+      text: text ? text.trim() : undefined,
+      category,
+      accessibility,
+      groupName,
+      authorizedUserIds,
+      lastModifyAt: lastModifyAt ? new Date(lastModifyAt).toISOString() : undefined 
     };
 
     const note = await notesService.updateNote(userId, noteId, updateData);
@@ -140,7 +171,8 @@ async function duplicateNote(req, res) {
       accessibility, 
       groupName, 
       authorizedUserIds,
-      createdAt 
+      createdAt,
+      lastModifyAt  // Aggiungiamo lastModifyAt
     } = req.body;
 
     const duplicateData = {
@@ -148,7 +180,8 @@ async function duplicateNote(req, res) {
       accessibility,
       groupName,
       authorizedUserIds,
-      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined 
+      createdAt: createdAt ? new Date(createdAt).toISOString() : undefined,
+      lastModifyAt: lastModifyAt ? new Date(lastModifyAt).toISOString() : undefined  // Aggiunto supporto per lastModifyAt
     };
 
     const duplicatedNote = await notesService.duplicateNote(userId, sourceNoteId, duplicateData);

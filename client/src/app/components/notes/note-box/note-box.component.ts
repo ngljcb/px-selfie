@@ -234,11 +234,6 @@ export class NoteBoxComponent {
     return contentLength > this.previewLength;
   }
 
-  getTruncatedLength(): number {
-    const contentLength = this.note.contentLength || 0;
-    return Math.max(0, contentLength - this.previewLength);
-  }
-
   private showFeedback(message: string, type: 'success' | 'error'): void {
     this.feedbackMessage = message;
     this.feedbackType = type;
