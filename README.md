@@ -2,6 +2,10 @@
 
 Selfie is an app built with `Angular`, `ExpressJS`, `TailwindCSS`, & `Supabase`, designed to help students manage events, deadlines, & daily tasks efficiently
 
+## Live Demo
+
+<a href="#"><img src="./client/public/selfie-demo.gif"></a>
+
 
 ## Backend
 
