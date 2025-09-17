@@ -83,7 +83,7 @@ ng serve
 
 By default, the frontend runs at: http://localhost:4200. The app will automatically reload whenever you modify the source files.
 
-## 
+## Deployment & Repository
 
 This project is deployed in vercel at https://px-selfie.vercel.app
 
